@@ -1955,7 +1955,7 @@ a:hover {
     margin-top: 8px;
     padding: 8px 12px;
     border-radius: 6px;
-    background-color: rgba(253, 185, 19, 0.1);
+    background-color: transparent;
     border: 1px solid rgba(253, 185, 19, 0.3);
 }
 
@@ -1966,7 +1966,7 @@ a:hover {
 }
 
 .pick-status-text.saved {
-    background-color: rgba(40, 167, 69, 0.1);
+    background-color: transparent;
     border-color: rgba(40, 167, 69, 0.3);
     color: #155724;
 }
@@ -4892,7 +4892,7 @@ a:hover {
 }
 
 .mobile-deadline-section .pick-status-header {
-    background: rgba(255,255,255,0.2);
+    background: transparent;
     padding: 10px;
     border-radius: 6px;
     margin-top: 10px;
