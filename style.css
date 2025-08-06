@@ -509,7 +509,7 @@ a:hover {
 .intro-highlight::before {
     content: '⚽';
     position: absolute;
-    left: 0;
+    left: -10px;
     top: 5px;
     width: 16px;
     height: 16px;
