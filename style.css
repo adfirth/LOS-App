@@ -5036,9 +5036,10 @@ a:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     min-height: 80vh;
     padding: 40px;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
+    width: calc(100% - 40px);
+    max-width: 1360px;
+    margin: 0 auto 0 0;
+    margin-right: 40px;
     position: relative;
     display: flex;
     flex-direction: column;
