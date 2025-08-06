@@ -5039,16 +5039,18 @@ a:hover {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
+    position: relative;
 }
 
 .desktop-tab-content .desktop-tab-pane {
     display: none;
-    width: 100%;
-    grid-column: 1;
-    grid-row: 1;
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: 30px;
+    bottom: 30px;
+    width: calc(100% - 60px);
+    height: calc(100% - 60px);
 }
 
 .desktop-tab-content .desktop-tab-pane.active {
