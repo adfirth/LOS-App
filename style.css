@@ -503,6 +503,7 @@ a:hover {
     top: 5px;
     width: 16px;
     height: 16px;
+    filter: grayscale(100%);
 }
 
 /* 6. NEW League Table Styles */
