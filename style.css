@@ -505,6 +505,19 @@ a:hover {
     line-height: 1;
 }
 
+/* Red and white football for specific highlight bullet points */
+.intro-highlight::before {
+    content: '⚽';
+    position: absolute;
+    left: -25px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    filter: hue-rotate(0deg) saturate(200%) brightness(1.2%);
+    font-size: 16px;
+    line-height: 1;
+}
+
 /* 6. NEW League Table Styles */
 .league-table {
     width: 100%;
