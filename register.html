@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Last One Standing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>The Ultimate National League Challenge</h2>
+        </div>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="intro">
+                <h2>Register for Edition <span id="current-edition-display">1</span></h2>
+                
+                <!-- Registration Window Check -->
+                <div id="registration-closed" style="display: none; text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 2rem;">
+                    <h3>Registration Currently Closed</h3>
+                    <p>Registration for this edition is not currently open. Please check back later or contact the administrator.</p>
+                    <a href="/index.html" class="cta-button">Return to Home</a>
+                </div>
+
+                <!-- Registration Form -->
+                <form id="register-form" style="display: block;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="register-firstname">First Name *</label>
+                            <input type="text" id="register-firstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-surname">Surname *</label>
+                            <input type="text" id="register-surname" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-dob">Date of Birth *</label>
+                        <input type="date" id="register-dob" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-email">Email Address *</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-mobile">Mobile Phone Number *</label>
+                        <input type="tel" id="register-mobile" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password">Password (min. 6 characters) *</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-confirm-password">Confirm Password *</label>
+                        <input type="password" id="register-confirm-password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-payment">Preferred Payment Method *</label>
+                        <select id="register-payment" required>
+                            <option value="">Select payment method</option>
+                            <option value="cash">Cash</option>
+                            <option value="online">Online Payment</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="register-email-consent" required>
+                            <span class="checkmark"></span>
+                            I consent to receive emails about the competition *
+                        </label>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="register-whatsapp-consent">
+                            <span class="checkmark"></span>
+                            I consent to join the Altrincham FC Juniors LOS WhatsApp group
+                        </label>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="register-terms" required>
+                            <span class="checkmark"></span>
+                            I agree to the terms and conditions *
+                        </label>
+                    </div>
+
+                    <button type="submit" class="cta-button">Register for Edition <span id="submit-edition-display">1</span></button>
+                    <p id="error-message" class="error-text"></p>
+                </form>
+
+                <!-- Re-registration Form for Existing Users -->
+                <form id="re-register-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="re-register-email">Email Address (from previous registration) *</label>
+                        <input type="email" id="re-register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="re-register-password">Password *</label>
+                        <input type="password" id="re-register-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="re-register-payment">Preferred Payment Method *</label>
+                        <select id="re-register-payment" required>
+                            <option value="">Select payment method</option>
+                            <option value="cash">Cash</option>
+                            <option value="online">Online Payment</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="re-register-email-consent" required>
+                            <span class="checkmark"></span>
+                            I consent to receive emails about the competition *
+                        </label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="re-register-whatsapp-consent">
+                            <span class="checkmark"></span>
+                            I consent to join the Altrincham FC Juniors LOS WhatsApp group
+                        </label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="re-register-terms" required>
+                            <span class="checkmark"></span>
+                            I agree to the terms and conditions *
+                        </label>
+                    </div>
+                    <button type="submit" class="cta-button">Register for Edition <span id="re-submit-edition-display">1</span></button>
+                    <p id="re-register-error-message" class="error-text"></p>
+                </form>
+
+                <div class="sub-links">
+                    <p>Already have an account? <a href="/login.html">Login here</a></p>
+                    <p>Returning player? <a href="#" id="show-re-register">Click here for quick re-registration</a></p>
+                    <p>New player? <a href="#" id="show-new-register">Click here for full registration</a></p>
+                </div>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <h3>Register for Edition <span id="sidebar-edition-display">1</span>!</h3>
+            <p>Complete your registration to enter the competition and make your first pick.</p>
+            <div id="registration-info" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                <h4>Registration Information</h4>
+                <p><strong>Entry Fee:</strong> £5 per edition</p>
+                <p><strong>Prize Pool:</strong> 70% of entry fees</p>
+                <p><strong>Format:</strong> 10 game weeks</p>
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="teams-config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Football Web Pages API Scores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        .fixture {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Football Web Pages API Scores Test</h1>
+    
+    <div class="test-section">
+        <h2>Test API Connection</h2>
+        <p>This test demonstrates the new Football Web Pages API integration for real-time score updates.</p>
+        
+        <div>
+            <label for="league">League:</label>
+            <select id="league">
+                <option value="5">National League</option>
+                <option value="6">National League North</option>
+                <option value="7">National League South</option>
+            </select>
+            
+            <label for="season">Season:</label>
+            <select id="season">
+                <option value="2025-26">2025/26</option>
+                <option value="2024-25">2024/25</option>
+                <option value="2023-24">2023/24</option>
+            </select>
+            
+            <label for="matchday">Matchday:</label>
+            <input type="number" id="matchday" value="1" min="1" max="50">
+            
+            <button onclick="testFetchScores()">Test Fetch Scores</button>
+        </div>
+        
+        <div id="test-status"></div>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Real-time Update Simulation</h2>
+        <p>This simulates the dynamic refresh intervals based on match status:</p>
+        <ul>
+            <li><strong>5 minutes</strong> during normal match play</li>
+            <li><strong>1 minute</strong> during the last 5 minutes of a match</li>
+            <li><strong>No updates</strong> for completed matches</li>
+        </ul>
+        
+        <button onclick="startSimulation()">Start Simulation</button>
+        <button onclick="stopSimulation()">Stop Simulation</button>
+        
+        <div id="simulation-status"></div>
+        <div id="simulation-results"></div>
+    </div>
+
+    <script>
+        let simulationInterval = null;
+        
+        async function testFetchScores() {
+            const statusDiv = document.getElementById('test-status');
+            const resultsDiv = document.getElementById('test-results');
+            
+            const league = document.getElementById('league').value;
+            const season = document.getElementById('season').value;
+            const matchday = document.getElementById('matchday').value;
+            
+            statusDiv.innerHTML = '<div class="status info">Fetching scores...</div>';
+            
+            try {
+                const response = await fetch(`/.netlify/functions/fetch-scores?league=${league}&season=${season}&matchday=${matchday}`);
+                
+                // Check if response is ok
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Response is not JSON. The Netlify function may not be deployed correctly.');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="status success">Successfully fetched ${data.count} fixtures</div>`;
+                    
+                    let html = '<h3>Fixtures:</h3>';
+                    data.fixtures.forEach((fixture, index) => {
+                        const refreshInterval = fixture.refreshInterval / 60000; // Convert to minutes
+                        html += `
+                            <div class="fixture">
+                                <strong>${fixture.homeTeam} vs ${fixture.awayTeam}</strong><br>
+                                Score: ${fixture.homeScore} - ${fixture.awayScore}<br>
+                                Status: ${fixture.status}<br>
+                                Refresh Interval: ${refreshInterval} minute${refreshInterval !== 1 ? 's' : ''}<br>
+                                Date: ${fixture.date} ${fixture.time}
+                            </div>
+                        `;
+                    });
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                    resultsDiv.innerHTML = '';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">Network error: ${error.message}</div>`;
+                resultsDiv.innerHTML = '';
+            }
+        }
+        
+        function startSimulation() {
+            const statusDiv = document.getElementById('simulation-status');
+            const resultsDiv = document.getElementById('simulation-results');
+            
+            statusDiv.innerHTML = '<div class="status info">Starting simulation...</div>';
+            
+            let updateCount = 0;
+            let currentInterval = 5000; // 5 seconds for demo
+            
+            simulationInterval = setInterval(() => {
+                updateCount++;
+                const now = new Date().toLocaleTimeString();
+                
+                statusDiv.innerHTML = `
+                    <div class="status info">
+                        Update #${updateCount} at ${now}<br>
+                        Current interval: ${currentInterval / 1000} seconds
+                    </div>
+                `;
+                
+                // Simulate changing intervals
+                if (updateCount === 3) {
+                    currentInterval = 1000; // 1 second
+                    statusDiv.innerHTML += '<div class="status success">Switched to 1-second updates (last 5 minutes simulation)</div>';
+                } else if (updateCount === 8) {
+                    currentInterval = 0; // Stop updates
+                    statusDiv.innerHTML += '<div class="status success">Match completed - updates stopped</div>';
+                    stopSimulation();
+                    return;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="fixture">
+                        <strong>Simulated Match Update</strong><br>
+                        Time: ${now}<br>
+                        Update Count: ${updateCount}<br>
+                        Next Update: ${currentInterval > 0 ? `${currentInterval / 1000} seconds` : 'None (completed)'}
+                    </div>
+                `;
+            }, currentInterval);
+        }
+        
+        function stopSimulation() {
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+                
+                const statusDiv = document.getElementById('simulation-status');
+                statusDiv.innerHTML = '<div class="status info">Simulation stopped</div>';
+            }
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testFetchScores, 1000);
+        });
+    </script>
+</body>
+</html> 

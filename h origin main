@@ -1,0 +1,5 @@
+[33m4258aa3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix null container error in renderPickHistory function
+[33mc8ead00[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Implement desktop tabbed interface
+[33m31fddd7[m Implement mobile tabbed interface for improved mobile UX
+[33m826a5bf[m Fix team pick display issue - fetch fresh user data after saving picks
+[33m1ce9760[m Streamline pick process: use popups for direct team selection, remove save buttons, change to Yes/No buttons

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlify Function Deployment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Netlify Function Deployment Test</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Test Basic Function Deployment</h2>
+        <p>This test checks if Netlify functions are working at all.</p>
+        <button onclick="testBasicFunction()">Test Basic Function</button>
+        <button onclick="testHelloFunction()">Test Hello Function</button>
+        <div id="basic-status"></div>
+        <div id="basic-response"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 2: Test Function Existence</h2>
+        <p>This test checks if the fetch-scores function is deployed and accessible.</p>
+        <button onclick="testFunctionExistence()">Test Function Existence</button>
+        <div id="existence-status"></div>
+        <div id="existence-response"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 2: Test Function Response</h2>
+        <p>This test checks if the function returns proper JSON with valid parameters.</p>
+        <button onclick="testFunctionResponse()">Test Function Response</button>
+        <div id="response-status"></div>
+        <div id="response-data"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 3: Test API Connection</h2>
+        <p>This test checks if the function can successfully connect to the Football Web Pages API.</p>
+        <button onclick="testApiConnection()">Test API Connection</button>
+        <button onclick="testApiParameters()">Test API Parameters</button>
+        <button onclick="testExactParameters()">Test Exact Parameters</button>
+        <div id="api-status"></div>
+        <div id="api-data"></div>
+    </div>
+
+    <script>
+        async function testBasicFunction() {
+            const statusDiv = document.getElementById('basic-status');
+            const responseDiv = document.getElementById('basic-response');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing basic function...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/test');
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Basic function works! Status: ${response.status}<br>
+                        Content-Type: ${response.headers.get('content-type')}
+                    </div>
+                `;
+                
+                const data = await response.json();
+                responseDiv.innerHTML = `<div class="response">${JSON.stringify(data, null, 2)}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Basic function failed: ${error.message}</div>`;
+                responseDiv.innerHTML = '';
+            }
+        }
+        
+        async function testHelloFunction() {
+            const statusDiv = document.getElementById('basic-status');
+            const responseDiv = document.getElementById('basic-response');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing hello function...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/hello');
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Hello function works! Status: ${response.status}<br>
+                        Content-Type: ${response.headers.get('content-type')}
+                    </div>
+                `;
+                
+                const data = await response.json();
+                responseDiv.innerHTML = `<div class="response">${JSON.stringify(data, null, 2)}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Hello function failed: ${error.message}</div>`;
+                responseDiv.innerHTML = '';
+            }
+        }
+        
+        async function testFunctionExistence() {
+            const statusDiv = document.getElementById('existence-status');
+            const responseDiv = document.getElementById('existence-response');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing function existence...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/fetch-scores');
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Function exists! Status: ${response.status}<br>
+                        Content-Type: ${response.headers.get('content-type')}
+                    </div>
+                `;
+                
+                const text = await response.text();
+                responseDiv.innerHTML = `<div class="response">${text}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Function not found: ${error.message}</div>`;
+                responseDiv.innerHTML = '';
+            }
+        }
+        
+        async function testFunctionResponse() {
+            const statusDiv = document.getElementById('response-status');
+            const dataDiv = document.getElementById('response-data');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing function response...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/fetch-scores?league=5');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    statusDiv.innerHTML = `<div class="status error">❌ Not JSON response. Content-Type: ${contentType}</div>`;
+                    dataDiv.innerHTML = `<div class="response">${text}</div>`;
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                statusDiv.innerHTML = `<div class="status success">✅ Valid JSON response received!</div>`;
+                dataDiv.innerHTML = `<div class="response">${JSON.stringify(data, null, 2)}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                dataDiv.innerHTML = '';
+            }
+        }
+        
+        async function testApiConnection() {
+            const statusDiv = document.getElementById('api-status');
+            const dataDiv = document.getElementById('api-data');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing API connection...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/fetch-scores?league=5');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="status success">
+                            ✅ API connection successful!<br>
+                            Fixtures found: ${data.count}<br>
+                            Refresh interval: ${data.refreshInterval}ms
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ API error: ${data.error}</div>`;
+                }
+                
+                dataDiv.innerHTML = `<div class="response">${JSON.stringify(data, null, 2)}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Connection error: ${error.message}</div>`;
+                dataDiv.innerHTML = '';
+            }
+        }
+        
+        async function testApiParameters() {
+            const statusDiv = document.getElementById('api-status');
+            const dataDiv = document.getElementById('api-data');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing different API parameters...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/test-api');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const workingParams = data.testResults.filter(r => r.success && r.hasMatches);
+                    const workingCount = workingParams.length;
+                    
+                    statusDiv.innerHTML = `
+                        <div class="status success">
+                            ✅ API parameter test completed!<br>
+                            Working combinations: ${workingCount}/${data.testResults.length}<br>
+                            Found ${workingCount} valid parameter sets
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Parameter test error: ${data.error}</div>`;
+                }
+                
+                dataDiv.innerHTML = `<div class="response">${JSON.stringify(data, null, 2)}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Parameter test error: ${error.message}</div>`;
+                dataDiv.innerHTML = '';
+            }
+        }
+        
+        async function testExactParameters() {
+            const statusDiv = document.getElementById('api-status');
+            const dataDiv = document.getElementById('api-data');
+            
+            statusDiv.innerHTML = '<div class="status info">Testing exact parameters...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/test-exact');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const workingParams = data.testResults.filter(r => r.success && r.hasMatches);
+                    const workingCount = workingParams.length;
+                    
+                    statusDiv.innerHTML = `
+                        <div class="status success">
+                            ✅ Exact parameter test completed!<br>
+                            Working combinations: ${workingCount}/${data.testResults.length}<br>
+                            Found ${workingCount} valid parameter sets
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Exact parameter test error: ${data.error}</div>`;
+                }
+                
+                dataDiv.innerHTML = `<div class="response">${JSON.stringify(data, null, 2)}</div>`;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Exact parameter test error: ${error.message}</div>`;
+                dataDiv.innerHTML = '';
+            }
+        }
+        
+        // Auto-run first test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testBasicFunction, 1000);
+        });
+    </script>
+</body>
+</html> 

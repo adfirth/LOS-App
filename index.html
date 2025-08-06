@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last One Standing - Altrincham FC Juniors</title>
+    <link rel="stylesheet" href="style.css?v=1.1">
+</head>
+<body class="homepage">
+
+    <header>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>The Ultimate National League Challenge</h2>
+        </div>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="intro">
+                <div class="intro-highlight-box">
+                    <p class="intro-highlight">
+                        Thank you for getting involved in this Altrincham FC Juniors fundraiser.
+                    </p>
+                    <p class="intro-highlight">
+                        £10 gets you 2 lives and the simple task of picking a winner from 10 consecutive National League game weeks.
+                    </p>
+                    <p class="intro-highlight">
+                        If you pick wisely, you have the chance to join the exclusive group of 'Last One Standing' champions and win up to 50% of the total entry fees.
+                    </p>
+                </div>
+                <p><strong>The fine details:</strong></p>
+                <ul>
+                    <li>Each team can only be selected once during the 10 Game Weeks.</li>
+                    <li>Should your selected team win, you will progress to the next game week unscathed.</li>
+                    <li>Lose or draw and you will pick up a 🟨. Your entry gives you 2 lives, but a second 🟨 makes a 🟥 and it's time for an early bath.</li>
+                    <li>You can edit your entry for the relevant game week up to the published deadline (the kick-off time) using a simple web app.</li>
+                    <li>Regular reminders and updates will be sent via the AltyLOS WhatsApp group.</li>
+                    <li>If you fail to make a pick by the deadline, you will be auto-assigned your next unselected team in alphabetical order.</li>
+                </ul>
+
+                <!-- Mobile testimonial tab -->
+                <div class="mobile-testimonial-tab">
+                    <button class="testimonial-toggle" onclick="toggleTestimonials()">
+                        <span class="toggle-text">What Our Players Say...</span>
+                        <span class="toggle-icon">▼</span>
+                    </button>
+                                         <div class="mobile-testimonials" id="mobile-testimonials">
+                         <h3>What Our Players Say...</h3>
+                         <div class="testimonial-content">
+                                                           <div class="testimonial-images" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px;">
+                                  <img src="images/Test1.jpg" alt="Player Testimonial 1" class="testimonial-image" style="width: 35px; max-width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">
+                                  <img src="images/Test2.jpg" alt="Player Testimonial 2" class="testimonial-image" style="width: 35px; max-width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">
+                                  <img src="images/Test3.jpg" alt="Player Testimonial 3" class="testimonial-image" style="width: 35px; max-width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">
+                                  <img src="images/Test4.jpg" alt="Player Testimonial 4" class="testimonial-image" style="width: 35px; max-width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">
+                                  <img src="images/Test5.jpg" alt="Player Testimonial 5" class="testimonial-image" style="width: 35px; max-width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">
+                              </div>
+                         </div>
+                     </div>
+                </div>
+                
+                <!-- Registration Window Status -->
+                <div id="registration-window-status" class="registration-status">
+                    <div id="registration-countdown" style="display: none;">
+                        <h3>Registration Window</h3>
+                        <p><strong>Time remaining to register:</strong> <span id="countdown-timer">--</span></p>
+                        <div class="registration-button-container">
+                            <a href="/register.html" class="cta-button" id="register-now-button">Register Now</a>
+                        </div>
+                    </div>
+                    <div id="next-registration-countdown" style="display: none;">
+                        <h3>Next Registration Window</h3>
+                        <p><strong>Registration opens in:</strong> <span id="next-countdown-timer">--</span></p>
+                    </div>
+                </div>
+
+                <div id="user-logged-out-view">
+                    <div class="button-group">
+                        <a href="/login.html" class="secondary-button">Player Login</a>
+                        <a href="/admin.html" class="secondary-button">Admin Login</a>
+                    </div>
+                </div>
+
+                <div id="user-logged-in-view" style="display: none;">
+                    <p>Welcome back! Ready to make your pick?</p>
+                    <div class="button-group">
+                         <a href="/dashboard.html" class="cta-button">Go to Dashboard</a>
+                         <button id="logout-button" class="secondary-button">Logout</button>
+                    </div>
+                </div>
+
+                <nav class="sub-links">
+                    <a href="/rules.html">The finest details - Full rules, terms & conditions</a>
+                </nav>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <h3>What Our Players Say...</h3>
+            <div class="testimonial-images">
+                <img src="images/Test1.jpg" alt="Player Testimonial 1" class="testimonial-image">
+                <img src="images/Test2.jpg" alt="Player Testimonial 2" class="testimonial-image">
+                <img src="images/Test3.jpg" alt="Player Testimonial 3" class="testimonial-image">
+                <img src="images/Test4.jpg" alt="Player Testimonial 4" class="testimonial-image">
+                <img src="images/Test5.jpg" alt="Player Testimonial 5" class="testimonial-image">
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="teams-config.js"></script>
+    <script src="app.js"></script>
+
+    <!-- Image Modal - Moved to end of body -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+</body>
+</html>

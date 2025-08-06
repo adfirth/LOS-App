@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Last One Standing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>The Ultimate National League Challenge</h2>
+        </div>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="intro">
+                <h2>Player Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="cta-button">Login</button>
+                    <p id="error-message" class="error-text"></p>
+                </form>
+                <div class="sub-links">
+                    <p>Don't have an account? <a href="/register.html">Register here</a></p>
+                </div>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <h3>Welcome Back!</h3>
+            <p>Log in to make your pick for the next game week.</p>
+        </aside>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="teams-config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

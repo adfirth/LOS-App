@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League Table - Last One Standing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>The Ultimate National League Challenge</h2>
+        </div>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="intro">
+                <h2>League Table</h2>
+                <p>See how you stack up against the competition. The table is sorted by lives remaining.</p>
+                <table class="league-table">
+                    <thead>
+                        <tr>
+                            <th>Player Name</th>
+                            <th>Card</th>
+                            <th>Status</th>
+                            <th>Current Pick</th>
+                        </tr>
+                    </thead>
+                    <tbody id="league-table-body">
+                        </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="teams-config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

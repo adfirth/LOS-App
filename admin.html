@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Last One Standing</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>Admin Panel</h2>
+        </div>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <!-- Admin Login Form -->
+        <main id="admin-login-form" style="display: none;">
+            <section class="intro">
+                <h2>Admin Login</h2>
+                <form id="admin-login-form-element">
+                    <div class="form-group">
+                        <label for="admin-login-email">Email Address</label>
+                        <input type="email" id="admin-login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-login-password">Password</label>
+                        <input type="password" id="admin-login-password" required>
+                    </div>
+                    <button type="submit" class="cta-button">Admin Login</button>
+                    <p id="admin-error-message" class="error-text"></p>
+                </form>
+                <div class="sub-links">
+                    <p><a href="/index.html">Back to Home</a></p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Admin Panel -->
+        <main id="admin-panel" style="display: none;">
+            <div id="admin-loading" style="text-align: center; padding: 2rem; display: none;">
+                <p>Loading admin panel...</p>
+            </div>
+            <div id="admin-error" style="text-align: center; padding: 2rem; display: none; color: red;">
+                <p>Authentication error. Redirecting to login...</p>
+            </div>
+            
+
+            
+            <section class="admin-content">
+                <h1 style="text-align: center; margin-bottom: 2rem; color: #333;">Admin Panel</h1>
+                <div id="active-edition-display" style="text-align: center; margin-bottom: 1rem; padding: 10px; background-color: #f0f8ff; border: 2px solid #007bff; border-radius: 8px; display: inline-block; margin-left: auto; margin-right: auto;">
+                    <strong>Active Edition: <span id="current-edition-display">Edition 1</span></strong>
+                </div>
+                <p style="text-align: center; margin-bottom: 2rem;">Use the tabs below to manage the competition.</p>
+                
+                <!-- Admin Panel Tabs -->
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="settings">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                    <button class="admin-tab" data-tab="registration">
+                        <i class="fas fa-user-plus"></i> Registration
+                    </button>
+                    <button class="admin-tab" data-tab="fixtures">
+                        <i class="fas fa-calendar-alt"></i> Fixtures
+                    </button>
+                    <button class="admin-tab" data-tab="scores">
+                        <i class="fas fa-chart-line"></i> Scores
+                    </button>
+                                            <button class="admin-tab" data-tab="vidiprinter">
+                            <i class="fas fa-tv"></i> Vidiprinter
+                        </button>
+                    <button class="admin-tab" data-tab="picks">
+                        <i class="fas fa-users"></i> Player Picks
+                    </button>
+                    <button class="admin-tab" id="admin-logout-btn" style="margin-left: auto;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- Settings Tab -->
+                    <div id="settings-tab" class="tab-pane active">
+                        <div class="admin-section">
+                            <h3>Competition Settings</h3>
+                            <div class="settings-form">
+                                <label for="active-edition-select">Set Active Edition:</label>
+                                <select id="active-edition-select">
+                                    <option value="1">Edition 1</option>
+                                    <option value="2">Edition 2</option>
+                                    <option value="3">Edition 3</option>
+                                    <option value="4">Edition 4</option>
+                                </select>
+                                <label for="active-gameweek-select">Set Active Game Week:</label>
+                                <select id="active-gameweek-select">
+                                    <option value="1">Game Week 1</option>
+                                    <option value="2">Game Week 2</option>
+                                    <option value="3">Game Week 3</option>
+                                    <option value="4">Game Week 4</option>
+                                    <option value="5">Game Week 5</option>
+                                    <option value="6">Game Week 6</option>
+                                    <option value="7">Game Week 7</option>
+                                    <option value="8">Game Week 8</option>
+                                    <option value="9">Game Week 9</option>
+                                    <option value="10">Game Week 10</option>
+                                    <option value="tiebreak">Tiebreak Round</option>
+                                </select>
+                                <button id="save-settings-btn" class="cta-button">Save Settings</button>
+                                <p id="settings-status" class="status-message"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Registration Tab -->
+                    <div id="registration-tab" class="tab-pane">
+                        <div class="admin-section">
+                            <h3>Registration Management</h3>
+                            
+                            <!-- Registration Window Controls -->
+                            <div class="registration-window-controls">
+                                <h4>Registration Window Settings</h4>
+                                
+                                <!-- Edition Selection for Settings -->
+                                <div class="form-group">
+                                    <label for="edition-for-settings">Select Edition to Configure:</label>
+                                    <select id="edition-for-settings" onchange="loadEditionRegistrationSettings()">
+                                        <option value="1">Edition 1</option>
+                                        <option value="2">Edition 2</option>
+                                        <option value="3">Edition 3</option>
+                                        <option value="4">Edition 4</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Current Edition Settings -->
+                                <div class="edition-settings-section">
+                                    <h5 id="edition-settings-title">Edition 1 Registration Settings</h5>
+                                    <div class="form-group">
+                                        <label for="registration-enabled">Enable Registration:</label>
+                                        <input type="checkbox" id="registration-enabled">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="registration-start-date">Start Date:</label>
+                                        <input type="datetime-local" id="registration-start-date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="registration-end-date">End Date:</label>
+                                        <input type="datetime-local" id="registration-end-date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="next-registration-start-date">Next Registration Start Date:</label>
+                                        <input type="datetime-local" id="next-registration-start-date">
+                                        <small>Optional: Set when the next registration window will open</small>
+                                    </div>
+                                    <button id="save-registration-settings" class="cta-button">Save Registration Settings</button>
+                                    <p id="registration-settings-status" class="status-message"></p>
+                                </div>
+                                
+                                <!-- All Editions Overview -->
+                                <div class="all-editions-overview">
+                                    <h5>All Editions Registration Status</h5>
+                                    <div class="editions-status-grid">
+                                        <div class="edition-status-card" id="edition-1-status">
+                                            <h6>Edition 1</h6>
+                                            <p class="status-text">Not configured</p>
+                                            <p class="date-range">No dates set</p>
+                                        </div>
+                                        <div class="edition-status-card" id="edition-2-status">
+                                            <h6>Edition 2</h6>
+                                            <p class="status-text">Not configured</p>
+                                            <p class="date-range">No dates set</p>
+                                        </div>
+                                        <div class="edition-status-card" id="edition-3-status">
+                                            <h6>Edition 3</h6>
+                                            <p class="status-text">Not configured</p>
+                                            <p class="date-range">No dates set</p>
+                                        </div>
+                                        <div class="edition-status-card" id="edition-4-status">
+                                            <h6>Edition 4</h6>
+                                            <p class="status-text">Not configured</p>
+                                            <p class="date-range">No dates set</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Registration Statistics -->
+                            <div class="registration-stats">
+                                <h4>Registration Statistics</h4>
+                                <div class="stats-grid">
+                                    <div class="stat-card clickable" id="total-registrations-card" onclick="showPlayerManagement('total')">
+                                        <h5>Active Registrations</h5>
+                                        <p id="total-registrations">0</p>
+                                        <small>Click to manage active players (excludes archived)</small>
+                                    </div>
+                                    <div class="stat-card clickable" id="current-edition-card" onclick="showPlayerManagement('current')">
+                                        <h5>Current Edition</h5>
+                                        <p id="current-edition-registrations">0</p>
+                                        <small>Click to manage current edition players</small>
+                                    </div>
+                                    <div class="stat-card clickable" id="archived-players-card" onclick="showPlayerManagement('archived')">
+                                        <h5>Archived Players</h5>
+                                        <p id="archived-players-count">0</p>
+                                        <small>Click to manage archived players</small>
+                                    </div>
+                                </div>
+                                <button id="refresh-registration-stats" class="cta-button">Refresh Statistics</button>
+                                <button id="check-orphaned-accounts" class="secondary-button" style="margin-left: 10px;" onclick="checkOrphanedAccounts()">Check Orphaned Accounts</button>
+                                <button id="firebase-auth-help" class="secondary-button" style="margin-left: 10px;" onclick="showFirebaseAuthDeletionInstructions()">Firebase Auth Help</button>
+                            </div>
+
+                            <!-- Player Management Modal -->
+                            <div id="player-management-modal" class="modal-overlay" style="display: none;">
+                                <div class="user-details-modal">
+                                    <div class="modal-header">
+                                        <h3 id="player-management-title">Player Management</h3>
+                                        <button class="close-modal" onclick="closePlayerManagement()">&times;</button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="player-management-controls">
+                                            <div class="search-controls">
+                                                <input type="text" id="player-search" placeholder="Search players by name or email..." class="form-group input">
+                                                <button onclick="searchPlayers()" class="secondary-button">Search</button>
+                                            </div>
+                                            <div class="filter-controls">
+                                                <select id="player-status-filter" onchange="filterPlayers()">
+                                                    <option value="all">All Players</option>
+                                                    <option value="active">Active Players</option>
+                                                    <option value="archived">Archived Players</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="player-list-container">
+                                            <table class="league-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Email</th>
+                                                        <th>Status</th>
+                                                        <th>Lives</th>
+                                                        <th>Edition</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="player-management-list">
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Player Edit Modal -->
+                            <div id="player-edit-modal" class="modal-overlay" style="display: none;">
+                                <div class="user-details-modal">
+                                    <div class="modal-header">
+                                        <h3>Edit Player</h3>
+                                        <button class="close-modal" onclick="closePlayerEdit()">&times;</button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="player-edit-form">
+                                            <div class="form-group">
+                                                <label for="edit-first-name">First Name</label>
+                                                <input type="text" id="edit-first-name" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-surname">Surname</label>
+                                                <input type="text" id="edit-surname" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-email">Email</label>
+                                                <input type="email" id="edit-email" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-lives">Lives</label>
+                                                <input type="number" id="edit-lives" min="0" max="2" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-status">Status</label>
+                                                <select id="edit-status">
+                                                    <option value="active">Active</option>
+                                                    <option value="archived">Archived</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-notes">Admin Notes</label>
+                                                <textarea id="edit-notes" rows="3"></textarea>
+                                            </div>
+                                            <div class="button-group">
+                                                <button type="submit" class="cta-button">Save Changes</button>
+                                                <button type="button" class="secondary-button" onclick="closePlayerEdit()">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Registration List -->
+                            <div class="registration-list">
+                                <h4>Recent Registrations</h4>
+                                <div class="table-container">
+                                    <table class="league-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Edition</th>
+                                                <th>Registration Date</th>
+                                                <th>Payment Method</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="registration-list-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fixtures Tab -->
+                    <div id="fixtures-tab" class="tab-pane">
+                        <div class="admin-section">
+                            <h3>Fixture Management</h3>
+                            
+                            <!-- Manual Fixture Entry -->
+                            <div class="fixture-entry">
+                                <h4>Game Week Fixtures</h4>
+                                <div class="fixture-form">
+                                    <label for="gameweek-select">Game Week:</label>
+                                    <select id="gameweek-select">
+                                        <option value="1">Game Week 1</option>
+                                        <option value="2">Game Week 2</option>
+                                        <option value="3">Game Week 3</option>
+                                        <option value="4">Game Week 4</option>
+                                        <option value="5">Game Week 5</option>
+                                        <option value="6">Game Week 6</option>
+                                        <option value="7">Game Week 7</option>
+                                        <option value="8">Game Week 8</option>
+                                        <option value="9">Game Week 9</option>
+                                        <option value="10">Game Week 10</option>
+                                        <option value="tiebreak">Tiebreak Round</option>
+                                    </select>
+                                    
+                                    <div id="fixtures-container">
+                                        <!-- Fixture rows will be added here -->
+                                    </div>
+                                    
+                                    <button id="add-fixture-btn" class="cta-button">Add Another Fixture</button>
+                                    <button id="save-fixtures-btn" class="cta-button">Save Fixtures</button>
+                                    <button id="check-fixtures-btn" class="cta-button">Check Fixtures</button>
+                                </div>
+                                
+                                <!-- Fixture Validation Results -->
+                                <div id="fixture-validation-results" class="fixture-validation-results" style="display: none;">
+                                    <h5>Fixture Validation Results</h5>
+                                    <div id="validation-status" class="validation-status"></div>
+                                    <div id="validation-details" class="validation-details"></div>
+                                </div>
+                            </div>
+
+                            <!-- Test API Connection -->
+                            <div class="test-api-section">
+                                <h4>Test API Connection</h4>
+                                <p>Test the connection to the Football Web Pages API to ensure it's working correctly.</p>
+                                <div class="api-key-status">
+                                    <span id="api-key-status" class="status-indicator">Checking API key...</span>
+                                    <button id="test-api-connection" class="cta-button">Test Connection</button>
+                                </div>
+                            </div>
+
+                            <!-- Fixture Management Tools -->
+                            <div class="fixture-management-tools">
+                                <h4>Fixture Management Tools</h4>
+                                
+                                <!-- Reallocate Fixtures -->
+                                <div class="reallocate-fixtures">
+                                    <h5>Reallocate Fixtures Between Game Weeks</h5>
+                                    <p>Move all fixtures from one game week to another. This will overwrite any existing fixtures in the target game week.</p>
+                                    <div class="reallocate-controls">
+                                        <label for="source-gameweek">From Game Week:</label>
+                                        <select id="source-gameweek">
+                                            <option value="1">Game Week 1</option>
+                                            <option value="2">Game Week 2</option>
+                                            <option value="3">Game Week 3</option>
+                                            <option value="4">Game Week 4</option>
+                                            <option value="5">Game Week 5</option>
+                                            <option value="6">Game Week 6</option>
+                                            <option value="7">Game Week 7</option>
+                                            <option value="8">Game Week 8</option>
+                                            <option value="9">Game Week 9</option>
+                                            <option value="10">Game Week 10</option>
+                                            <option value="tiebreak">Tiebreak Round</option>
+                                        </select>
+                                        
+                                        <label for="target-gameweek">To Game Week:</label>
+                                        <select id="target-gameweek">
+                                            <option value="1">Game Week 1</option>
+                                            <option value="2">Game Week 2</option>
+                                            <option value="3">Game Week 3</option>
+                                            <option value="4">Game Week 4</option>
+                                            <option value="5">Game Week 5</option>
+                                            <option value="6">Game Week 6</option>
+                                            <option value="7">Game Week 7</option>
+                                            <option value="8">Game Week 8</option>
+                                            <option value="9">Game Week 9</option>
+                                            <option value="10">Game Week 10</option>
+                                            <option value="tiebreak">Tiebreak Round</option>
+                                        </select>
+                                        
+                                        <button id="reallocate-fixtures-btn" class="cta-button">Reallocate Fixtures</button>
+                                    </div>
+                                    <p id="reallocate-status" class="status-message"></p>
+                                </div>
+
+                                <!-- Delete All Fixtures -->
+                                <div class="delete-all-fixtures">
+                                    <h5>Delete All Fixtures from Game Week</h5>
+                                    <p>Remove all fixtures from a specific game week. This action cannot be undone.</p>
+                                    <div class="delete-controls">
+                                        <label for="delete-gameweek">Game Week:</label>
+                                        <select id="delete-gameweek">
+                                            <option value="1">Game Week 1</option>
+                                            <option value="2">Game Week 2</option>
+                                            <option value="3">Game Week 3</option>
+                                            <option value="4">Game Week 4</option>
+                                            <option value="5">Game Week 5</option>
+                                            <option value="6">Game Week 6</option>
+                                            <option value="7">Game Week 7</option>
+                                            <option value="8">Game Week 8</option>
+                                            <option value="9">Game Week 9</option>
+                                            <option value="10">Game Week 10</option>
+                                            <option value="tiebreak">Tiebreak Round</option>
+                                        </select>
+                                        
+                                        <button id="delete-all-fixtures-btn" class="cta-button danger">Delete All Fixtures</button>
+                                    </div>
+                                    <p id="delete-status" class="status-message"></p>
+                                </div>
+                            </div>
+
+                            <!-- Football Web Pages API Integration -->
+                            <div class="football-webpages-api">
+                                <h4>Football Web Pages API Integration</h4>
+                                <p>Automatically pull fixtures and scores from Football Web Pages API via RapidAPI (requires API key).</p>
+                                
+                                <!-- Date Range Fetch -->
+                                <div class="date-range-controls">
+                                    <h5>Date Range Fetch</h5>
+                                    <p>Fetch fixtures for a specific date range to avoid loading all 555 fixtures at once.</p>
+                                    
+                                    <label for="date-range-league">League:</label>
+                                    <select id="date-range-league">
+                                        <option value="5">National League</option>
+                                        <option value="6">National League North</option>
+                                        <option value="7">National League South</option>
+                                    </select>
+                                    
+                                    <label for="date-range-season">Season:</label>
+                                    <select id="date-range-season">
+                                        <option value="2025-2026">2025/26</option>
+                                        <option value="2024-2025">2024/25</option>
+                                        <option value="2023-2024">2023/24</option>
+                                    </select>
+                                    
+                                    <label for="start-date">Start Date:</label>
+                                    <input type="date" id="start-date" placeholder="YYYY-MM-DD">
+                                    
+                                    <label for="end-date">End Date:</label>
+                                    <input type="date" id="end-date" placeholder="YYYY-MM-DD">
+                                    
+                                    <button id="fetch-date-range-fixtures-btn" class="cta-button">Fetch Fixtures by Date Range</button>
+                                    <button id="fetch-all-fixtures-btn" class="cta-button">Fetch All Fixtures</button>
+                                </div>
+
+                                <!-- Import Controls -->
+                                <div class="import-controls" id="import-controls" style="display: none;">
+                                    <h5>Import Fixtures</h5>
+                                    <p>Select the fixtures you want to import and choose a game week.</p>
+                                    
+                                    <div class="import-selection">
+                                        <label for="import-gameweek-select">Import to Game Week:</label>
+                                        <select id="import-gameweek-select">
+                                            <option value="1">Game Week 1</option>
+                                            <option value="2">Game Week 2</option>
+                                            <option value="3">Game Week 3</option>
+                                            <option value="4">Game Week 4</option>
+                                            <option value="5">Game Week 5</option>
+                                            <option value="6">Game Week 6</option>
+                                            <option value="7">Game Week 7</option>
+                                            <option value="8">Game Week 8</option>
+                                            <option value="9">Game Week 9</option>
+                                            <option value="10">Game Week 10</option>
+                                            <option value="tiebreak">Tiebreak Round</option>
+                                        </select>
+                                        
+                                        <button id="select-all-fixtures-btn" class="cta-button">Select All</button>
+                                        <button id="deselect-all-fixtures-btn" class="cta-button">Deselect All</button>
+                                        <button id="import-selected-fixtures-btn" class="cta-button">Import Selected Fixtures</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="football-webpages-status" class="football-webpages-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scores Tab -->
+                    <div id="scores-tab" class="tab-pane">
+                        <div class="admin-section">
+                            <h3>Score Management</h3>
+                            
+                            <!-- Enhanced Score Management -->
+                            <div class="score-entry">
+                                <h4>Score Management</h4>
+                                <div class="score-form">
+                                    <div class="score-controls">
+                                        <label for="score-gameweek-select">Game Week:</label>
+                                        <select id="score-gameweek-select">
+                                            <option value="1">Game Week 1</option>
+                                            <option value="2">Game Week 2</option>
+                                            <option value="3">Game Week 3</option>
+                                            <option value="4">Game Week 4</option>
+                                            <option value="5">Game Week 5</option>
+                                            <option value="6">Game Week 6</option>
+                                            <option value="7">Game Week 7</option>
+                                            <option value="8">Game Week 8</option>
+                                            <option value="9">Game Week 9</option>
+                                            <option value="10">Game Week 10</option>
+                                            <option value="tiebreak">Tiebreak Round</option>
+                                        </select>
+                                        
+                                                                            <button id="import-football-webpages-scores-btn" class="cta-button">Import from Football Web Pages</button>
+                                    <button id="refresh-scores-btn" class="cta-button">Refresh Display</button>
+                                        <input type="file" id="scores-file-input" accept=".json" style="display: none;">
+                                    </div>
+                                    
+                                    <!-- Football Web Pages API Configuration -->
+                                    <div class="football-webpages-config">
+                                        <h5>Football Web Pages API Settings</h5>
+                                        <div class="api-config-controls">
+                                            <label for="football-webpages-league">League:</label>
+                                            <select id="football-webpages-league">
+                                                <option value="5">National League</option>
+                                                <option value="6">National League North</option>
+                                                <option value="7">National League South</option>
+                                            </select>
+                                            
+                                            <label for="football-webpages-season">Season:</label>
+                                            <select id="football-webpages-season">
+                                                <option value="2025-26">2025/26</option>
+                                                <option value="2024-25">2024/25</option>
+                                                <option value="2023-24">2023/24</option>
+                                            </select>
+                                            
+                                            <button id="save-api-settings-btn" class="cta-button">Save API Settings</button>
+                                        </div>
+                                        <p id="api-settings-status" class="status-message"></p>
+                                    </div>
+                                    
+
+                                    
+                                    <!-- Auto Score Updates -->
+                                    <div class="auto-update-controls">
+                                        <h5>Auto Score Updates</h5>
+                                        <p>Automatically check for half-time scores (45+ min after kick-off) and full-time scores (105+ min after kick-off) every minute.</p>
+                                        <button id="start-auto-update-btn" class="cta-button">Start Auto Updates</button>
+                                        <button id="stop-auto-update-btn" class="cta-button">Stop Auto Updates</button>
+                                        <div id="auto-update-status" class="status-message"></div>
+                                    </div>
+                                    
+                                    <div id="scores-container">
+                                        <!-- Score entry rows will be populated here -->
+                                    </div>
+                                    
+                                    <button id="save-scores-btn" class="cta-button">Save Scores</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vidiprinter Tab -->
+                    <div id="vidiprinter-tab" class="tab-pane">
+                        <div class="admin-section">
+                            <h3>Live Vidiprinter Feed</h3>
+                            <p>Real-time match updates from Football Web Pages National League Vidiprinter.</p>
+                            
+                            <div class="vidiprinter-controls">
+                                <button id="start-vidiprinter-btn" class="cta-button">
+                                    <i class="fas fa-play"></i> Start Vidiprinter
+                                </button>
+                                <button id="stop-vidiprinter-btn" class="cta-button" style="display: none;">
+                                    <i class="fas fa-stop"></i> Stop Vidiprinter
+                                </button>
+                                <div class="vidiprinter-status">
+                                    <span id="vidiprinter-status-text">Ready to start</span>
+                                    <span id="vidiprinter-connection-status" class="connection-indicator"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="vidiprinter-display">
+                                <div class="vidiprinter-header">
+                                    <h4>Live Match Updates</h4>
+                                    <div class="vidiprinter-controls-small">
+                                        <button id="clear-vidiprinter-btn" class="small-button">Clear Feed</button>
+                                        <button id="auto-scroll-toggle" class="small-button active">Auto-scroll</button>
+                                    </div>
+                                </div>
+                                <div id="vidiprinter-feed" class="vidiprinter-feed">
+                                    <div class="vidiprinter-placeholder">
+                                        <i class="fas fa-tv"></i>
+                                        <p>Click "Start Vidiprinter" to begin receiving live match updates</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="vidiprinter-settings">
+                                <h5>Vidiprinter Settings</h5>
+                                <div class="settings-row">
+                                    <label for="vidiprinter-comp">Competition:</label>
+                                    <select id="vidiprinter-comp">
+                                        <option value="5">National League</option>
+                                        <option value="6">National League North</option>
+                                        <option value="7">National League South</option>
+                                    </select>
+                                </div>
+                                <div class="settings-row">
+                                    <label for="vidiprinter-refresh-rate">Refresh Rate:</label>
+                                    <select id="vidiprinter-refresh-rate">
+                                        <option value="5000">5 seconds</option>
+                                        <option value="10000" selected>10 seconds</option>
+                                        <option value="15000">15 seconds</option>
+                                        <option value="30000">30 seconds</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Picks Tab -->
+                    <div id="picks-tab" class="tab-pane">
+                        <div class="admin-section">
+                            <h3 id="picks-title">Picks for Game Week 1</h3>
+                            <table class="league-table">
+                                <thead>
+                                    <tr>
+                                        <th>Player Name</th>
+                                        <th>Pick</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-picks-body">
+                                    </tbody>
+                            </table>
+                        </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="football-webpages-config.js"></script>
+    <script src="teams-config.js"></script>
+
+    <script>
+        // Wait for Firebase to be fully initialized before loading app.js
+        let firebaseTimeout = 0;
+        function waitForFirebase() {
+            if (typeof firebase !== 'undefined' && window.auth && window.db) {
+                console.log('Firebase is ready, loading app.js');
+                const script = document.createElement('script');
+                script.src = 'app.js';
+                script.onload = function() {
+                    console.log('app.js loaded successfully');
+                    // Initialize admin login handlers after app.js is loaded
+                    if (typeof initializeAdminLoginHandlers === 'function') {
+                        initializeAdminLoginHandlers();
+                    } else {
+                        // If function not available yet, wait a bit and try again
+                        setTimeout(() => {
+                            if (typeof initializeAdminLoginHandlers === 'function') {
+                                initializeAdminLoginHandlers();
+                            }
+                        }, 100);
+                    }
+                };
+                script.onerror = function() {
+                    console.error('Failed to load app.js');
+                };
+                document.head.appendChild(script);
+            } else {
+                firebaseTimeout += 100;
+                if (firebaseTimeout > 5000) { // 5 second timeout
+                    console.error('Firebase failed to initialize within 5 seconds');
+                    const loadingElement = document.querySelector('#admin-loading');
+                    if (loadingElement) {
+                        loadingElement.innerHTML = '<p>Error: Failed to load admin panel. Please refresh the page.</p>';
+                    }
+                    return;
+                }
+                console.log('Waiting for Firebase to be ready...');
+                setTimeout(waitForFirebase, 100);
+            }
+        }
+        waitForFirebase();
+    </script>
+    
+    <script>
+        // Tab switching function
+        function switchTab(tabName) {
+            console.log('switchTab called with:', tabName);
+            
+            // Remove active class from all tabs and panes
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+                pane.style.display = 'none';
+                console.log('Removed active from pane:', pane.id);
+            });
+            
+            // Add active class to clicked tab and corresponding pane
+            const clickedTab = document.querySelector(`[data-tab="${tabName}"]`);
+            const targetPane = document.getElementById(`${tabName}-tab`);
+            
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+                console.log('Added active class to tab:', tabName);
+            } else {
+                console.error('Tab not found:', tabName);
+            }
+            
+            if (targetPane) {
+                targetPane.classList.add('active');
+                targetPane.style.display = 'block';
+                console.log('Added active class to pane:', tabName);
+                console.log('Pane display style:', targetPane.style.display);
+                console.log('Pane computed display:', window.getComputedStyle(targetPane).display);
+            } else {
+                console.error('Pane not found:', tabName);
+            }
+            
+            // Force a repaint
+            setTimeout(() => {
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    console.log('Pane:', pane.id, 'Classes:', pane.className, 'Display:', window.getComputedStyle(pane).display);
+                });
+            }, 100);
+            
+            // Initialize Vidiprinter if that tab was clicked
+            if (tabName === 'vidiprinter') {
+                console.log('Vidiprinter tab clicked - initializing...');
+                if (typeof initializeVidiprinter === 'function') {
+                    initializeVidiprinter();
+                } else {
+                    console.log('initializeVidiprinter function not available yet');
+                }
+            }
+        }
+        
+        // Initialize tabs when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up tabs');
+            
+            // Show admin login form by default (will be hidden if user is already authenticated)
+            const loginForm = document.querySelector('#admin-login-form');
+            if (loginForm) {
+                loginForm.style.display = 'block';
+            }
+            
+            // Try to initialize admin login handlers immediately
+            if (typeof initializeAdminLoginHandlers === 'function') {
+                initializeAdminLoginHandlers();
+            }
+            
+            // Add a backup event listener directly
+            const adminLoginForm = document.querySelector('#admin-login-form-element');
+            if (adminLoginForm) {
+                console.log('Adding backup event listener to admin login form');
+                adminLoginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Backup admin login form submitted');
+                    
+                    const email = document.querySelector('#admin-login-email').value;
+                    const password = document.querySelector('#admin-login-password').value;
+                    const errorMessage = document.querySelector('#admin-error-message');
+                    
+                    console.log('Backup form values - Email:', email, 'Password length:', password.length);
+                    
+                    // Clear previous error
+                    errorMessage.textContent = '';
+                    
+                    // Check if Firebase auth is available
+                    if (typeof firebase !== 'undefined' && firebase.auth) {
+                        firebase.auth().signInWithEmailAndPassword(email, password)
+                            .then((userCredential) => {
+                                console.log('Backup admin login successful');
+                                // Manually trigger admin page logic
+                                setTimeout(() => {
+                                    const currentUser = firebase.auth().currentUser;
+                                    if (currentUser) {
+                                        console.log('Backup: Current user after login:', currentUser.email);
+                                        // Manually trigger the admin check
+                                        firebase.firestore().collection('users').doc(currentUser.uid).get().then(doc => {
+                                            console.log('Backup: Manual admin check - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
+                                            if (doc.exists && doc.data().isAdmin === true) {
+                                                console.log('Backup: Manual admin access granted');
+                                                // Hide login form and loading message, show admin panel
+                                                const loginForm = document.querySelector('#admin-login-form');
+                                                const loadingElement = document.querySelector('#admin-loading');
+                                                
+                                                if (loginForm) {
+                                                    loginForm.style.display = 'none';
+                                                }
+                                                if (loadingElement) {
+                                                    loadingElement.style.display = 'none';
+                                                }
+                                                document.querySelector('#admin-panel').style.display = 'flex';
+                                                
+
+                                                
+                                                // Initialize admin login handlers (for logout button)
+                                                if (typeof initializeAdminLoginHandlers === 'function') {
+                                                    initializeAdminLoginHandlers();
+                                                }
+                                                
+                                                // Fetch settings and pass them to the render function
+                                                firebase.firestore().collection('settings').doc('currentCompetition').get().then(settingsDoc => {
+                                                    if (settingsDoc.exists) {
+                                                        if (typeof renderAdminPanel === 'function') {
+                                                            renderAdminPanel(settingsDoc.data());
+                                                        }
+                                                    } else {
+                                                        console.error("Settings document not found!");
+                                                    }
+                                                }).catch(error => {
+                                                    console.error("Error fetching settings:", error);
+                                                });
+                                            } else {
+                                                console.log('Backup: Manual admin access denied');
+                                            }
+                                        }).catch(error => {
+                                            console.error('Backup: Manual admin check error:', error);
+                                        });
+                                    }
+                                }, 500);
+                            })
+                            .catch((error) => {
+                                console.error('Backup admin login error:', error);
+                                errorMessage.textContent = 'Login failed: ' + error.message;
+                            });
+                    } else {
+                        console.error('Firebase auth not available in backup handler');
+                        errorMessage.textContent = 'Error: Authentication service not available';
+                    }
+                });
+            }
+            
+            // Wait for Firebase to be ready before setting up tabs
+            const checkFirebaseReady = () => {
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    console.log('Firebase is ready, setting up tabs');
+                    
+                                // Add click event listeners to all tabs (excluding logout button)
+            const tabs = document.querySelectorAll('.admin-tab:not(#admin-logout-btn)');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    console.log('Tab clicked:', tabName);
+                    switchTab(tabName);
+                });
+            });
+                    
+                    // Make sure the first tab is active by default
+                    switchTab('settings');
+                } else {
+                    console.log('Firebase not ready yet, retrying...');
+                    setTimeout(checkFirebaseReady, 100);
+                }
+            };
+            
+            checkFirebaseReady();
+        });
+    </script>
+</body>
+</html>

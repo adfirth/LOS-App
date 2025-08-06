@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Last One Standing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>The Ultimate National League Challenge</h2>
+        </div>
+        <img src="images/alty-crest.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <!-- Mobile Tab Navigation -->
+        <div class="mobile-tabs">
+            <button class="tab-btn active" data-tab="fixtures">
+                <span class="tab-icon">⚽</span>
+                <span class="tab-label">Fixtures</span>
+            </button>
+            <button class="tab-btn" data-tab="picks">
+                <span class="tab-icon">📋</span>
+                <span class="tab-label">My Picks</span>
+            </button>
+            <button class="tab-btn" data-tab="scores">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Scores</span>
+            </button>
+            <button class="tab-btn" data-tab="vidiprinter">
+                <span class="tab-icon">📺</span>
+                <span class="tab-label">Live</span>
+            </button>
+        </div>
+
+        <!-- Desktop Layout -->
+        <div class="desktop-layout">
+            <!-- Desktop Tab Navigation -->
+            <div class="desktop-tabs">
+                <button class="desktop-tab-btn active" data-tab="fixtures">
+                    <span class="desktop-tab-icon">⚽</span>
+                    <span class="desktop-tab-label">Fixtures</span>
+                </button>
+                <button class="desktop-tab-btn" data-tab="picks">
+                    <span class="desktop-tab-icon">📋</span>
+                    <span class="desktop-tab-label">My Picks</span>
+                </button>
+                <button class="desktop-tab-btn" data-tab="scores">
+                    <span class="desktop-tab-icon">📊</span>
+                    <span class="desktop-tab-label">Scores</span>
+                </button>
+                <button class="desktop-tab-btn" data-tab="vidiprinter">
+                    <span class="desktop-tab-icon">📺</span>
+                    <span class="desktop-tab-label">Live Updates</span>
+                </button>
+            </div>
+
+            <!-- Desktop Tab Content -->
+            <div class="desktop-tab-content">
+                <!-- Fixtures Tab -->
+                <div id="desktop-fixtures-tab" class="desktop-tab-pane active">
+                    <div class="desktop-intro">
+                        <h2 id="welcome-message">Welcome, Player!</h2>
+                        <p>Make your picks for each game week below. You can make picks in advance and edit any pick up until that week's deadline.</p>
+                        
+                        <!-- Game Week Navigation -->
+                        <div id="gameweek-navigation" class="gameweek-nav" style="display: none;">
+                            <h3>Game Week Navigation</h3>
+                            <div class="nav-controls">
+                                <button id="prev-gameweek" class="nav-button">← Previous</button>
+                                <span id="current-gameweek-display" class="current-gameweek">Game Week 1</span>
+                                <button id="next-gameweek" class="nav-button">Next →</button>
+                            </div>
+                            <div class="gameweek-tabs">
+                                <button class="gameweek-tab active" data-gameweek="1">GW 1</button>
+                                <button class="gameweek-tab" data-gameweek="2">GW 2</button>
+                                <button class="gameweek-tab" data-gameweek="3">GW 3</button>
+                                <button class="gameweek-tab" data-gameweek="4">GW 4</button>
+                                <button class="gameweek-tab" data-gameweek="5">GW 5</button>
+                                <button class="gameweek-tab" data-gameweek="6">GW 6</button>
+                                <button class="gameweek-tab" data-gameweek="7">GW 7</button>
+                                <button class="gameweek-tab" data-gameweek="8">GW 8</button>
+                                <button class="gameweek-tab" data-gameweek="9">GW 9</button>
+                                <button class="gameweek-tab" data-gameweek="10">GW 10</button>
+                                <button class="gameweek-tab tiebreak-tab" data-gameweek="tiebreak" style="display: none;">Tiebreak</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Combined Fixtures and Deadline Section -->
+                        <div id="fixtures-display-container" class="fixtures-section" style="display: none;">
+                            <div class="deadline-section">
+                                <div class="deadline-header">
+                                    <h3>Game Week Deadline - <span class="deadline-date" id="deadline-date" style="font-weight: normal !important; color: #dc3545;">--</span></h3>
+                                </div>
+                                <p class="deadline-status"><strong>Game Week Status:</strong> <span id="deadline-status" style="color: inherit;">--</span></p>
+                                <div class="pick-status-header">
+                                    <span id="pick-status-display" class="pick-status-text">--</span>
+                                </div>
+                            </div>
+                            <div id="fixtures-display">
+                                <p>Loading fixtures...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Picks Tab -->
+                <div id="desktop-picks-tab" class="desktop-tab-pane">
+                    <div class="desktop-picks-section">
+                        <h2>Player Status & Picks</h2>
+                        <div class="picks-content">
+                            <div class="player-status-card">
+                                <h3>Player Status</h3>
+                                <p><strong>Card:</strong> <span id="desktop-lives-remaining">--</span></p>
+                            </div>
+                            <div class="picks-history-card">
+                                <h3>Your Picks</h3>
+                                <div id="desktop-picks-history">
+                                    <p>No picks made yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scores Tab -->
+                <div id="desktop-scores-tab" class="desktop-tab-pane">
+                    <div class="desktop-scores-section">
+                        <h2>Live Scores & Results</h2>
+                        <div id="desktop-scores-display">
+                            <p>Scores will appear here when available.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vidiprinter Tab -->
+                <div id="desktop-vidiprinter-tab" class="desktop-tab-pane">
+                    <div class="desktop-vidiprinter-section">
+                        <h2>Live Match Updates</h2>
+                        <div id="desktop-vidiprinter-display">
+                            <p>Live updates will appear here during matches.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="user-logged-in-view" style="display: none; margin-top: 30px;">
+                <button id="logout-button" class="secondary-button">Logout</button>
+            </div>
+        </div>
+
+        <!-- Mobile Tab Content -->
+        <div class="mobile-tab-content">
+            <!-- Fixtures Tab -->
+            <div id="fixtures-tab" class="tab-pane active">
+                <div class="mobile-intro">
+                    <h2 id="mobile-welcome-message">Welcome, Player!</h2>
+                    <p>Make your picks for each game week below. You can make picks in advance and edit any pick up until that week's deadline.</p>
+                </div>
+                
+                <!-- Mobile Game Week Navigation -->
+                <div id="mobile-gameweek-navigation" class="mobile-gameweek-nav" style="display: none;">
+                    <div class="mobile-nav-controls">
+                        <button id="mobile-prev-gameweek" class="nav-button">←</button>
+                        <span id="mobile-current-gameweek-display" class="current-gameweek">Game Week 1</span>
+                        <button id="mobile-next-gameweek" class="nav-button">→</button>
+                    </div>
+                    <div class="mobile-gameweek-tabs">
+                        <button class="gameweek-tab active" data-gameweek="1">GW 1</button>
+                        <button class="gameweek-tab" data-gameweek="2">GW 2</button>
+                        <button class="gameweek-tab" data-gameweek="3">GW 3</button>
+                        <button class="gameweek-tab" data-gameweek="4">GW 4</button>
+                        <button class="gameweek-tab" data-gameweek="5">GW 5</button>
+                        <button class="gameweek-tab" data-gameweek="6">GW 6</button>
+                        <button class="gameweek-tab" data-gameweek="7">GW 7</button>
+                        <button class="gameweek-tab" data-gameweek="8">GW 8</button>
+                        <button class="gameweek-tab" data-gameweek="9">GW 9</button>
+                        <button class="gameweek-tab" data-gameweek="10">GW 10</button>
+                        <button class="gameweek-tab tiebreak-tab" data-gameweek="tiebreak" style="display: none;">Tiebreak</button>
+                    </div>
+                </div>
+                
+                <!-- Mobile Fixtures Display -->
+                <div id="mobile-fixtures-display-container" class="mobile-fixtures-section" style="display: none;">
+                    <div class="mobile-deadline-section">
+                        <div class="deadline-header">
+                            <h3>Game Week Deadline - <span class="deadline-date" id="mobile-deadline-date" style="font-weight: normal !important; color: #dc3545;">--</span></h3>
+                        </div>
+                        <p class="deadline-status"><strong>Game Week Status:</strong> <span id="mobile-deadline-status" style="color: inherit;">--</span></p>
+                        <div class="pick-status-header">
+                            <span id="mobile-pick-status-display" class="pick-status-text">--</span>
+                        </div>
+                    </div>
+                    <div id="mobile-fixtures-display">
+                        <p>Loading fixtures...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Picks Tab -->
+            <div id="picks-tab" class="tab-pane">
+                <div class="mobile-picks-section">
+                    <h3>Player Status</h3>
+                    <p><strong>Card:</strong> <span id="mobile-lives-remaining">--</span></p>
+                    <hr>
+                    <h3>Your Picks</h3>
+                    <div id="mobile-picks-history">
+                        <p>No picks made yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scores Tab -->
+            <div id="scores-tab" class="tab-pane">
+                <div class="mobile-scores-section">
+                    <h3>Live Scores & Results</h3>
+                    <div id="mobile-scores-display">
+                        <p>Scores will appear here when available.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vidiprinter Tab -->
+            <div id="vidiprinter-tab" class="tab-pane">
+                <div class="mobile-vidiprinter-section">
+                    <h3>Live Match Updates</h3>
+                    <div id="mobile-vidiprinter-display">
+                        <p>Live updates will appear here during matches.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+        <script src="firebase-init.js"></script>
+    <script src="teams-config.js"></script>
+    <script src="app.js"></script> 
+
+</body>
+</html>
