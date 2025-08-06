@@ -5054,8 +5054,10 @@ a:hover {
 .desktop-tab-content .desktop-tab-pane.active {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    width: 100%;
+    height: 100%;
 }
 
 /* Desktop Layout Elements */
@@ -5065,8 +5067,9 @@ a:hover {
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    flex: 1;
 }
 
 .desktop-intro h2 {
@@ -5089,6 +5092,7 @@ a:hover {
     max-width: 100%;
     display: flex;
     flex-direction: column;
+    flex: 1;
 }
 
 .desktop-picks-section h2 {
@@ -5147,8 +5151,9 @@ a:hover {
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    flex: 1;
 }
 
 .desktop-scores-section h2 {
@@ -5165,8 +5170,9 @@ a:hover {
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    flex: 1;
 }
 
 .desktop-vidiprinter-section h2 {
@@ -5186,12 +5192,14 @@ a:hover {
     
     .desktop-layout {
         display: block;
+        width: 100%;
     }
     
     .container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 20px auto;
         padding: 0 20px;
+        width: 100%;
     }
 }
 
