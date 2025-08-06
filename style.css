@@ -5040,15 +5040,20 @@ a:hover {
     max-width: 1400px;
     margin: 0 auto;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
     .desktop-tab-content .desktop-tab-pane {
         display: none;
         width: 100%;
+        flex: 1;
+        min-height: 540px; /* Ensure consistent minimum height */
     }
 
 .desktop-tab-content .desktop-tab-pane.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Desktop Layout Elements */
@@ -5056,6 +5061,11 @@ a:hover {
     width: 100%;
     text-align: center;
     max-width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .desktop-intro h2 {
@@ -5076,6 +5086,9 @@ a:hover {
     padding: 20px;
     width: 100%;
     max-width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .desktop-picks-section h2 {
@@ -5090,6 +5103,7 @@ a:hover {
     grid-template-columns: 1fr 2fr;
     gap: 30px;
     width: 100%;
+    flex: 1;
 }
 
 .player-status-card {
@@ -5130,6 +5144,11 @@ a:hover {
     text-align: center;
     width: 100%;
     max-width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .desktop-scores-section h2 {
@@ -5144,6 +5163,11 @@ a:hover {
     text-align: center;
     width: 100%;
     max-width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .desktop-vidiprinter-section h2 {
