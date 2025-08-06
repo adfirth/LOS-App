@@ -5039,11 +5039,16 @@ a:hover {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
 }
 
 .desktop-tab-content .desktop-tab-pane {
     display: none;
     width: 100%;
+    grid-column: 1;
+    grid-row: 1;
 }
 
 .desktop-tab-content .desktop-tab-pane.active {
@@ -5054,6 +5059,7 @@ a:hover {
 .desktop-intro {
     width: 100%;
     text-align: center;
+    max-width: 100%;
 }
 
 .desktop-intro h2 {
@@ -5073,6 +5079,7 @@ a:hover {
 .desktop-picks-section {
     padding: 20px;
     width: 100%;
+    max-width: 100%;
 }
 
 .desktop-picks-section h2 {
@@ -5086,6 +5093,7 @@ a:hover {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 30px;
+    width: 100%;
 }
 
 .player-status-card {
@@ -5125,6 +5133,7 @@ a:hover {
     padding: 30px;
     text-align: center;
     width: 100%;
+    max-width: 100%;
 }
 
 .desktop-scores-section h2 {
@@ -5138,6 +5147,7 @@ a:hover {
     padding: 30px;
     text-align: center;
     width: 100%;
+    max-width: 100%;
 }
 
 .desktop-vidiprinter-section h2 {
