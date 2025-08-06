@@ -4821,7 +4821,7 @@ a:hover {
 }
 
 .mobile-nav-controls .nav-button {
-    background: #28a745;
+    background: var(--alty-red);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -4830,9 +4830,13 @@ a:hover {
     font-weight: 500;
 }
 
+.mobile-nav-controls .nav-button:hover {
+    background: #c41e3a;
+}
+
 .mobile-nav-controls .current-gameweek {
     font-weight: bold;
-    color: #28a745;
+    color: var(--alty-red);
     font-size: 1.1em;
 }
 
@@ -4855,8 +4859,8 @@ a:hover {
 }
 
 .mobile-gameweek-tabs .gameweek-tab.active {
-    background: #28a745;
-    border-color: #28a745;
+    background: var(--alty-red);
+    border-color: var(--alty-red);
     color: white;
 }
 
@@ -4875,33 +4879,9 @@ a:hover {
     overflow: hidden;
 }
 
-.mobile-deadline-section {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-    padding: 20px;
-}
 
-.mobile-deadline-section .deadline-header h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.2em;
-}
 
-.mobile-deadline-section .deadline-status {
-    margin: 10px 0;
-    font-size: 0.9em;
-}
 
-.mobile-deadline-section .pick-status-header {
-    background: transparent;
-    padding: 10px;
-    border-radius: 6px;
-    margin-top: 10px;
-}
-
-.mobile-deadline-section .pick-status-text {
-    font-weight: 500;
-    font-size: 0.95em;
-}
 
 /* Mobile Picks Section */
 .mobile-picks-section {
@@ -5233,4 +5213,67 @@ a:hover {
     .desktop-tabs .desktop-tab-label {
         font-size: 14px;
     }
+}
+
+/* Welcome Message Styling */
+#welcome-message, #mobile-welcome-message {
+    color: var(--alty-red);
+}
+
+/* Mobile Deadline Section - Match Desktop Colors */
+.mobile-deadline-section {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.mobile-deadline-section .deadline-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    color: #495057;
+}
+
+.mobile-deadline-section .deadline-status {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin: 10px 0 0 0;
+    padding: 8px 15px;
+    border-radius: 20px;
+    display: inline-block;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.mobile-deadline-section .deadline-status.active {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.mobile-deadline-section .deadline-status.locked {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+.mobile-deadline-section .deadline-status.complete {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+}
+
+.mobile-deadline-section .pick-status-header {
+    background: transparent;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.mobile-deadline-section .pick-status-text {
+    font-weight: 500;
+    font-size: 0.95em;
 }
