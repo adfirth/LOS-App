@@ -5034,31 +5034,28 @@ a:hover {
     background: white;
     border-radius: 0 0 8px 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-height: 600px;
-    padding: 30px;
+    min-height: 80vh;
+    padding: 40px;
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
     position: relative;
-    display: grid;
-    grid-template-areas: "tab";
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
+    display: flex;
+    flex-direction: column;
 }
 
-    .desktop-tab-content .desktop-tab-pane {
-        display: none;
-        width: 100%;
-        height: 100%;
-        grid-area: tab;
-        min-height: 540px;
-    }
+.desktop-tab-content .desktop-tab-pane {
+    display: none;
+    width: 100%;
+    height: 100%;
+    min-height: 70vh;
+}
 
 .desktop-tab-content .desktop-tab-pane.active {
-    display: grid;
-    grid-template-areas: "content";
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Desktop Layout Elements */
@@ -5066,7 +5063,6 @@ a:hover {
     width: 100%;
     text-align: center;
     max-width: 100%;
-    grid-area: content;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -5091,7 +5087,6 @@ a:hover {
     padding: 20px;
     width: 100%;
     max-width: 100%;
-    grid-area: content;
     display: flex;
     flex-direction: column;
 }
@@ -5109,7 +5104,7 @@ a:hover {
     gap: 30px;
     width: 100%;
     flex: 1;
-    min-height: 400px;
+    min-height: 60vh;
 }
 
 .player-status-card {
@@ -5150,7 +5145,6 @@ a:hover {
     text-align: center;
     width: 100%;
     max-width: 100%;
-    grid-area: content;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -5169,7 +5163,6 @@ a:hover {
     text-align: center;
     width: 100%;
     max-width: 100%;
-    grid-area: content;
     display: flex;
     flex-direction: column;
     justify-content: center;
