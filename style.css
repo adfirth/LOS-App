@@ -5042,16 +5042,10 @@ a:hover {
     position: relative;
 }
 
-.desktop-tab-content .desktop-tab-pane {
-    display: none;
-    position: absolute;
-    top: 30px;
-    left: 30px;
-    right: 30px;
-    bottom: 30px;
-    width: calc(100% - 60px);
-    height: calc(100% - 60px);
-}
+    .desktop-tab-content .desktop-tab-pane {
+        display: none;
+        width: 100%;
+    }
 
 .desktop-tab-content .desktop-tab-pane.active {
     display: block;
