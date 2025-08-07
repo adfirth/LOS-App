@@ -1779,7 +1779,7 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
 
 // Function to handle temporary team selection from fixtures display
 function selectTeamAsTempPick(teamName, gameweek, userId) {
-    const gameweekKey = `gw${gameweek}`;
+    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     
     // Check if deadline has passed
     checkDeadlineForGameweek(gameweek).then(isDeadlinePassed => {
@@ -1807,9 +1807,9 @@ function selectTeamAsTempPick(teamName, gameweek, userId) {
                     if (pickedGameweek) {
                         const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
                         const gameweekNum = parseInt(pickedGameweekNum);
-                        const currentGameweekNum = parseInt(gameweek);
+                        const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
                         
-                        if (gameweekNum < currentGameweekNum) {
+                        if (gameweekNum < activeGameweekNum) {
                             // Past gameweek - team is locked
                             alert(`This team is locked having been used in Game Week ${gameweekNum}.`);
                             return;
