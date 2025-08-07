@@ -4755,17 +4755,17 @@ a:hover {
     flex-direction: column;
     align-items: center;
     padding: 8px 4px;
-    background: rgba(253, 185, 19, 0.1);
+    background: rgba(94, 165, 152, 0.1);
     border: none;
-    color: var(--alty-yellow);
+    color: #5ea598;
     font-size: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .mobile-tabs .tab-btn.active {
-    color: var(--alty-yellow);
-    background: rgba(253, 185, 19, 0.2);
+    color: white;
+    background: #5ea598;
 }
 
 .mobile-tabs .tab-icon {
@@ -4987,9 +4987,9 @@ a:hover {
     flex-direction: column;
     align-items: center;
     padding: 20px 16px;
-    background: rgba(253, 185, 19, 0.1);
+    background: rgba(94, 165, 152, 0.1);
     border: none;
-    color: var(--alty-yellow);
+    color: #5ea598;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -5001,14 +5001,14 @@ a:hover {
 }
 
 .desktop-tabs .desktop-tab-btn.active {
-    color: var(--alty-yellow);
-    background: rgba(253, 185, 19, 0.2);
-    border-bottom: 3px solid var(--alty-yellow);
+    color: white;
+    background: #5ea598;
+    border-bottom: 3px solid #4a8a7a;
 }
 
 .desktop-tabs .desktop-tab-btn:hover {
-    background: rgba(253, 185, 19, 0.15);
-    color: var(--alty-yellow);
+    background: rgba(94, 165, 152, 0.15);
+    color: #4a8a7a;
 }
 
 .desktop-tabs .desktop-tab-icon {
