@@ -1685,16 +1685,12 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                if (gameweekNum < currentGameweekNum) {
-                    // Locked - past gameweek
-                    homeTeamClickable = false;
-                    homeTeamTooltip = `This team is locked having been used in Game Week ${gameweekNum}`;
-                } else if (gameweekNum === currentGameweekNum) {
+                if (gameweekNum === currentGameweekNum) {
                     // Current gameweek - already picked
                     homeTeamClickable = false;
                     homeTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
                 } else {
-                    // Future gameweek - can be changed
+                    // Different gameweek - can be changed
                     homeTeamClickable = true;
                     homeTeamTooltip = `You have provisionally picked ${fixture.homeTeam} for Game Week ${gameweekNum}`;
                 }
