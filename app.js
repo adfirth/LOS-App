@@ -1760,12 +1760,7 @@ async function selectTeamAsTempPick(teamName, gameweek, userId) {
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     
     try {
-        // Check if deadline has passed
-        const isDeadlinePassed = await checkDeadlineForGameweek(gameweek);
-        if (isDeadlinePassed) {
-            alert('Deadline has passed for this gameweek. Picks are locked.');
-            return;
-        }
+        // Simple logic - no deadline checking
         
         // Check if user has already picked this team in another gameweek
         const userDoc = await db.collection('users').doc(userId).get();
@@ -1786,16 +1781,8 @@ async function selectTeamAsTempPick(teamName, gameweek, userId) {
                 if (pickedGameweek) {
                     const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
                     
-                    // Check if that gameweek has completed (deadline passed)
-                    const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum);
-                    
-                    if (isDeadlinePassed) {
-                        // Completed gameweek - team is locked
-                        alert(`This team is locked having been used in completed Game Week ${pickedGameweekNum}.`);
-                        return;
-                    } else {
-                        // Gameweek not completed - offer to release
-                        if (confirm(`You have picked ${teamName} for Game Week ${pickedGameweekNum} (not yet completed). Would you like to release this pick and select ${teamName} for Game Week ${gameweek}?`)) {
+                    // Simple logic - always offer to release
+                    if (confirm(`You have picked ${teamName} for Game Week ${pickedGameweekNum}. Would you like to release this pick and select ${teamName} for Game Week ${gameweek}?`)) {
                             // Release the old pick and save the new one
                             const oldGameweekKey = pickedGameweek;
                             
