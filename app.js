@@ -2,7 +2,14 @@
 
 // Global variable to track current active edition
 let currentActiveEdition = 1;
+// Global variable to track current active gameweek
+let currentActiveGameweek = '1';
 // The allTeams array is now defined in TEAMS_CONFIG.allTeams
+
+// Helper function to get the active gameweek from settings
+function getActiveGameweek() {
+    return currentActiveGameweek;
+}
 
 // --- AUTH STATE & LOGOUT LOGIC (GLOBAL) ---
 auth.onAuthStateChanged(user => {
@@ -1409,11 +1416,13 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                // For now, use a more accurate comparison based on gameweek numbers
-                // A team is "completed-pick" if it was picked in a gameweek that has already passed
-                // We'll assume gameweeks are sequential and current gameweek is the active one
-                if (gameweekNum < currentGameweekNum) {
-                    homeTeamClasses += ' completed-pick'; // Locked - past gameweek
+                // Use the active gameweek from settings to determine if a gameweek is truly completed
+                // Only gameweeks that are before the active gameweek should be considered completed
+                const activeGameweek = getActiveGameweek(); // We'll implement this helper function
+                const activeGameweekNum = activeGameweek === 'tiebreak' ? 11 : parseInt(activeGameweek);
+                
+                if (gameweekNum < activeGameweekNum) {
+                    homeTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
                 } else if (gameweekNum === currentGameweekNum) {
                     homeTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
@@ -1446,11 +1455,13 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                // For now, use a more accurate comparison based on gameweek numbers
-                // A team is "completed-pick" if it was picked in a gameweek that has already passed
-                // We'll assume gameweeks are sequential and current gameweek is the active one
-                if (gameweekNum < currentGameweekNum) {
-                    awayTeamClasses += ' completed-pick'; // Locked - past gameweek
+                // Use the active gameweek from settings to determine if a gameweek is truly completed
+                // Only gameweeks that are before the active gameweek should be considered completed
+                const activeGameweek = getActiveGameweek(); // We'll implement this helper function
+                const activeGameweekNum = activeGameweek === 'tiebreak' ? 11 : parseInt(activeGameweek);
+                
+                if (gameweekNum < activeGameweekNum) {
+                    awayTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
                 } else if (gameweekNum === currentGameweekNum) {
                     awayTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
@@ -1483,13 +1494,13 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
             if (pickedGameweek) {
                 const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
                 const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
+                const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
                 
-                if (gameweekNum < currentGameweekNum) {
-                    // Locked - past gameweek
+                if (gameweekNum < activeGameweekNum) {
+                    // Locked - past gameweek (before active)
                     homeTeamClickable = false;
                     homeTeamTooltip = `This team is locked having been used in Game Week ${gameweekNum}`;
-                } else if (gameweekNum === currentGameweekNum) {
+                } else if (gameweekNum === currentGameWeek) {
                     // Current gameweek - already picked
                     homeTeamClickable = false;
                     homeTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
@@ -1623,8 +1634,10 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                if (gameweekNum < currentGameweekNum) {
-                    homeTeamClasses += ' completed-pick'; // Locked - past gameweek
+                const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
+                
+                if (gameweekNum < activeGameweekNum) {
+                    homeTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
                 } else if (gameweekNum === currentGameweekNum) {
                     homeTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
@@ -1654,8 +1667,10 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                if (gameweekNum < currentGameweekNum) {
-                    awayTeamClasses += ' completed-pick'; // Locked - past gameweek
+                const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
+                
+                if (gameweekNum < activeGameweekNum) {
+                    awayTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
                 } else if (gameweekNum === currentGameweekNum) {
                     awayTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
@@ -2552,6 +2567,8 @@ function loadCompetitionSettings() {
             if (activeGameweekSelect) {
                 activeGameweekSelect.value = settings.active_gameweek || 1;
             }
+            // Update global variable
+            currentActiveGameweek = settings.active_gameweek || '1';
             if (statusMessage) {
                 const editionText = `Edition ${settings.active_edition || 1}`;
                 const gameweekText = settings.active_gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${settings.active_gameweek || 1}`;
@@ -2570,6 +2587,8 @@ function loadCompetitionSettings() {
                 if (activeGameweekSelect) {
                     activeGameweekSelect.value = 1;
                 }
+                // Update global variable
+                currentActiveGameweek = '1';
                 if (statusMessage) {
                     statusMessage.textContent = 'Settings initialized with Edition 1, Game Week 1';
                     statusMessage.className = 'status-message success';
