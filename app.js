@@ -1778,152 +1778,149 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
 }
 
 // Function to handle temporary team selection from fixtures display
-function selectTeamAsTempPick(teamName, gameweek, userId) {
+async function selectTeamAsTempPick(teamName, gameweek, userId) {
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     
-    // Check if deadline has passed
-    checkDeadlineForGameweek(gameweek).then(isDeadlinePassed => {
+    try {
+        // Check if deadline has passed
+        const isDeadlinePassed = await checkDeadlineForGameweek(gameweek);
         if (isDeadlinePassed) {
             alert('Deadline has passed for this gameweek. Picks are locked.');
             return;
         }
         
         // Check if user has already picked this team in another gameweek
-        db.collection('users').doc(userId).get().then(userDoc => {
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                const existingPicks = Object.values(userData.picks || {});
-                
-                if (existingPicks.includes(teamName)) {
-                    // Find which gameweek this team was picked in
-                    let pickedGameweek = null;
-                    for (const [key, pick] of Object.entries(userData.picks || {})) {
-                        if (pick === teamName) {
-                            pickedGameweek = key;
-                            break;
-                        }
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            const existingPicks = Object.values(userData.picks || {});
+            
+            if (existingPicks.includes(teamName)) {
+                // Find which gameweek this team was picked in
+                let pickedGameweek = null;
+                for (const [key, pick] of Object.entries(userData.picks || {})) {
+                    if (pick === teamName) {
+                        pickedGameweek = key;
+                        break;
                     }
+                }
+                
+                if (pickedGameweek) {
+                    const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
                     
-                    if (pickedGameweek) {
-                        const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                        const gameweekNum = parseInt(pickedGameweekNum);
-                        const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
-                        
-                        if (gameweekNum < activeGameweekNum) {
-                            // Past gameweek - team is locked
-                            alert(`This team is locked having been used in Game Week ${gameweekNum}.`);
-                            return;
-                        } else {
-                            // Future gameweek - offer to release
-                            if (confirm(`You have provisionally picked ${teamName} for Game Week ${gameweekNum}. Would you like to release this pick and select ${teamName} for Game Week ${gameweek}?`)) {
-                                // Release the future pick and save the new pick
-                                const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-                                const oldGameweekKey = pickedGameweek;
-                                
-                                // First release the old pick, then save the new one
-                                db.collection('users').doc(userId).update({
+                    // Check if that gameweek has completed (deadline passed)
+                    const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum);
+                    
+                    if (isDeadlinePassed) {
+                        // Completed gameweek - team is locked
+                        alert(`This team is locked having been used in completed Game Week ${pickedGameweekNum}.`);
+                        return;
+                    } else {
+                        // Gameweek not completed - offer to release
+                        if (confirm(`You have picked ${teamName} for Game Week ${pickedGameweekNum} (not yet completed). Would you like to release this pick and select ${teamName} for Game Week ${gameweek}?`)) {
+                            // Release the old pick and save the new one
+                            const oldGameweekKey = pickedGameweek;
+                            
+                            try {
+                                await db.collection('users').doc(userId).update({
                                     [`picks.${oldGameweekKey}`]: firebase.firestore.FieldValue.delete(),
                                     [`picks.${gameweekKey}`]: teamName
-                                }).then(() => {
-                                    console.log(`Future pick released and new pick saved: ${teamName} for Game Week ${gameweek}`);
-                                    
-                                    // Fetch updated user data and refresh the display
-                                    db.collection('users').doc(userId).get().then(updatedUserDoc => {
-                                        if (updatedUserDoc.exists) {
-                                            const updatedUserData = updatedUserDoc.data();
-                                            
-                                            // Refresh the desktop display with updated data
-                                            loadFixturesForDeadline(gameweek, updatedUserData, userId);
-                                            
-                                            // Refresh the mobile display with updated data
-                                            loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
-                                            
-                                            // Update the pick status headers with updated data
-                                            updatePickStatusHeader(gameweek, updatedUserData, userId);
-                                            updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
-                                            
-                                            // Refresh the pick history sidebars with updated data
-                                            const picksHistoryContainer = document.querySelector('#picks-history');
-                                            const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
-                                            const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
-                                            if (picksHistoryContainer) {
-                                                renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
-                                            }
-                                            if (mobilePicksHistoryContainer) {
-                                                renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
-                                            }
-                                            if (desktopPicksHistoryContainer) {
-                                                renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
-                                            }
-                                        }
-                                    }).catch(error => {
-                                        console.error('Error fetching updated user data:', error);
-                                    });
-                                }).catch(error => {
-                                    console.error('Error updating picks:', error);
-                                    alert('Error updating picks. Please try again.');
                                 });
-                                return;
-                            } else {
-                                return;
+                                
+                                console.log(`Pick released and new pick saved: ${teamName} for Game Week ${gameweek}`);
+                                
+                                // Fetch updated user data and refresh the display
+                                const updatedUserDoc = await db.collection('users').doc(userId).get();
+                                if (updatedUserDoc.exists) {
+                                    const updatedUserData = updatedUserDoc.data();
+                                    
+                                    // Refresh the desktop display with updated data
+                                    loadFixturesForDeadline(gameweek, updatedUserData, userId);
+                                    
+                                    // Refresh the mobile display with updated data
+                                    loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
+                                    
+                                    // Update the pick status headers with updated data
+                                    updatePickStatusHeader(gameweek, updatedUserData, userId);
+                                    updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
+                                    
+                                    // Refresh the pick history sidebars with updated data
+                                    const picksHistoryContainer = document.querySelector('#picks-history');
+                                    const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
+                                    const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
+                                    if (picksHistoryContainer) {
+                                        renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
+                                    }
+                                    if (mobilePicksHistoryContainer) {
+                                        renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
+                                    }
+                                    if (desktopPicksHistoryContainer) {
+                                        renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error updating picks:', error);
+                                alert('Error updating picks. Please try again.');
                             }
+                            return;
+                        } else {
+                            return;
                         }
-                    } else {
+                    }
+                } else {
                     alert(`You have already picked ${teamName} in a previous gameweek.`);
                     return;
-                    }
-                }
-                
-                // Team is available for picking - show confirmation popup
-                if (confirm(`Would you like to pick ${teamName} for Game Week ${gameweek}?`)) {
-                    // Save the pick directly to database
-                    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-                    
-                    db.collection('users').doc(userId).update({
-                        [`picks.${gameweekKey}`]: teamName
-                    }).then(() => {
-                        console.log(`Pick saved: ${teamName} for Game Week ${gameweek}`);
-                        
-                        // Fetch updated user data and refresh the display
-                        db.collection('users').doc(userId).get().then(updatedUserDoc => {
-                            if (updatedUserDoc.exists) {
-                                const updatedUserData = updatedUserDoc.data();
-                                
-                                // Refresh the desktop display with updated data
-                                loadFixturesForDeadline(gameweek, updatedUserData, userId);
-                                
-                                // Refresh the mobile display with updated data
-                                loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
-                                
-                                // Update the pick status headers with updated data
-                                updatePickStatusHeader(gameweek, updatedUserData, userId);
-                                updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
-                                
-                                // Refresh the pick history sidebars with updated data
-                                const picksHistoryContainer = document.querySelector('#picks-history');
-                                const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
-                                const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
-                                if (picksHistoryContainer) {
-                                    renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
-                                }
-                                if (mobilePicksHistoryContainer) {
-                                    renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
-                                }
-                                if (desktopPicksHistoryContainer) {
-                                    renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
-                                }
-                            }
-                        }).catch(error => {
-                            console.error('Error fetching updated user data:', error);
-                        });
-                    }).catch(error => {
-                        console.error('Error saving pick:', error);
-                        alert('Error saving pick. Please try again.');
-                    });
                 }
             }
-        });
-    });
+            
+            // Team is available for picking - show confirmation popup
+            if (confirm(`Would you like to pick ${teamName} for Game Week ${gameweek}?`)) {
+                try {
+                    await db.collection('users').doc(userId).update({
+                        [`picks.${gameweekKey}`]: teamName
+                    });
+                    
+                    console.log(`Pick saved: ${teamName} for Game Week ${gameweek}`);
+                    
+                    // Fetch updated user data and refresh the display
+                    const updatedUserDoc = await db.collection('users').doc(userId).get();
+                    if (updatedUserDoc.exists) {
+                        const updatedUserData = updatedUserDoc.data();
+                        
+                        // Refresh the desktop display with updated data
+                        loadFixturesForDeadline(gameweek, updatedUserData, userId);
+                        
+                        // Refresh the mobile display with updated data
+                        loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
+                        
+                        // Update the pick status headers with updated data
+                        updatePickStatusHeader(gameweek, updatedUserData, userId);
+                        updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
+                        
+                        // Refresh the pick history sidebars with updated data
+                        const picksHistoryContainer = document.querySelector('#picks-history');
+                        const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
+                        const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
+                        if (picksHistoryContainer) {
+                            renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
+                        }
+                        if (mobilePicksHistoryContainer) {
+                            renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
+                        }
+                        if (desktopPicksHistoryContainer) {
+                            renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error saving pick:', error);
+                    alert('Error saving pick. Please try again.');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error in selectTeamAsTempPick:', error);
+        alert('Error processing pick. Please try again.');
+    }
 }
 
 // Function to save temporary pick to database
