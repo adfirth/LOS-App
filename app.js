@@ -1415,17 +1415,14 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
                 // Check if that gameweek has completed (deadline passed)
-                // We'll use a simple check for now - if it's before the active gameweek, it's completed
-                // In a full implementation, we'd use checkDeadlineForGameweek(pickedGameweekNum)
-                const activeGameweek = getActiveGameweek();
-                const activeGameweekNum = activeGameweek === 'tiebreak' ? 11 : parseInt(activeGameweek);
+                const isDeadlinePassed = checkDeadlineForGameweek(pickedGameweekNum);
                 
-                if (gameweekNum < activeGameweekNum) {
-                    homeTeamClasses += ' completed-pick'; // Locked - completed gameweek
+                if (isDeadlinePassed) {
+                    homeTeamClasses += ' completed-pick'; // Locked - deadline passed
                 } else if (gameweekNum === currentGameweekNum) {
                     homeTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
-                    homeTeamClasses += ' future-pick'; // Can still be changed - not yet completed
+                    homeTeamClasses += ' future-pick'; // Can still be changed - deadline not passed
                 }
             } else {
                 homeTeamClasses += ' completed-pick'; // Fallback
@@ -1453,17 +1450,14 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
                 // Check if that gameweek has completed (deadline passed)
-                // We'll use a simple check for now - if it's before the active gameweek, it's completed
-                // In a full implementation, we'd use checkDeadlineForGameweek(pickedGameweekNum)
-                const activeGameweek = getActiveGameweek();
-                const activeGameweekNum = activeGameweek === 'tiebreak' ? 11 : parseInt(activeGameweek);
+                const isDeadlinePassed = checkDeadlineForGameweek(pickedGameweekNum);
                 
-                if (gameweekNum < activeGameweekNum) {
-                    awayTeamClasses += ' completed-pick'; // Locked - completed gameweek
+                if (isDeadlinePassed) {
+                    awayTeamClasses += ' completed-pick'; // Locked - deadline passed
                 } else if (gameweekNum === currentGameweekNum) {
                     awayTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
-                    awayTeamClasses += ' future-pick'; // Can still be changed - not yet completed
+                    awayTeamClasses += ' future-pick'; // Can still be changed - deadline not passed
                 }
             } else {
                 awayTeamClasses += ' completed-pick'; // Fallback
@@ -1494,8 +1488,10 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
                 
-                if (gameweekNum < activeGameweekNum) {
-                    // Locked - past gameweek (before active)
+                const isDeadlinePassed = checkDeadlineForGameweek(pickedGameweekNum);
+                
+                if (isDeadlinePassed) {
+                    // Locked - deadline passed
                     homeTeamClickable = false;
                     homeTeamTooltip = `This team is locked having been used in Game Week ${gameweekNum}`;
                 } else if (gameweekNum === currentGameWeek) {
@@ -1503,7 +1499,7 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
                     homeTeamClickable = false;
                     homeTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
                 } else {
-                    // Future gameweek - can be changed
+                    // Deadline not passed - can be changed
                     homeTeamClickable = true;
                     homeTeamTooltip = `You have provisionally picked ${fixture.homeTeam} for Game Week ${gameweekNum}`;
                 }
