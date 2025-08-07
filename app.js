@@ -227,6 +227,7 @@ function handleAdminLogin(e) {
                                     console.error("Error fetching settings:", error);
                                 });
                             } else {
+                        
                                 console.log('Manual admin access denied');
                             }
                         }).catch(error => {
@@ -1760,128 +1761,98 @@ async function selectTeamAsTempPick(teamName, gameweek, userId) {
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     
     try {
-        // Simple logic - no deadline checking
-        
         // Check if user has already picked this team in another gameweek
         const userDoc = await db.collection('users').doc(userId).get();
-        if (userDoc.exists) {
-            const userData = userDoc.data();
-            const existingPicks = Object.values(userData.picks || {});
-            
-            if (existingPicks.includes(teamName)) {
-                // Find which gameweek this team was picked in
-                let pickedGameweek = null;
-                for (const [key, pick] of Object.entries(userData.picks || {})) {
-                    if (pick === teamName) {
-                        pickedGameweek = key;
-                        break;
-                    }
-                }
-                
-                if (pickedGameweek) {
-                    const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                    
-                    // Simple logic - always offer to release
-                    if (confirm(`You have picked ${teamName} for Game Week ${pickedGameweekNum}. Would you like to release this pick and select ${teamName} for Game Week ${gameweek}?`)) {
-                            // Release the old pick and save the new one
-                            const oldGameweekKey = pickedGameweek;
-                            
-                            try {
-                                await db.collection('users').doc(userId).update({
-                                    [`picks.${oldGameweekKey}`]: firebase.firestore.FieldValue.delete(),
-                                    [`picks.${gameweekKey}`]: teamName
-                                });
-                                
-                                console.log(`Pick released and new pick saved: ${teamName} for Game Week ${gameweek}`);
-                                
-                                // Fetch updated user data and refresh the display
-                                const updatedUserDoc = await db.collection('users').doc(userId).get();
-                                if (updatedUserDoc.exists) {
-                                    const updatedUserData = updatedUserDoc.data();
-                                    
-                                    // Refresh the desktop display with updated data
-                                    loadFixturesForDeadline(gameweek, updatedUserData, userId);
-                                    
-                                    // Refresh the mobile display with updated data
-                                    loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
-                                    
-                                    // Update the pick status headers with updated data
-                                    updatePickStatusHeader(gameweek, updatedUserData, userId);
-                                    updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
-                                    
-                                    // Refresh the pick history sidebars with updated data
-                                    const picksHistoryContainer = document.querySelector('#picks-history');
-                                    const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
-                                    const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
-                                    if (picksHistoryContainer) {
-                                        renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
-                                    }
-                                    if (mobilePicksHistoryContainer) {
-                                        renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
-                                    }
-                                    if (desktopPicksHistoryContainer) {
-                                        renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
-                                    }
-                                }
-                            } catch (error) {
-                                console.error('Error updating picks:', error);
-                                alert('Error updating picks. Please try again.');
-                            }
-                            return;
-                        } else {
-                            return;
-                        }
-                    }
+        if (!userDoc.exists) {
+            alert('User not found.');
+            return;
+        }
+        
+        const userData = userDoc.data();
+        const existingPicks = Object.values(userData.picks || {});
+        
+        if (existingPicks.includes(teamName)) {
+            // Find which gameweek this team was picked in
+            let pickedGameweek = null;
+            for (const [key, pick] of Object.entries(userData.picks || {})) {
+                if (pick === teamName) {
+                    pickedGameweek = key;
+                    break;
                 }
             }
             
-            // Team is available for picking - show confirmation popup
-            if (confirm(`Would you like to pick ${teamName} for Game Week ${gameweek}?`)) {
-                try {
+            if (pickedGameweek) {
+                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
+                
+                // Offer to release the old pick and save the new one
+                if (confirm(`You have picked ${teamName} for Game Week ${pickedGameweekNum}. Would you like to release this pick and select ${teamName} for Game Week ${gameweek}?`)) {
+                    const oldGameweekKey = pickedGameweek;
+                    
                     await db.collection('users').doc(userId).update({
+                        [`picks.${oldGameweekKey}`]: firebase.firestore.FieldValue.delete(),
                         [`picks.${gameweekKey}`]: teamName
                     });
                     
-                    console.log(`Pick saved: ${teamName} for Game Week ${gameweek}`);
+                    console.log(`Pick released and new pick saved: ${teamName} for Game Week ${gameweek}`);
                     
-                    // Fetch updated user data and refresh the display
-                    const updatedUserDoc = await db.collection('users').doc(userId).get();
-                    if (updatedUserDoc.exists) {
-                        const updatedUserData = updatedUserDoc.data();
-                        
-                        // Refresh the desktop display with updated data
-                        loadFixturesForDeadline(gameweek, updatedUserData, userId);
-                        
-                        // Refresh the mobile display with updated data
-                        loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
-                        
-                        // Update the pick status headers with updated data
-                        updatePickStatusHeader(gameweek, updatedUserData, userId);
-                        updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
-                        
-                        // Refresh the pick history sidebars with updated data
-                        const picksHistoryContainer = document.querySelector('#picks-history');
-                        const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
-                        const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
-                        if (picksHistoryContainer) {
-                            renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
-                        }
-                        if (mobilePicksHistoryContainer) {
-                            renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
-                        }
-                        if (desktopPicksHistoryContainer) {
-                            renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error saving pick:', error);
-                    alert('Error saving pick. Please try again.');
+                    // Refresh the display with updated data
+                    await refreshDisplayAfterPickUpdate(gameweek, userId);
                 }
+                return;
             }
+        }
+        
+        // Team is available for picking - show confirmation popup
+        if (confirm(`Would you like to pick ${teamName} for Game Week ${gameweek}?`)) {
+            await db.collection('users').doc(userId).update({
+                [`picks.${gameweekKey}`]: teamName
+            });
+            
+            console.log(`Pick saved: ${teamName} for Game Week ${gameweek}`);
+            
+            // Refresh the display with updated data
+            await refreshDisplayAfterPickUpdate(gameweek, userId);
         }
     } catch (error) {
         console.error('Error in selectTeamAsTempPick:', error);
         alert('Error processing pick. Please try again.');
+    }
+}
+
+// Helper function to refresh display after pick update
+async function refreshDisplayAfterPickUpdate(gameweek, userId) {
+    try {
+        const updatedUserDoc = await db.collection('users').doc(userId).get();
+        if (updatedUserDoc.exists) {
+            const updatedUserData = updatedUserDoc.data();
+            
+            // Refresh the desktop display with updated data
+            loadFixturesForDeadline(gameweek, updatedUserData, userId);
+            
+            // Refresh the mobile display with updated data
+            loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
+            
+            // Update the pick status headers with updated data
+            updatePickStatusHeader(gameweek, updatedUserData, userId);
+            updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
+            
+            // Refresh the pick history sidebars with updated data
+            const picksHistoryContainer = document.querySelector('#picks-history');
+            const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
+            const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
+            
+            if (picksHistoryContainer) {
+                renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
+            }
+            if (mobilePicksHistoryContainer) {
+                renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
+            }
+            if (desktopPicksHistoryContainer) {
+                renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing display:', error);
     }
 }
 
