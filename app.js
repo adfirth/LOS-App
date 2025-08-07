@@ -1038,6 +1038,21 @@ function navigateToGameweek(gameweek, userData, userId) {
     const nextButton = document.querySelector('#next-gameweek');
     updateNavigationButtons(gameweek, prevButton, nextButton);
     
+    // Update event listeners with the new gameweek
+    if (prevButton) {
+        // Remove existing event listeners
+        prevButton.replaceWith(prevButton.cloneNode(true));
+        const newPrevButton = document.querySelector('#prev-gameweek');
+        newPrevButton.addEventListener('click', () => navigateGameweek(gameweek, -1, userData, userId));
+    }
+    
+    if (nextButton) {
+        // Remove existing event listeners
+        nextButton.replaceWith(nextButton.cloneNode(true));
+        const newNextButton = document.querySelector('#next-gameweek');
+        newNextButton.addEventListener('click', () => navigateGameweek(gameweek, 1, userData, userId));
+    }
+    
     // Update active tab
     const gameweekTabs = document.querySelectorAll('.gameweek-tab');
     updateActiveTab(gameweek, gameweekTabs);
@@ -2478,6 +2493,21 @@ function navigateToMobileGameweek(gameweek, userData, userId) {
     const prevButton = document.querySelector('#mobile-prev-gameweek');
     const nextButton = document.querySelector('#mobile-next-gameweek');
     updateMobileNavigationButtons(gameweek, prevButton, nextButton);
+    
+    // Update event listeners with the new gameweek
+    if (prevButton) {
+        // Remove existing event listeners
+        prevButton.replaceWith(prevButton.cloneNode(true));
+        const newPrevButton = document.querySelector('#mobile-prev-gameweek');
+        newPrevButton.addEventListener('click', () => navigateMobileGameweek(gameweek, -1, userData, userId));
+    }
+    
+    if (nextButton) {
+        // Remove existing event listeners
+        nextButton.replaceWith(nextButton.cloneNode(true));
+        const newNextButton = document.querySelector('#mobile-next-gameweek');
+        newNextButton.addEventListener('click', () => navigateMobileGameweek(gameweek, 1, userData, userId));
+    }
     
     // Update active tab
     const gameweekTabs = document.querySelectorAll('.mobile-gameweek-tabs .gameweek-tab');
