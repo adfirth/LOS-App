@@ -4891,7 +4891,7 @@ a:hover {
 }
 
 .mobile-picks-section h3 {
-    color: #28a745;
+    color: var(--alty-red);
     margin-bottom: 15px;
     font-size: 1.3em;
 }
@@ -4911,7 +4911,7 @@ a:hover {
 }
 
 .mobile-scores-section h3 {
-    color: #28a745;
+    color: var(--alty-red);
     margin-bottom: 15px;
     font-size: 1.3em;
 }
@@ -4925,7 +4925,7 @@ a:hover {
 }
 
 .mobile-vidiprinter-section h3 {
-    color: #28a745;
+    color: var(--alty-red);
     margin-bottom: 15px;
     font-size: 1.3em;
 }
@@ -5088,7 +5088,7 @@ a:hover {
 }
 
 .desktop-picks-section h2 {
-    color: #28a745;
+    color: var(--alty-red);
     margin-bottom: 25px;
     font-size: 1.8em;
     text-align: center;
@@ -5149,7 +5149,7 @@ a:hover {
 }
 
 .desktop-scores-section h2 {
-    color: #28a745;
+    color: var(--alty-red);
     margin-bottom: 25px;
     font-size: 1.8em;
 }
@@ -5168,7 +5168,7 @@ a:hover {
 }
 
 .desktop-vidiprinter-section h2 {
-    color: #28a745;
+    color: var(--alty-red);
     margin-bottom: 25px;
     font-size: 1.8em;
 }
