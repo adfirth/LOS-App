@@ -1186,7 +1186,7 @@ function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
                 updatePickStatusHeader(gameweek, userData, userId);
 
                 // Display fixtures
-                renderFixturesDisplay(fixtures, userData, gameweek, userId);
+                renderFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
                 fixturesDisplayContainer.style.display = 'block';
             }
         } else {
@@ -1263,7 +1263,7 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
                 updateMobilePickStatusHeader(gameweek, userData, userId);
 
                 // Display fixtures
-                renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
+                renderMobileFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
                 if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'block';
             }
         } else {
@@ -1369,7 +1369,7 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     return { status: 'available', clickable: true, reason: 'Available for picking' };
 }
 
-function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
@@ -1409,66 +1409,27 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         let homeTeamClasses = 'team-pick-button';
         let awayTeamClasses = 'team-pick-button';
         
-        if (currentPick === fixture.homeTeam) {
+        // Use the centralized getTeamStatus function for consistent logic
+        const homeTeamStatus = await getTeamStatus(fixture.homeTeam, userData, currentGameWeek, userId);
+        const awayTeamStatus = await getTeamStatus(fixture.awayTeam, userData, currentGameWeek, userId);
+        
+        // Apply status classes based on the centralized logic
+        if (homeTeamStatus.status === 'current-pick') {
             homeTeamClasses += ' current-pick';
-        } else if (homeTeamPicked) {
-            // Check if the gameweek where this team was picked has passed its deadline
-            // Find which gameweek this team was picked in
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.homeTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                // Simple logic: if it's the current gameweek being viewed, it's the current pick
-                // If it's a different gameweek, it's a future pick (changeable)
-                if (gameweekNum === currentGameweekNum) {
-                    homeTeamClasses += ' current-pick'; // Current pick for this gameweek
-                } else {
-                    homeTeamClasses += ' future-pick'; // Can still be changed - different gameweek
-                }
-            } else {
-                homeTeamClasses += ' completed-pick'; // Fallback
-            }
+        } else if (homeTeamStatus.status === 'future-pick') {
+            homeTeamClasses += ' future-pick';
+        } else if (homeTeamStatus.status === 'completed-pick') {
+            homeTeamClasses += ' completed-pick';
         } else {
             homeTeamClasses += ' available';
         }
         
-        if (currentPick === fixture.awayTeam) {
+        if (awayTeamStatus.status === 'current-pick') {
             awayTeamClasses += ' current-pick';
-        } else if (awayTeamPicked) {
-            // Check if the gameweek where this team was picked has passed its deadline
-            // Find which gameweek this team was picked in
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.awayTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                // Simple logic: if it's the current gameweek being viewed, it's the current pick
-                // If it's a different gameweek, it's a future pick (changeable)
-                if (gameweekNum === currentGameweekNum) {
-                    awayTeamClasses += ' current-pick'; // Current pick for this gameweek
-                } else {
-                    awayTeamClasses += ' future-pick'; // Can still be changed - different gameweek
-                }
-            } else {
-                awayTeamClasses += ' completed-pick'; // Fallback
-            }
+        } else if (awayTeamStatus.status === 'future-pick') {
+            awayTeamClasses += ' future-pick';
+        } else if (awayTeamStatus.status === 'completed-pick') {
+            awayTeamClasses += ' completed-pick';
         } else {
             awayTeamClasses += ' available';
         }
@@ -1476,65 +1437,10 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
 
         
         // Determine if teams are clickable based on their status and create tooltips
-        let homeTeamClickable = isClickable;
-        let awayTeamClickable = isClickable;
-        let homeTeamTooltip = '';
-        let awayTeamTooltip = '';
-        
-        // If team is picked in a completed gameweek, it should not be clickable
-        if (homeTeamPicked) {
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.homeTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
-                
-                if (gameweekNum === currentGameWeek) {
-                    // Current gameweek - already picked
-                    homeTeamClickable = false;
-                    homeTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
-                } else {
-                    // Different gameweek - can be changed
-                    homeTeamClickable = true;
-                    homeTeamTooltip = `You have provisionally picked ${fixture.homeTeam} for Game Week ${gameweekNum}`;
-                }
-            }
-        }
-        
-        if (awayTeamPicked) {
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.awayTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                if (gameweekNum < currentGameweekNum) {
-                    // Locked - past gameweek
-                    awayTeamClickable = false;
-                    awayTeamTooltip = `This team is locked having been used in Game Week ${gameweekNum}`;
-                } else if (gameweekNum === currentGameweekNum) {
-                    // Current gameweek - already picked
-                    awayTeamClickable = false;
-                    awayTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
-                } else {
-                    // Future gameweek - can be changed
-                    awayTeamClickable = true;
-                    awayTeamTooltip = `You have provisionally picked ${fixture.awayTeam} for Game Week ${gameweekNum}`;
-                }
-            }
-        }
+        let homeTeamClickable = homeTeamStatus.clickable;
+        let awayTeamClickable = awayTeamStatus.clickable;
+        let homeTeamTooltip = homeTeamStatus.reason;
+        let awayTeamTooltip = awayTeamStatus.reason;
         
         const homeTeamClickAttr = homeTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
         const awayTeamClickAttr = awayTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
@@ -1574,7 +1480,7 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
 }
 
 // Mobile fixtures display rendering function
-function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+async function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
@@ -1612,132 +1518,36 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         let homeTeamClasses = 'team-pick-button';
         let awayTeamClasses = 'team-pick-button';
         
-        if (currentPick === fixture.homeTeam) {
+        // Use the centralized getTeamStatus function for consistent logic
+        const homeTeamStatus = await getTeamStatus(fixture.homeTeam, userData, currentGameWeek, userId);
+        const awayTeamStatus = await getTeamStatus(fixture.awayTeam, userData, currentGameWeek, userId);
+        
+        // Apply status classes based on the centralized logic
+        if (homeTeamStatus.status === 'current-pick') {
             homeTeamClasses += ' current-pick';
-        } else if (homeTeamPicked) {
-            // Check if the gameweek where this team was picked has passed its deadline
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.homeTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
-                
-                if (gameweekNum < activeGameweekNum) {
-                    homeTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
-                } else if (gameweekNum === currentGameweekNum) {
-                    homeTeamClasses += ' current-pick'; // Current pick for this gameweek
-                } else {
-                    homeTeamClasses += ' future-pick'; // Can still be changed - future gameweek
-                }
-            } else {
-                homeTeamClasses += ' completed-pick';
-            }
+        } else if (homeTeamStatus.status === 'future-pick') {
+            homeTeamClasses += ' future-pick';
+        } else if (homeTeamStatus.status === 'completed-pick') {
+            homeTeamClasses += ' completed-pick';
         } else {
             homeTeamClasses += ' available';
         }
         
-        if (currentPick === fixture.awayTeam) {
+        if (awayTeamStatus.status === 'current-pick') {
             awayTeamClasses += ' current-pick';
-        } else if (awayTeamPicked) {
-            // Check if the gameweek where this team was picked has passed its deadline
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.awayTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                const activeGameweekNum = getActiveGameweek() === 'tiebreak' ? 11 : parseInt(getActiveGameweek());
-                
-                if (gameweekNum < activeGameweekNum) {
-                    awayTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
-                } else if (gameweekNum === currentGameweekNum) {
-                    awayTeamClasses += ' current-pick'; // Current pick for this gameweek
-                } else {
-                    awayTeamClasses += ' future-pick'; // Can still be changed - future gameweek
-                }
-            } else {
-                awayTeamClasses += ' completed-pick';
-            }
+        } else if (awayTeamStatus.status === 'future-pick') {
+            awayTeamClasses += ' future-pick';
+        } else if (awayTeamStatus.status === 'completed-pick') {
+            awayTeamClasses += ' completed-pick';
         } else {
             awayTeamClasses += ' available';
         }
         
         // Determine if teams are clickable based on their status and create tooltips
-        let homeTeamClickable = isClickable;
-        let awayTeamClickable = isClickable;
-        let homeTeamTooltip = '';
-        let awayTeamTooltip = '';
-        
-        // If team is picked in a future gameweek, it should still be clickable
-        if (homeTeamPicked) {
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.homeTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                if (gameweekNum === currentGameweekNum) {
-                    // Current gameweek - already picked
-                    homeTeamClickable = false;
-                    homeTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
-                } else {
-                    // Different gameweek - can be changed
-                    homeTeamClickable = true;
-                    homeTeamTooltip = `You have provisionally picked ${fixture.homeTeam} for Game Week ${gameweekNum}`;
-                }
-            }
-        }
-        
-        if (awayTeamPicked) {
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === fixture.awayTeam) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            if (pickedGameweek) {
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const gameweekNum = parseInt(pickedGameweekNum);
-                const currentGameweekNum = parseInt(currentGameWeek);
-                
-                if (gameweekNum < currentGameweekNum) {
-                    // Locked - past gameweek
-                    awayTeamClickable = false;
-                    awayTeamTooltip = `This team is locked having been used in Game Week ${gameweekNum}`;
-                } else if (gameweekNum === currentGameweekNum) {
-                    // Current gameweek - already picked
-                    awayTeamClickable = false;
-                    awayTeamTooltip = `This is your current pick for Game Week ${gameweekNum}`;
-                } else {
-                    // Future gameweek - can be changed
-                    awayTeamClickable = true;
-                    awayTeamTooltip = `You have provisionally picked ${fixture.awayTeam} for Game Week ${gameweekNum}`;
-                }
-            }
-        }
+        let homeTeamClickable = homeTeamStatus.clickable;
+        let awayTeamClickable = awayTeamStatus.clickable;
+        let homeTeamTooltip = homeTeamStatus.reason;
+        let awayTeamTooltip = awayTeamStatus.reason;
         
         const homeTeamClickAttr = homeTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
         const awayTeamClickAttr = awayTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
