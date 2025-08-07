@@ -1117,11 +1117,43 @@ function makePick(userId, gameweek) {
         if (userDoc.exists) {
             const userData = userDoc.data();
             navigateToGameweek(gameweek, userData, userId);
+            
+            // Switch to the Fixtures tab
+            switchToFixturesTab();
         }
     }).catch(error => {
         console.error('Error fetching user data:', error);
         alert('Error loading gameweek. Please try again.');
     });
+}
+
+// Function to programmatically switch to the Fixtures tab
+function switchToFixturesTab() {
+    // Switch mobile tab to fixtures
+    const mobileTabButtons = document.querySelectorAll('.mobile-tabs .tab-btn');
+    const mobileTabPanes = document.querySelectorAll('.mobile-tab-content .tab-pane');
+    
+    mobileTabButtons.forEach(btn => btn.classList.remove('active'));
+    mobileTabPanes.forEach(pane => pane.classList.remove('active'));
+    
+    const mobileFixturesTab = document.querySelector('.mobile-tabs .tab-btn[data-tab="fixtures"]');
+    const mobileFixturesPane = document.getElementById('fixtures-tab');
+    
+    if (mobileFixturesTab) mobileFixturesTab.classList.add('active');
+    if (mobileFixturesPane) mobileFixturesPane.classList.add('active');
+    
+    // Switch desktop tab to fixtures
+    const desktopTabButtons = document.querySelectorAll('.desktop-tabs .desktop-tab-btn');
+    const desktopTabPanes = document.querySelectorAll('.desktop-tab-content .desktop-tab-pane');
+    
+    desktopTabButtons.forEach(btn => btn.classList.remove('active'));
+    desktopTabPanes.forEach(pane => pane.classList.remove('active'));
+    
+    const desktopFixturesTab = document.querySelector('.desktop-tabs .desktop-tab-btn[data-tab="fixtures"]');
+    const desktopFixturesPane = document.getElementById('desktop-fixtures-tab');
+    
+    if (desktopFixturesTab) desktopFixturesTab.classList.add('active');
+    if (desktopFixturesPane) desktopFixturesPane.classList.add('active');
 }
 
 // --- DEADLINE AND AUTO-PICK FUNCTIONS ---
