@@ -1411,22 +1411,21 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
             
             if (pickedGameweek) {
                 const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                // For now, we'll use a simple check - if it's a past gameweek, it's completed
-                // In a full implementation, we'd use checkDeadlineForGameweek(pickedGameweekNum)
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                // Use the active gameweek from settings to determine if a gameweek is truly completed
-                // Only gameweeks that are before the active gameweek should be considered completed
-                const activeGameweek = getActiveGameweek(); // We'll implement this helper function
+                // Check if that gameweek has completed (deadline passed)
+                // We'll use a simple check for now - if it's before the active gameweek, it's completed
+                // In a full implementation, we'd use checkDeadlineForGameweek(pickedGameweekNum)
+                const activeGameweek = getActiveGameweek();
                 const activeGameweekNum = activeGameweek === 'tiebreak' ? 11 : parseInt(activeGameweek);
                 
                 if (gameweekNum < activeGameweekNum) {
-                    homeTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
+                    homeTeamClasses += ' completed-pick'; // Locked - completed gameweek
                 } else if (gameweekNum === currentGameweekNum) {
                     homeTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
-                    homeTeamClasses += ' future-pick'; // Can still be changed - future gameweek
+                    homeTeamClasses += ' future-pick'; // Can still be changed - not yet completed
                 }
             } else {
                 homeTeamClasses += ' completed-pick'; // Fallback
@@ -1450,22 +1449,21 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
             
             if (pickedGameweek) {
                 const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                // For now, we'll use a simple check - if it's a past gameweek, it's completed
-                // In a full implementation, we'd use checkDeadlineForGameweek(pickedGameweekNum)
                 const gameweekNum = parseInt(pickedGameweekNum);
                 const currentGameweekNum = parseInt(currentGameWeek);
                 
-                // Use the active gameweek from settings to determine if a gameweek is truly completed
-                // Only gameweeks that are before the active gameweek should be considered completed
-                const activeGameweek = getActiveGameweek(); // We'll implement this helper function
+                // Check if that gameweek has completed (deadline passed)
+                // We'll use a simple check for now - if it's before the active gameweek, it's completed
+                // In a full implementation, we'd use checkDeadlineForGameweek(pickedGameweekNum)
+                const activeGameweek = getActiveGameweek();
                 const activeGameweekNum = activeGameweek === 'tiebreak' ? 11 : parseInt(activeGameweek);
                 
                 if (gameweekNum < activeGameweekNum) {
-                    awayTeamClasses += ' completed-pick'; // Locked - past gameweek (before active)
+                    awayTeamClasses += ' completed-pick'; // Locked - completed gameweek
                 } else if (gameweekNum === currentGameweekNum) {
                     awayTeamClasses += ' current-pick'; // Current pick for this gameweek
                 } else {
-                    awayTeamClasses += ' future-pick'; // Can still be changed - future gameweek
+                    awayTeamClasses += ' future-pick'; // Can still be changed - not yet completed
                 }
             } else {
                 awayTeamClasses += ' completed-pick'; // Fallback
