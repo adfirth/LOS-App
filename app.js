@@ -1035,38 +1035,50 @@ function navigateGameweek(currentGameWeek, direction, userData, userId) {
     navigateToGameweek(newGameweek, userData, userId);
 }
 
-function navigateToGameweek(gameweek, userData, userId) {
-    // Update current gameweek display
-    const currentGameweekDisplay = document.querySelector('#current-gameweek-display');
-    const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
-    currentGameweekDisplay.textContent = displayText;
-    
-    // Update navigation buttons
-    const prevButton = document.querySelector('#prev-gameweek');
-    const nextButton = document.querySelector('#next-gameweek');
-    updateNavigationButtons(gameweek, prevButton, nextButton);
-    
-    // Update event listeners with the new gameweek
-    if (prevButton) {
-        // Remove existing event listeners
-        prevButton.replaceWith(prevButton.cloneNode(true));
-        const newPrevButton = document.querySelector('#prev-gameweek');
-        newPrevButton.addEventListener('click', () => navigateGameweek(gameweek, -1, userData, userId));
+async function navigateToGameweek(gameweek, userData, userId) {
+    try {
+        // Fetch fresh user data from database to ensure we have the latest picks
+        const freshUserDoc = await db.collection('users').doc(userId).get();
+        const freshUserData = freshUserDoc.exists ? freshUserDoc.data() : userData;
+        
+        // Update current gameweek display
+        const currentGameweekDisplay = document.querySelector('#current-gameweek-display');
+        const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
+        currentGameweekDisplay.textContent = displayText;
+        
+        // Update navigation buttons
+        const prevButton = document.querySelector('#prev-gameweek');
+        const nextButton = document.querySelector('#next-gameweek');
+        updateNavigationButtons(gameweek, prevButton, nextButton);
+        
+        // Update event listeners with the new gameweek
+        if (prevButton) {
+            // Remove existing event listeners
+            prevButton.replaceWith(prevButton.cloneNode(true));
+            const newPrevButton = document.querySelector('#prev-gameweek');
+            newPrevButton.addEventListener('click', () => navigateGameweek(gameweek, -1, freshUserData, userId));
+        }
+        
+        if (nextButton) {
+            // Remove existing event listeners
+            nextButton.replaceWith(nextButton.cloneNode(true));
+            const newNextButton = document.querySelector('#next-gameweek');
+            newNextButton.addEventListener('click', () => navigateGameweek(gameweek, 1, freshUserData, userId));
+        }
+        
+        // Update active tab
+        const gameweekTabs = document.querySelectorAll('.gameweek-tab');
+        updateActiveTab(gameweek, gameweekTabs);
+        
+        // Load fixtures for the selected gameweek with fresh data
+        loadFixturesForDeadline(gameweek, freshUserData, userId);
+        
+        console.log(`Navigated to gameweek ${gameweek} with fresh user data`);
+    } catch (error) {
+        console.error('Error navigating to gameweek:', error);
+        // Fallback to original behavior if there's an error
+        loadFixturesForDeadline(gameweek, userData, userId);
     }
-    
-    if (nextButton) {
-        // Remove existing event listeners
-        nextButton.replaceWith(nextButton.cloneNode(true));
-        const newNextButton = document.querySelector('#next-gameweek');
-        newNextButton.addEventListener('click', () => navigateGameweek(gameweek, 1, userData, userId));
-    }
-    
-    // Update active tab
-    const gameweekTabs = document.querySelectorAll('.gameweek-tab');
-    updateActiveTab(gameweek, gameweekTabs);
-    
-    // Load fixtures for the selected gameweek
-    loadFixturesForDeadline(gameweek, userData, userId);
 }
 
 function removePick(userId, gameweekKey) {
@@ -1826,15 +1838,19 @@ async function refreshDisplayAfterPickUpdate(gameweek, userId) {
         if (updatedUserDoc.exists) {
             const updatedUserData = updatedUserDoc.data();
             
-            // Refresh the desktop display with updated data
-            loadFixturesForDeadline(gameweek, updatedUserData, userId);
+            // Get the current gameweek being viewed from the active tab
+            const activeTab = document.querySelector('.gameweek-tab.active');
+            const currentViewedGameweek = activeTab ? activeTab.getAttribute('data-gameweek') : gameweek;
             
-            // Refresh the mobile display with updated data
-            loadMobileFixturesForDeadline(gameweek, updatedUserData, userId);
+            // Refresh the desktop display with updated data for the current viewed gameweek
+            loadFixturesForDeadline(currentViewedGameweek, updatedUserData, userId);
             
-            // Update the pick status headers with updated data
-            updatePickStatusHeader(gameweek, updatedUserData, userId);
-            updateMobilePickStatusHeader(gameweek, updatedUserData, userId);
+            // Refresh the mobile display with updated data for the current viewed gameweek
+            loadMobileFixturesForDeadline(currentViewedGameweek, updatedUserData, userId);
+            
+            // Update the pick status headers with updated data for the current viewed gameweek
+            updatePickStatusHeader(currentViewedGameweek, updatedUserData, userId);
+            updateMobilePickStatusHeader(currentViewedGameweek, updatedUserData, userId);
             
             // Refresh the pick history sidebars with updated data
             const picksHistoryContainer = document.querySelector('#picks-history');
@@ -1850,6 +1866,8 @@ async function refreshDisplayAfterPickUpdate(gameweek, userId) {
             if (desktopPicksHistoryContainer) {
                 renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
             }
+            
+            console.log(`Display refreshed for gameweek ${currentViewedGameweek} with updated user data`);
         }
     } catch (error) {
         console.error('Error refreshing display:', error);
@@ -2428,38 +2446,50 @@ function navigateMobileGameweek(currentGameWeek, direction, userData, userId) {
     navigateToMobileGameweek(newGameweek, userData, userId);
 }
 
-function navigateToMobileGameweek(gameweek, userData, userId) {
-    // Update current gameweek display
-    const currentGameweekDisplay = document.querySelector('#mobile-current-gameweek-display');
-    const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
-    if (currentGameweekDisplay) currentGameweekDisplay.textContent = displayText;
-    
-    // Update navigation buttons
-    const prevButton = document.querySelector('#mobile-prev-gameweek');
-    const nextButton = document.querySelector('#mobile-next-gameweek');
-    updateMobileNavigationButtons(gameweek, prevButton, nextButton);
-    
-    // Update event listeners with the new gameweek
-    if (prevButton) {
-        // Remove existing event listeners
-        prevButton.replaceWith(prevButton.cloneNode(true));
-        const newPrevButton = document.querySelector('#mobile-prev-gameweek');
-        newPrevButton.addEventListener('click', () => navigateMobileGameweek(gameweek, -1, userData, userId));
+async function navigateToMobileGameweek(gameweek, userData, userId) {
+    try {
+        // Fetch fresh user data from database to ensure we have the latest picks
+        const freshUserDoc = await db.collection('users').doc(userId).get();
+        const freshUserData = freshUserDoc.exists ? freshUserDoc.data() : userData;
+        
+        // Update current gameweek display
+        const currentGameweekDisplay = document.querySelector('#mobile-current-gameweek-display');
+        const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
+        if (currentGameweekDisplay) currentGameweekDisplay.textContent = displayText;
+        
+        // Update navigation buttons
+        const prevButton = document.querySelector('#mobile-prev-gameweek');
+        const nextButton = document.querySelector('#mobile-next-gameweek');
+        updateMobileNavigationButtons(gameweek, prevButton, nextButton);
+        
+        // Update event listeners with the new gameweek
+        if (prevButton) {
+            // Remove existing event listeners
+            prevButton.replaceWith(prevButton.cloneNode(true));
+            const newPrevButton = document.querySelector('#mobile-prev-gameweek');
+            newPrevButton.addEventListener('click', () => navigateMobileGameweek(gameweek, -1, freshUserData, userId));
+        }
+        
+        if (nextButton) {
+            // Remove existing event listeners
+            nextButton.replaceWith(nextButton.cloneNode(true));
+            const newNextButton = document.querySelector('#mobile-next-gameweek');
+            newNextButton.addEventListener('click', () => navigateMobileGameweek(gameweek, 1, freshUserData, userId));
+        }
+        
+        // Update active tab
+        const gameweekTabs = document.querySelectorAll('.mobile-gameweek-tabs .gameweek-tab');
+        updateMobileActiveTab(gameweek, gameweekTabs);
+        
+        // Load fixtures for the selected gameweek with fresh data
+        loadMobileFixturesForDeadline(gameweek, freshUserData, userId);
+        
+        console.log(`Navigated to mobile gameweek ${gameweek} with fresh user data`);
+    } catch (error) {
+        console.error('Error navigating to mobile gameweek:', error);
+        // Fallback to original behavior if there's an error
+        loadMobileFixturesForDeadline(gameweek, userData, userId);
     }
-    
-    if (nextButton) {
-        // Remove existing event listeners
-        nextButton.replaceWith(nextButton.cloneNode(true));
-        const newNextButton = document.querySelector('#mobile-next-gameweek');
-        newNextButton.addEventListener('click', () => navigateMobileGameweek(gameweek, 1, userData, userId));
-    }
-    
-    // Update active tab
-    const gameweekTabs = document.querySelectorAll('.mobile-gameweek-tabs .gameweek-tab');
-    updateMobileActiveTab(gameweek, gameweekTabs);
-    
-    // Load fixtures for the selected gameweek
-    loadMobileFixturesForDeadline(gameweek, userData, userId);
 }
 
 // --- COMPETITION SETTINGS FUNCTIONS ---
