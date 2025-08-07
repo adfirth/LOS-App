@@ -1384,7 +1384,7 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
     
 
     
-    sortedFixtures.forEach(fixture => {
+    for (const fixture of sortedFixtures) {
         const fixtureDate = new Date(fixture.date);
 
         const homeBadge = getTeamBadge(fixture.homeTeam);
@@ -1468,7 +1468,7 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
         `;
         
 
-    });
+    }
 
 
 
@@ -1493,7 +1493,7 @@ async function renderMobileFixturesDisplay(fixtures, userData = null, currentGam
     
     let fixturesHTML = '';
     
-    sortedFixtures.forEach(fixture => {
+    for (const fixture of sortedFixtures) {
         const fixtureDate = new Date(fixture.date);
 
         const homeBadge = getTeamBadge(fixture.homeTeam);
@@ -1573,7 +1573,7 @@ async function renderMobileFixturesDisplay(fixtures, userData = null, currentGam
                 </div>
             </div>
         `;
-    });
+    }
 
     fixturesDisplay.innerHTML = fixturesHTML;
 }
