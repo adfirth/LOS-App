@@ -1832,9 +1832,6 @@ async function selectTeamAsTempPick(teamName, gameweek, userId) {
                             return;
                         }
                     }
-                } else {
-                    alert(`You have already picked ${teamName} in a previous gameweek.`);
-                    return;
                 }
             }
             
