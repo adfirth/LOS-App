@@ -670,6 +670,7 @@ async function updateRegistrationList() {
                 <td>
                     <button class="secondary-button" onclick="viewUserDetails('${doc.id}')">View</button>
                     <button class="secondary-button" onclick="toggleTesterStatus('${doc.id}', ${userData.isTester || false})">${userData.isTester ? 'Remove Tester' : 'Make Tester'}</button>
+                    ${userData.isTester ? '<span class="tester-badge">🧪 Tester</span>' : ''}
                 </td>
             `;
             
@@ -1364,151 +1365,173 @@ function switchToFixturesTab() {
 }
 
 // --- DEADLINE AND AUTO-PICK FUNCTIONS ---
-function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
+async function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
     const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
     const deadlineDate = document.querySelector('#deadline-date');
     const deadlineStatus = document.querySelector('#deadline-status');
     const fixturesDisplay = document.querySelector('#fixtures-display');
 
-    // Handle tiebreak gameweek
-    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
-
-    // Try new structure first, then fallback to old structure
-    db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
-        if (!doc.exists) {
-            // Fallback to old structure for backward compatibility
-            return db.collection('fixtures').doc(gameweekKey).get();
-        }
-        return doc;
-    }).then(doc => {
-        if (doc.exists) {
-            const fixtures = doc.data().fixtures;
-            if (fixtures && fixtures.length > 0) {
-                // Find the earliest fixture (deadline)
-                const earliestFixture = fixtures.reduce((earliest, fixture) => {
-                    const fixtureDate = new Date(fixture.date);
-                    const earliestDate = new Date(earliest.date);
-                    return fixtureDate < earliestDate ? fixture : earliest;
-                });
-
-                // Display deadline
-                const deadlineDateObj = new Date(earliestFixture.date);
-                const formattedDeadline = formatDeadlineDate(deadlineDateObj);
-                
-                deadlineDate.textContent = formattedDeadline;
-                
-                // Check if deadline has passed
-                const now = new Date();
-                const timeUntilDeadline = deadlineDateObj - now;
-                
-                // Check if all fixtures in this gameweek are completed
-                const allFixturesCompleted = fixtures.every(fixture => 
-                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                );
-                
-                if (allFixturesCompleted) {
-                    deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
-                    deadlineStatus.className = 'complete';
-                    deadlineStatus.style.color = '#0c5460';
-                } else if (timeUntilDeadline <= 0) {
-                    deadlineStatus.textContent = 'Locked (Matches are underway)';
-                    deadlineStatus.className = 'locked';
-                    deadlineStatus.style.color = '#721c24';
-                } else {
-                    deadlineStatus.textContent = 'Active (Pick updates allowed)';
-                    deadlineStatus.className = 'active';
-                    deadlineStatus.style.color = '#28a745';
+    try {
+        // Get user-specific fixtures (tester vs regular)
+        const userFixtures = await getUserFixtures(userId, gameweek);
+        
+        if (userFixtures.fixtures && userFixtures.fixtures.length > 0) {
+            // Update gameweek display to show correct name
+            const gameweekElements = document.querySelectorAll('.current-gameweek, .gameweek-tab.active');
+            gameweekElements.forEach(el => {
+                if (el) {
+                    el.textContent = userFixtures.gameweekName;
+                    if (userFixtures.isTesterFixtures) {
+                        el.classList.add('tester-gameweek');
+                        el.title = `Tester Edition - ${userFixtures.gameweekName}`;
+                    } else {
+                        el.classList.remove('tester-gameweek');
+                        el.title = `Edition ${userFixtures.edition} - ${userFixtures.gameweekName}`;
+                    }
                 }
+            });
+            
+            // Find the earliest fixture (deadline)
+            const earliestFixture = userFixtures.fixtures.reduce((earliest, fixture) => {
+                const fixtureDate = new Date(fixture.date);
+                const earliestDate = new Date(earliest.date);
+                return fixtureDate < earliestDate ? fixture : earliest;
+            });
 
-                // Update pick status header
-                updatePickStatusHeader(gameweek, userData, userId);
-
-                // Display fixtures
-                renderFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
-                fixturesDisplayContainer.style.display = 'block';
+            // Display deadline
+            const deadlineDateObj = new Date(earliestFixture.date);
+            const formattedDeadline = formatDeadlineDate(deadlineDateObj);
+            
+            deadlineDate.textContent = formattedDeadline;
+            
+            // Check if deadline has passed
+            const now = new Date();
+            const timeUntilDeadline = deadlineDateObj - now;
+            
+            // Check if all fixtures in this gameweek are completed
+            const allFixturesCompleted = userFixtures.fixtures.every(fixture => 
+                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+            );
+            
+            if (allFixturesCompleted) {
+                deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
+                deadlineStatus.className = 'complete';
+                deadlineStatus.style.color = '#0c5460';
+            } else if (timeUntilDeadline <= 0) {
+                deadlineStatus.textContent = 'Locked (Matches are underway)';
+                deadlineStatus.className = 'locked';
+                deadlineStatus.style.color = '#721c24';
+            } else {
+                deadlineStatus.textContent = 'Active (Pick updates allowed)';
+                deadlineStatus.className = 'active';
+                deadlineStatus.style.color = '#28a745';
             }
+
+            // Update pick status header
+            updatePickStatusHeader(gameweek, userData, userId);
+
+            // Display fixtures
+            await renderFixturesDisplay(userFixtures.fixtures, userData, gameweek, userId);
+            fixturesDisplayContainer.style.display = 'block';
         } else {
-            fixturesDisplayContainer.style.display = 'none';
+            fixturesDisplayContainer.innerHTML = `<p>No fixtures available for ${userFixtures.gameweekName}.</p>`;
+            fixturesDisplayContainer.style.display = 'block';
         }
-    });
+    } catch (error) {
+        console.error('Error loading fixtures:', error);
+        fixturesDisplayContainer.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+        fixturesDisplayContainer.style.display = 'block';
+    }
 }
 
 // Mobile fixtures loading function
-function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null) {
+async function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null) {
     const fixturesDisplayContainer = document.querySelector('#mobile-fixtures-display-container');
     const deadlineDate = document.querySelector('#mobile-deadline-date');
     const deadlineStatus = document.querySelector('#mobile-deadline-status');
     const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
 
-    // Handle tiebreak gameweek
-    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
-
-    // Try new structure first, then fallback to old structure
-    db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
-        if (!doc.exists) {
-            // Fallback to old structure for backward compatibility
-            return db.collection('fixtures').doc(gameweekKey).get();
-        }
-        return doc;
-    }).then(doc => {
-        if (doc.exists) {
-            const fixtures = doc.data().fixtures;
-            if (fixtures && fixtures.length > 0) {
-                // Find the earliest fixture (deadline)
-                const earliestFixture = fixtures.reduce((earliest, fixture) => {
-                    const fixtureDate = new Date(fixture.date);
-                    const earliestDate = new Date(earliest.date);
-                    return fixtureDate < earliestDate ? fixture : earliest;
-                });
-
-                // Display deadline
-                const deadlineDateObj = new Date(earliestFixture.date);
-                const formattedDeadline = formatDeadlineDate(deadlineDateObj);
-                
-                if (deadlineDate) deadlineDate.textContent = formattedDeadline;
-                
-                // Check if deadline has passed
-                const now = new Date();
-                const timeUntilDeadline = deadlineDateObj - now;
-                
-                // Check if all fixtures in this gameweek are completed
-                const allFixturesCompleted = fixtures.every(fixture => 
-                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                );
-                
-                if (allFixturesCompleted) {
-                    if (deadlineStatus) {
-                        deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
-                        deadlineStatus.className = 'complete';
-                        deadlineStatus.style.color = '#0c5460';
-                    }
-                } else if (timeUntilDeadline <= 0) {
-                    if (deadlineStatus) {
-                        deadlineStatus.textContent = 'Locked (Matches are underway)';
-                        deadlineStatus.className = 'locked';
-                        deadlineStatus.style.color = '#721c24';
-                    }
-                } else {
-                    if (deadlineStatus) {
-                        deadlineStatus.textContent = 'Active (Pick updates allowed)';
-                        deadlineStatus.className = 'active';
-                        deadlineStatus.style.color = '#28a745';
+    try {
+        // Get user-specific fixtures (tester vs regular)
+        const userFixtures = await getUserFixtures(userId, gameweek);
+        
+        if (userFixtures.fixtures && userFixtures.fixtures.length > 0) {
+            // Update gameweek display to show correct name
+            const gameweekElements = document.querySelectorAll('.mobile-current-gameweek, .mobile-gameweek-tab.active');
+            gameweekElements.forEach(el => {
+                if (el) {
+                    el.textContent = userFixtures.gameweekName;
+                    if (userFixtures.isTesterFixtures) {
+                        el.classList.add('tester-gameweek');
+                        el.title = `Tester Edition - ${userFixtures.gameweekName}`;
+                    } else {
+                        el.classList.remove('tester-gameweek');
+                        el.title = `Edition ${userFixtures.edition} - ${userFixtures.gameweekName}`;
                     }
                 }
+            });
+            
+            // Find the earliest fixture (deadline)
+            const earliestFixture = userFixtures.fixtures.reduce((earliest, fixture) => {
+                const fixtureDate = new Date(fixture.date);
+                const earliestDate = new Date(earliest.date);
+                return fixtureDate < earliestDate ? fixture : earliest;
+            });
 
-                // Update pick status header
-                updateMobilePickStatusHeader(gameweek, userData, userId);
-
-                // Display fixtures
-                renderMobileFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
-                if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'block';
+            // Display deadline
+            const deadlineDateObj = new Date(earliestFixture.date);
+            const formattedDeadline = formatDeadlineDate(deadlineDateObj);
+            
+            if (deadlineDate) deadlineDate.textContent = formattedDeadline;
+            
+            // Check if deadline has passed
+            const now = new Date();
+            const timeUntilDeadline = deadlineDateObj - now;
+            
+            // Check if all fixtures in this gameweek are completed
+            const allFixturesCompleted = userFixtures.fixtures.every(fixture => 
+                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+            );
+            
+            if (allFixturesCompleted) {
+                if (deadlineStatus) {
+                    deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
+                    deadlineStatus.className = 'complete';
+                    deadlineStatus.style.color = '#0c5460';
+                }
+            } else if (timeUntilDeadline <= 0) {
+                if (deadlineStatus) {
+                    deadlineStatus.textContent = 'Locked (Matches are underway)';
+                    deadlineStatus.className = 'locked';
+                    deadlineStatus.style.color = '#721c24';
+                }
+            } else {
+                if (deadlineStatus) {
+                    deadlineStatus.textContent = 'Active (Pick updates allowed)';
+                    deadlineStatus.className = 'active';
+                    deadlineStatus.style.color = '#28a745';
+                }
             }
+
+            // Update pick status header
+            updateMobilePickStatusHeader(gameweek, userData, userId);
+
+            // Display fixtures
+            await renderMobileFixturesDisplay(userFixtures.fixtures, userData, gameweek, userId);
+            if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'block';
         } else {
-            if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'none';
+            if (fixturesDisplayContainer) {
+                fixturesDisplayContainer.innerHTML = `<p>No fixtures available for ${userFixtures.gameweekName}.</p>`;
+                fixturesDisplayContainer.style.display = 'block';
+            }
         }
-    });
+    } catch (error) {
+        console.error('Error loading mobile fixtures:', error);
+        if (fixturesDisplayContainer) {
+            fixturesDisplayContainer.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+            fixturesDisplayContainer.style.display = 'block';
+        }
+    }
 }
 
 // Function to update the mobile pick status header

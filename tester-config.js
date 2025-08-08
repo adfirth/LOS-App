@@ -17,6 +17,25 @@ const TESTER_CONFIG = {
         description: 'Main competition edition'
     },
     
+    // Tester-specific game weeks and fixtures
+    testerGameWeeks: {
+        enabled: true,
+        gameWeeks: [
+            {
+                number: '1',
+                name: 'Test Week 1',
+                description: 'First test game week for trial fixtures',
+                fixtures: [] // Will be populated from database
+            },
+            {
+                number: '2', 
+                name: 'Test Week 2',
+                description: 'Second test game week for trial fixtures',
+                fixtures: [] // Will be populated from database
+            }
+        ]
+    },
+    
     // Trial game weeks that testers can access
     trialGameWeeks: ['1', '2'],
     
@@ -38,7 +57,8 @@ const TESTER_CONFIG = {
     adminSettings: {
         showTesterToggle: true,
         showTesterStatus: true,
-        showEditionInfo: true
+        showEditionInfo: true,
+        showTesterFixtures: true
     }
 };
 
@@ -89,6 +109,72 @@ async function getUserEdition(userId) {
     }
 }
 
+// Function to get tester-specific fixtures for a gameweek
+async function getTesterFixtures(gameweek) {
+    try {
+        if (!TESTER_CONFIG.testerGameWeeks.enabled) {
+            return null; // Use regular fixtures if tester fixtures disabled
+        }
+        
+        // Get fixtures from tester edition database
+        const fixturesDoc = await db.collection('fixtures').doc(`tester_edition_gw${gameweek}`).get();
+        if (fixturesDoc.exists) {
+            return fixturesDoc.data().fixtures || [];
+        }
+        
+        return []; // Return empty array if no fixtures found
+    } catch (error) {
+        console.error('Error getting tester fixtures:', error);
+        return null; // Fall back to regular fixtures
+    }
+}
+
+// Function to get the appropriate fixtures for a user and gameweek
+async function getUserFixtures(userId, gameweek) {
+    try {
+        const isTester = await isUserTester(userId);
+        
+        if (isTester && TESTER_CONFIG.testerGameWeeks.enabled) {
+            // Get tester-specific fixtures
+            const testerFixtures = await getTesterFixtures(gameweek);
+            if (testerFixtures && testerFixtures.length > 0) {
+                return {
+                    fixtures: testerFixtures,
+                    isTesterFixtures: true,
+                    gameweekName: `Test Week ${gameweek}`,
+                    edition: 'tester'
+                };
+            }
+        }
+        
+        // Fall back to regular fixtures
+        const regularFixturesDoc = await db.collection('fixtures').doc(`edition1_gw${gameweek}`).get();
+        if (regularFixturesDoc.exists) {
+            return {
+                fixtures: regularFixturesDoc.data().fixtures || [],
+                isTesterFixtures: false,
+                gameweekName: `Game Week ${gameweek}`,
+                edition: 1
+            };
+        }
+        
+        return {
+            fixtures: [],
+            isTesterFixtures: false,
+            gameweekName: `Game Week ${gameweek}`,
+            edition: 1
+        };
+    } catch (error) {
+        console.error('Error getting user fixtures:', error);
+        return {
+            fixtures: [],
+            isTesterFixtures: false,
+            gameweekName: `Game Week ${gameweek}`,
+            edition: 1
+        };
+    }
+}
+
 // Function to get tester features
 function getTesterFeatures() {
     return TESTER_CONFIG.testerFeatures;
@@ -114,16 +200,24 @@ function getRegularEditionConfig() {
     return TESTER_CONFIG.regularEdition;
 }
 
+// Function to get tester game weeks config
+function getTesterGameWeeksConfig() {
+    return TESTER_CONFIG.testerGameWeeks;
+}
+
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         TESTER_CONFIG,
         isUserTester,
         getUserEdition,
+        getUserFixtures,
+        getTesterFixtures,
         getTesterFeatures,
         getRegularUserRestrictions,
         getAdminSettings,
         getTesterEditionConfig,
-        getRegularEditionConfig
+        getRegularEditionConfig,
+        getTesterGameWeeksConfig
     };
 }
