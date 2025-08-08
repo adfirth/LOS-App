@@ -260,22 +260,11 @@ function handleAdminLogout() {
 // --- REGISTRATION LOGIC ---
 let currentEdition = 1;
 
-// Tester configuration is now managed in tester-config.js
-// The isTesterEmail function is defined in that file
-
 // Check registration window status
-async function checkRegistrationWindow(userId = null) {
+async function checkRegistrationWindow() {
     try {
-        // Get the appropriate edition for the user
-        let editionToCheck = currentActiveEdition;
-        
-        if (userId) {
-            const userEdition = await getUserEdition(userId);
-            editionToCheck = userEdition.editionNumber;
-        }
-        
-        // Get the settings for the appropriate edition
-        const settingsDoc = await db.collection('settings').doc(`registration_edition_${editionToCheck}`).get();
+        // Get the current active edition from the global variable
+        const settingsDoc = await db.collection('settings').doc(`registration_edition_${currentActiveEdition}`).get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
             
@@ -312,27 +301,7 @@ async function checkRegistrationWindow(userId = null) {
     }
 }
 
-// Check if a user is a tester (either by email or admin promotion)
-async function isUserTester(userId) {
-    try {
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (userDoc.exists) {
-            const userData = userDoc.data();
-            return userData.isTester === true;
-        }
-        return false;
-    } catch (error) {
-        console.error('Error checking tester status:', error);
-        return false;
-    }
-}
 
-// Check registration window status for testers (allows registration even when closed)
-async function checkRegistrationWindowForTesters(email) {
-    // For the new system, we don't need email-based tester checks
-    // Testers will be promoted via admin panel after registration
-    return await checkRegistrationWindow();
-}
 
 function showRegistrationClosed(message = 'Registration is currently closed') {
     const closedDiv = document.querySelector('#registration-closed');
@@ -669,8 +638,6 @@ async function updateRegistrationList() {
                 <td>${paymentMethod}</td>
                 <td>
                     <button class="secondary-button" onclick="viewUserDetails('${doc.id}')">View</button>
-                    <button class="secondary-button" onclick="toggleTesterStatus('${doc.id}', ${userData.isTester || false})">${userData.isTester ? 'Remove Tester' : 'Make Tester'}</button>
-                    ${userData.isTester ? '<span class="tester-badge">🧪 Tester</span>' : ''}
                 </td>
             `;
             
@@ -815,28 +782,7 @@ function closeUserDetailsModal() {
     }
 }
 
-// Function to toggle tester status for a user
-async function toggleTesterStatus(userId, currentTesterStatus) {
-    try {
-        const newTesterStatus = !currentTesterStatus;
-        
-        await db.collection('users').doc(userId).update({
-            isTester: newTesterStatus
-        });
-        
-        console.log(`Tester status updated for user ${userId}: ${newTesterStatus}`);
-        
-        // Refresh the registration list to show updated status
-        await refreshRegistrationStats();
-        
-        // Show success message
-        alert(`User ${newTesterStatus ? 'promoted to tester' : 'removed from testers'} successfully!`);
-        
-    } catch (error) {
-        console.error('Error toggling tester status:', error);
-        alert('Error updating tester status. Please try again.');
-    }
-}
+
 
 // --- TABBED INTERFACE FUNCTIONS ---
 
@@ -923,22 +869,9 @@ async function renderDashboard(user) {
             if (userDoc.exists) {
                 const userData = userDoc.data();
                 
-                // Get the appropriate edition for this user
-                const userEdition = await getUserEdition(user.uid);
-                
-                // Update edition displays with user-specific edition
+                // Update edition displays
                 document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
-                    if (el) {
-                        el.textContent = userEdition.editionNumber;
-                        // Add visual indicator for tester edition
-                        if (userEdition.isTesterEdition) {
-                            el.classList.add('tester-edition');
-                            el.title = `${userEdition.name} - ${userEdition.description}`;
-                        } else {
-                            el.classList.remove('tester-edition');
-                            el.title = userEdition.name;
-                        }
-                    }
+                    if (el) el.textContent = currentActiveEdition;
                 });
                 
                 // Update welcome messages for both desktop and mobile
@@ -981,85 +914,14 @@ async function renderDashboard(user) {
             // Load fixtures for current gameweek to get deadline (with user data)
             loadFixturesForDeadline(currentGameWeek, userData, user.uid);
             
-            // Handle tester access restrictions for scores and vidiprinter
-            handleTesterAccessRestrictions(userData, user.uid);
+
         }
     } catch (error) {
         console.error("Error rendering dashboard:", error);
     }
 }
 
-// Function to handle tester access restrictions for scores and vidiprinter
-async function handleTesterAccessRestrictions(userData, userId) {
-    const isTester = await isUserTester(userId);
-    
-    // Get all scores and vidiprinter tab elements
-    const scoresTabs = document.querySelectorAll('[data-tab="scores"]');
-    const vidiprinterTabs = document.querySelectorAll('[data-tab="vidiprinter"]');
-    const scoresPanes = document.querySelectorAll('#scores-tab, #desktop-scores-tab');
-    const vidiprinterPanes = document.querySelectorAll('#vidiprinter-tab, #desktop-vidiprinter-tab');
-    
-    if (!isTester) {
-        // For non-testers, show "coming soon" message and disable tabs
-        scoresPanes.forEach(pane => {
-            if (pane) {
-                pane.innerHTML = `
-                    <div class="coming-soon-section">
-                        <h2>Live Scores & Results</h2>
-                        <div class="coming-soon-message">
-                            <div class="coming-soon-icon">🚧</div>
-                            <h3>Coming Soon!</h3>
-                            <p>Live scores and results will be available during the trial period.</p>
-                            <p>This feature is currently being tested by our beta users.</p>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-        
-        vidiprinterPanes.forEach(pane => {
-            if (pane) {
-                pane.innerHTML = `
-                    <div class="coming-soon-section">
-                        <h2>Live Match Updates</h2>
-                        <div class="coming-soon-message">
-                            <div class="coming-soon-icon">📺</div>
-                            <h3>Coming Soon!</h3>
-                            <p>Live match updates and the vidiprinter will be available during the trial period.</p>
-                            <p>This feature is currently being tested by our beta users.</p>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-        
-        // Disable tab clicks for non-testers
-        scoresTabs.forEach(tab => {
-            tab.style.opacity = '0.5';
-            tab.style.pointerEvents = 'none';
-            tab.title = 'Coming Soon - Currently in beta testing';
-        });
-        
-        vidiprinterTabs.forEach(tab => {
-            tab.style.opacity = '0.5';
-            tab.style.pointerEvents = 'none';
-            tab.title = 'Coming Soon - Currently in beta testing';
-        });
-    } else {
-        // For testers, enable normal functionality
-        scoresTabs.forEach(tab => {
-            tab.style.opacity = '1';
-            tab.style.pointerEvents = 'auto';
-            tab.title = '';
-        });
-        
-        vidiprinterTabs.forEach(tab => {
-            tab.style.opacity = '1';
-            tab.style.pointerEvents = 'auto';
-            tab.title = '';
-        });
-    }
-}
+
 
 async function renderPickHistory(picks, container, userId) {
     // Check if container exists before proceeding
@@ -1365,173 +1227,151 @@ function switchToFixturesTab() {
 }
 
 // --- DEADLINE AND AUTO-PICK FUNCTIONS ---
-async function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
+function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
     const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
     const deadlineDate = document.querySelector('#deadline-date');
     const deadlineStatus = document.querySelector('#deadline-status');
     const fixturesDisplay = document.querySelector('#fixtures-display');
 
-    try {
-        // Get user-specific fixtures (tester vs regular)
-        const userFixtures = await getUserFixtures(userId, gameweek);
-        
-        if (userFixtures.fixtures && userFixtures.fixtures.length > 0) {
-            // Update gameweek display to show correct name
-            const gameweekElements = document.querySelectorAll('.current-gameweek, .gameweek-tab.active');
-            gameweekElements.forEach(el => {
-                if (el) {
-                    el.textContent = userFixtures.gameweekName;
-                    if (userFixtures.isTesterFixtures) {
-                        el.classList.add('tester-gameweek');
-                        el.title = `Tester Edition - ${userFixtures.gameweekName}`;
-                    } else {
-                        el.classList.remove('tester-gameweek');
-                        el.title = `Edition ${userFixtures.edition} - ${userFixtures.gameweekName}`;
-                    }
-                }
-            });
-            
-            // Find the earliest fixture (deadline)
-            const earliestFixture = userFixtures.fixtures.reduce((earliest, fixture) => {
-                const fixtureDate = new Date(fixture.date);
-                const earliestDate = new Date(earliest.date);
-                return fixtureDate < earliestDate ? fixture : earliest;
-            });
+    // Handle tiebreak gameweek
+    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
 
-            // Display deadline
-            const deadlineDateObj = new Date(earliestFixture.date);
-            const formattedDeadline = formatDeadlineDate(deadlineDateObj);
-            
-            deadlineDate.textContent = formattedDeadline;
-            
-            // Check if deadline has passed
-            const now = new Date();
-            const timeUntilDeadline = deadlineDateObj - now;
-            
-            // Check if all fixtures in this gameweek are completed
-            const allFixturesCompleted = userFixtures.fixtures.every(fixture => 
-                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-            );
-            
-            if (allFixturesCompleted) {
-                deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
-                deadlineStatus.className = 'complete';
-                deadlineStatus.style.color = '#0c5460';
-            } else if (timeUntilDeadline <= 0) {
-                deadlineStatus.textContent = 'Locked (Matches are underway)';
-                deadlineStatus.className = 'locked';
-                deadlineStatus.style.color = '#721c24';
-            } else {
-                deadlineStatus.textContent = 'Active (Pick updates allowed)';
-                deadlineStatus.className = 'active';
-                deadlineStatus.style.color = '#28a745';
-            }
-
-            // Update pick status header
-            updatePickStatusHeader(gameweek, userData, userId);
-
-            // Display fixtures
-            await renderFixturesDisplay(userFixtures.fixtures, userData, gameweek, userId);
-            fixturesDisplayContainer.style.display = 'block';
-        } else {
-            fixturesDisplayContainer.innerHTML = `<p>No fixtures available for ${userFixtures.gameweekName}.</p>`;
-            fixturesDisplayContainer.style.display = 'block';
+    // Try new structure first, then fallback to old structure
+    db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
+        if (!doc.exists) {
+            // Fallback to old structure for backward compatibility
+            return db.collection('fixtures').doc(gameweekKey).get();
         }
-    } catch (error) {
-        console.error('Error loading fixtures:', error);
-        fixturesDisplayContainer.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
-        fixturesDisplayContainer.style.display = 'block';
-    }
+        return doc;
+    }).then(doc => {
+        if (doc.exists) {
+            const fixtures = doc.data().fixtures;
+            if (fixtures && fixtures.length > 0) {
+                // Find the earliest fixture (deadline)
+                const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                    const fixtureDate = new Date(fixture.date);
+                    const earliestDate = new Date(earliest.date);
+                    return fixtureDate < earliestDate ? fixture : earliest;
+                });
+
+                // Display deadline
+                const deadlineDateObj = new Date(earliestFixture.date);
+                const formattedDeadline = formatDeadlineDate(deadlineDateObj);
+                
+                deadlineDate.textContent = formattedDeadline;
+                
+                // Check if deadline has passed
+                const now = new Date();
+                const timeUntilDeadline = deadlineDateObj - now;
+                
+                // Check if all fixtures in this gameweek are completed
+                const allFixturesCompleted = fixtures.every(fixture => 
+                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                );
+                
+                if (allFixturesCompleted) {
+                    deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
+                    deadlineStatus.className = 'complete';
+                    deadlineStatus.style.color = '#0c5460';
+                } else if (timeUntilDeadline <= 0) {
+                    deadlineStatus.textContent = 'Locked (Matches are underway)';
+                    deadlineStatus.className = 'locked';
+                    deadlineStatus.style.color = '#721c24';
+                } else {
+                    deadlineStatus.textContent = 'Active (Pick updates allowed)';
+                    deadlineStatus.className = 'active';
+                    deadlineStatus.style.color = '#28a745';
+                }
+
+                // Update pick status header
+                updatePickStatusHeader(gameweek, userData, userId);
+
+                // Display fixtures
+                renderFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
+                fixturesDisplayContainer.style.display = 'block';
+            }
+        } else {
+            fixturesDisplayContainer.style.display = 'none';
+        }
+    });
 }
 
 // Mobile fixtures loading function
-async function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null) {
+function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null) {
     const fixturesDisplayContainer = document.querySelector('#mobile-fixtures-display-container');
     const deadlineDate = document.querySelector('#mobile-deadline-date');
     const deadlineStatus = document.querySelector('#mobile-deadline-status');
     const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
 
-    try {
-        // Get user-specific fixtures (tester vs regular)
-        const userFixtures = await getUserFixtures(userId, gameweek);
-        
-        if (userFixtures.fixtures && userFixtures.fixtures.length > 0) {
-            // Update gameweek display to show correct name
-            const gameweekElements = document.querySelectorAll('.mobile-current-gameweek, .mobile-gameweek-tab.active');
-            gameweekElements.forEach(el => {
-                if (el) {
-                    el.textContent = userFixtures.gameweekName;
-                    if (userFixtures.isTesterFixtures) {
-                        el.classList.add('tester-gameweek');
-                        el.title = `Tester Edition - ${userFixtures.gameweekName}`;
-                    } else {
-                        el.classList.remove('tester-gameweek');
-                        el.title = `Edition ${userFixtures.edition} - ${userFixtures.gameweekName}`;
+    // Handle tiebreak gameweek
+    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+
+    // Try new structure first, then fallback to old structure
+    db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
+        if (!doc.exists) {
+            // Fallback to old structure for backward compatibility
+            return db.collection('fixtures').doc(gameweekKey).get();
+        }
+        return doc;
+    }).then(doc => {
+        if (doc.exists) {
+            const fixtures = doc.data().fixtures;
+            if (fixtures && fixtures.length > 0) {
+                // Find the earliest fixture (deadline)
+                const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                    const fixtureDate = new Date(fixture.date);
+                    const earliestDate = new Date(earliest.date);
+                    return fixtureDate < earliestDate ? fixture : earliest;
+                });
+
+                // Display deadline
+                const deadlineDateObj = new Date(earliestFixture.date);
+                const formattedDeadline = formatDeadlineDate(deadlineDateObj);
+                
+                if (deadlineDate) deadlineDate.textContent = formattedDeadline;
+                
+                // Check if deadline has passed
+                const now = new Date();
+                const timeUntilDeadline = deadlineDateObj - now;
+                
+                // Check if all fixtures in this gameweek are completed
+                const allFixturesCompleted = fixtures.every(fixture => 
+                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                );
+                
+                if (allFixturesCompleted) {
+                    if (deadlineStatus) {
+                        deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
+                        deadlineStatus.className = 'complete';
+                        deadlineStatus.style.color = '#0c5460';
+                    }
+                } else if (timeUntilDeadline <= 0) {
+                    if (deadlineStatus) {
+                        deadlineStatus.textContent = 'Locked (Matches are underway)';
+                        deadlineStatus.className = 'locked';
+                        deadlineStatus.style.color = '#721c24';
+                    }
+                } else {
+                    if (deadlineStatus) {
+                        deadlineStatus.textContent = 'Active (Pick updates allowed)';
+                        deadlineStatus.className = 'active';
+                        deadlineStatus.style.color = '#28a745';
                     }
                 }
-            });
-            
-            // Find the earliest fixture (deadline)
-            const earliestFixture = userFixtures.fixtures.reduce((earliest, fixture) => {
-                const fixtureDate = new Date(fixture.date);
-                const earliestDate = new Date(earliest.date);
-                return fixtureDate < earliestDate ? fixture : earliest;
-            });
 
-            // Display deadline
-            const deadlineDateObj = new Date(earliestFixture.date);
-            const formattedDeadline = formatDeadlineDate(deadlineDateObj);
-            
-            if (deadlineDate) deadlineDate.textContent = formattedDeadline;
-            
-            // Check if deadline has passed
-            const now = new Date();
-            const timeUntilDeadline = deadlineDateObj - now;
-            
-            // Check if all fixtures in this gameweek are completed
-            const allFixturesCompleted = userFixtures.fixtures.every(fixture => 
-                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-            );
-            
-            if (allFixturesCompleted) {
-                if (deadlineStatus) {
-                    deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
-                    deadlineStatus.className = 'complete';
-                    deadlineStatus.style.color = '#0c5460';
-                }
-            } else if (timeUntilDeadline <= 0) {
-                if (deadlineStatus) {
-                    deadlineStatus.textContent = 'Locked (Matches are underway)';
-                    deadlineStatus.className = 'locked';
-                    deadlineStatus.style.color = '#721c24';
-                }
-            } else {
-                if (deadlineStatus) {
-                    deadlineStatus.textContent = 'Active (Pick updates allowed)';
-                    deadlineStatus.className = 'active';
-                    deadlineStatus.style.color = '#28a745';
-                }
+                // Update pick status header
+                updateMobilePickStatusHeader(gameweek, userData, userId);
+
+                // Display fixtures
+                renderMobileFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
+                if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'block';
             }
-
-            // Update pick status header
-            updateMobilePickStatusHeader(gameweek, userData, userId);
-
-            // Display fixtures
-            await renderMobileFixturesDisplay(userFixtures.fixtures, userData, gameweek, userId);
-            if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'block';
         } else {
-            if (fixturesDisplayContainer) {
-                fixturesDisplayContainer.innerHTML = `<p>No fixtures available for ${userFixtures.gameweekName}.</p>`;
-                fixturesDisplayContainer.style.display = 'block';
-            }
+            if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'none';
         }
-    } catch (error) {
-        console.error('Error loading mobile fixtures:', error);
-        if (fixturesDisplayContainer) {
-            fixturesDisplayContainer.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
-            fixturesDisplayContainer.style.display = 'block';
-        }
-    }
+    });
 }
 
 // Function to update the mobile pick status header
@@ -4656,10 +4496,10 @@ if (registerForm) {
         const dob = document.querySelector('#register-dob').value;
         const email = document.querySelector('#register-email').value;
         
-        // Check registration window (no user ID for new registrations)
-        if (!(await checkRegistrationWindow())) {
-            return;
-        }
+                    // Check registration window
+            if (!(await checkRegistrationWindow())) {
+                return;
+            }
         const mobile = document.querySelector('#register-mobile').value;
         const password = document.querySelector('#register-password').value;
         const confirmPassword = document.querySelector('#register-confirm-password').value;
