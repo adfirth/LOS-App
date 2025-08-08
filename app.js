@@ -2,6 +2,7 @@
 
 // Global variable to track current active edition
 let currentActiveEdition = 1;
+let currentEditionName = "Edition 1";
 // Global variable to track current active gameweek
 let currentActiveGameweek = '1';
 // The allTeams array is now defined in TEAMS_CONFIG.allTeams
@@ -369,7 +370,11 @@ async function loadEditionRegistrationSettings() {
         
         // Update the title
         if (editionSettingsTitle) {
+            if (editionNumber === 'test') {
+            editionSettingsTitle.textContent = `Test Weeks Registration Settings`;
+        } else {
             editionSettingsTitle.textContent = `Edition ${editionNumber} Registration Settings`;
+        }
         }
         
         if (settingsDoc.exists) {
@@ -426,7 +431,8 @@ async function loadEditionRegistrationSettings() {
 
 async function loadAllEditionsOverview() {
     try {
-        for (let edition = 1; edition <= 4; edition++) {
+        const editions = [1, 2, 3, 4, 'test'];
+        for (const edition of editions) {
             const statusCard = document.querySelector(`#edition-${edition}-status`);
             if (!statusCard) continue;
             
@@ -480,7 +486,7 @@ async function saveRegistrationSettings() {
     const nextStartDateInput = document.querySelector('#next-registration-start-date');
     const statusElement = document.querySelector('#registration-settings-status');
     
-    const editionNumber = editionForSettings ? parseInt(editionForSettings.value) : 1;
+    const editionNumber = editionForSettings ? editionForSettings.value : 1;
     
     try {
         const settings = {
@@ -504,7 +510,8 @@ async function saveRegistrationSettings() {
         await db.collection('settings').doc(`registration_edition_${editionNumber}`).set(settings);
         
         if (statusElement) {
-            statusElement.textContent = `Edition ${editionNumber} registration settings saved successfully!`;
+            const editionText = editionNumber === 'test' ? 'Test Weeks' : `Edition ${editionNumber}`;
+            statusElement.textContent = `${editionText} registration settings saved successfully!`;
             statusElement.className = 'status-message success';
             setTimeout(() => {
                 statusElement.textContent = '';
@@ -871,7 +878,13 @@ async function renderDashboard(user) {
                 
                 // Update edition displays
                 document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
-                    if (el) el.textContent = currentActiveEdition;
+                    if (el) {
+                        if (currentActiveEdition === 'test') {
+                            el.textContent = 'Test Weeks';
+                        } else {
+                            el.textContent = currentActiveEdition;
+                        }
+                    }
                 });
                 
                 // Update welcome messages for both desktop and mobile
@@ -2434,7 +2447,11 @@ function loadCompetitionSettings() {
             // Update the active edition display
             const editionDisplay = document.querySelector('#current-edition-display');
             if (editionDisplay) {
-                editionDisplay.textContent = `Edition ${currentActiveEdition}`;
+                if (currentActiveEdition === 'test') {
+                    editionDisplay.textContent = 'Test Weeks';
+                } else {
+                    editionDisplay.textContent = `Edition ${currentActiveEdition}`;
+                }
             }
             if (activeGameweekSelect) {
                 activeGameweekSelect.value = settings.active_gameweek || 1;
@@ -2497,7 +2514,11 @@ function saveCompetitionSettings() {
         // Update the active edition display
         const editionDisplay = document.querySelector('#current-edition-display');
         if (editionDisplay) {
-            editionDisplay.textContent = `Edition ${newActiveEdition}`;
+            if (newActiveEdition === 'test') {
+                editionDisplay.textContent = 'Test Weeks';
+            } else {
+                editionDisplay.textContent = `Edition ${newActiveEdition}`;
+            }
         }
         
         // Refresh the admin panel to show updated data for the new edition
