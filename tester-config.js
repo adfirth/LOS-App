@@ -1,17 +1,7 @@
 // Tester Configuration
-// This file contains the list of tester email addresses and related settings
+// This file contains settings for the admin-promoted tester system
 
 const TESTER_CONFIG = {
-    // List of tester email addresses (case-insensitive)
-    testerEmails: [
-        'tester1@example.com',
-        'tester2@example.com',
-        'tester3@example.com',
-        // Add more tester emails as needed
-        // You can also add specific domains for easier management
-        // '@yourdomain.com' // This would allow all emails from yourdomain.com
-    ],
-    
     // Trial game weeks that testers can access
     trialGameWeeks: ['1', '2'],
     
@@ -27,28 +17,28 @@ const TESTER_CONFIG = {
         scores: false,
         vidiprinter: false,
         liveUpdates: false
+    },
+    
+    // Admin panel settings
+    adminSettings: {
+        showTesterToggle: true,
+        showTesterStatus: true
     }
 };
 
-// Function to check if an email is a tester email
-function isTesterEmail(email) {
-    if (!email) return false;
-    
-    const emailLower = email.toLowerCase();
-    
-    // Check exact email matches
-    if (TESTER_CONFIG.testerEmails.includes(emailLower)) {
-        return true;
-    }
-    
-    // Check domain matches (for wildcard domains)
-    for (const testerEmail of TESTER_CONFIG.testerEmails) {
-        if (testerEmail.startsWith('@') && emailLower.endsWith(testerEmail)) {
-            return true;
+// Function to check if a user is a tester (now handled via database)
+async function isUserTester(userId) {
+    try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            return userData.isTester === true;
         }
+        return false;
+    } catch (error) {
+        console.error('Error checking tester status:', error);
+        return false;
     }
-    
-    return false;
 }
 
 // Function to get tester features
@@ -61,12 +51,18 @@ function getRegularUserRestrictions() {
     return TESTER_CONFIG.regularUserRestrictions;
 }
 
+// Function to get admin settings
+function getAdminSettings() {
+    return TESTER_CONFIG.adminSettings;
+}
+
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         TESTER_CONFIG,
-        isTesterEmail,
+        isUserTester,
         getTesterFeatures,
-        getRegularUserRestrictions
+        getRegularUserRestrictions,
+        getAdminSettings
     };
 }

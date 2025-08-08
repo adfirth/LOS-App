@@ -257,6 +257,88 @@ function handleAdminLogout() {
     });
 }
 
+// --- REGISTRATION LOGIC ---
+let currentEdition = 1;
+
+// Tester configuration is now managed in tester-config.js
+// The isTesterEmail function is defined in that file
+
+// Check registration window status
+async function checkRegistrationWindow() {
+    try {
+        // Get the current active edition from the global variable
+        const settingsDoc = await db.collection('settings').doc(`registration_edition_${currentActiveEdition}`).get();
+        if (settingsDoc.exists) {
+            const settings = settingsDoc.data();
+            
+            // Update edition displays
+            document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
+                if (el) el.textContent = currentActiveEdition;
+            });
+            
+            if (!settings.enabled) {
+                showRegistrationClosed();
+                return false;
+            }
+            
+            const now = new Date();
+            const startDate = settings.startDate ? new Date(settings.startDate.toDate()) : null;
+            const endDate = settings.endDate ? new Date(settings.endDate.toDate()) : null;
+            
+            if (startDate && now < startDate) {
+                showRegistrationClosed('Registration opens on ' + startDate.toLocaleDateString());
+                return false;
+            }
+            
+            if (endDate && now > endDate) {
+                showRegistrationClosed('Registration closed on ' + endDate.toLocaleDateString());
+                return false;
+            }
+            
+            return true;
+        }
+        return true; // Default to open if no settings
+    } catch (error) {
+        console.error('Error checking registration window:', error);
+        return true; // Default to open on error
+    }
+}
+
+// Check if a user is a tester (either by email or admin promotion)
+async function isUserTester(userId) {
+    try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            return userData.isTester === true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error checking tester status:', error);
+        return false;
+    }
+}
+
+// Check registration window status for testers (allows registration even when closed)
+async function checkRegistrationWindowForTesters(email) {
+    // For the new system, we don't need email-based tester checks
+    // Testers will be promoted via admin panel after registration
+    return await checkRegistrationWindow();
+}
+
+function showRegistrationClosed(message = 'Registration is currently closed') {
+    const closedDiv = document.querySelector('#registration-closed');
+    const registerForm = document.querySelector('#register-form');
+    const reRegisterForm = document.querySelector('#re-register-form');
+    
+    if (closedDiv) {
+        closedDiv.querySelector('p').textContent = message;
+        closedDiv.style.display = 'block';
+    }
+    if (registerForm) registerForm.style.display = 'none';
+    if (reRegisterForm) reRegisterForm.style.display = 'none';
+}
+
 // --- REGISTRATION MANAGEMENT FUNCTIONS ---
 function initializeRegistrationManagement() {
     console.log('Initializing registration management...');
@@ -579,6 +661,7 @@ async function updateRegistrationList() {
                 <td>${paymentMethod}</td>
                 <td>
                     <button class="secondary-button" onclick="viewUserDetails('${doc.id}')">View</button>
+                    <button class="secondary-button" onclick="toggleTesterStatus('${doc.id}', ${userData.isTester || false})">${userData.isTester ? 'Remove Tester' : 'Make Tester'}</button>
                 </td>
             `;
             
@@ -723,6 +806,29 @@ function closeUserDetailsModal() {
     }
 }
 
+// Function to toggle tester status for a user
+async function toggleTesterStatus(userId, currentTesterStatus) {
+    try {
+        const newTesterStatus = !currentTesterStatus;
+        
+        await db.collection('users').doc(userId).update({
+            isTester: newTesterStatus
+        });
+        
+        console.log(`Tester status updated for user ${userId}: ${newTesterStatus}`);
+        
+        // Refresh the registration list to show updated status
+        await refreshRegistrationStats();
+        
+        // Show success message
+        alert(`User ${newTesterStatus ? 'promoted to tester' : 'removed from testers'} successfully!`);
+        
+    } catch (error) {
+        console.error('Error toggling tester status:', error);
+        alert('Error updating tester status. Please try again.');
+    }
+}
+
 // --- TABBED INTERFACE FUNCTIONS ---
 
 // Mobile Tabbed Interface Functions
@@ -849,7 +955,7 @@ async function renderDashboard(user) {
             loadFixturesForDeadline(currentGameWeek, userData, user.uid);
             
             // Handle tester access restrictions for scores and vidiprinter
-            handleTesterAccessRestrictions(userData);
+            handleTesterAccessRestrictions(userData, user.uid);
         }
     } catch (error) {
         console.error("Error rendering dashboard:", error);
@@ -857,8 +963,8 @@ async function renderDashboard(user) {
 }
 
 // Function to handle tester access restrictions for scores and vidiprinter
-function handleTesterAccessRestrictions(userData) {
-    const isTester = userData.isTester === true;
+async function handleTesterAccessRestrictions(userData, userId) {
+    const isTester = await isUserTester(userId);
     
     // Get all scores and vidiprinter tab elements
     const scoresTabs = document.querySelectorAll('[data-tab="scores"]');
@@ -4453,77 +4559,6 @@ if (logoutButton) {
     });
 }
 
-// --- REGISTRATION LOGIC ---
-let currentEdition = 1;
-
-// Tester configuration is now managed in tester-config.js
-// The isTesterEmail function is defined in that file
-
-// Check registration window status
-async function checkRegistrationWindow() {
-    try {
-        // Get the current active edition from the global variable
-        const settingsDoc = await db.collection('settings').doc(`registration_edition_${currentActiveEdition}`).get();
-        if (settingsDoc.exists) {
-            const settings = settingsDoc.data();
-            
-            // Update edition displays
-            document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
-                if (el) el.textContent = currentActiveEdition;
-            });
-            
-            if (!settings.enabled) {
-                showRegistrationClosed();
-                return false;
-            }
-            
-            const now = new Date();
-            const startDate = settings.startDate ? new Date(settings.startDate.toDate()) : null;
-            const endDate = settings.endDate ? new Date(settings.endDate.toDate()) : null;
-            
-            if (startDate && now < startDate) {
-                showRegistrationClosed('Registration opens on ' + startDate.toLocaleDateString());
-                return false;
-            }
-            
-            if (endDate && now > endDate) {
-                showRegistrationClosed('Registration closed on ' + endDate.toLocaleDateString());
-                return false;
-            }
-            
-            return true;
-        }
-        return true; // Default to open if no settings
-    } catch (error) {
-        console.error('Error checking registration window:', error);
-        return true; // Default to open on error
-    }
-}
-
-// Check registration window status for testers (allows registration even when closed)
-async function checkRegistrationWindowForTesters(email) {
-    // If it's a tester email, allow registration regardless of window status
-    if (isTesterEmail(email)) {
-        return true;
-    }
-    
-    // For regular users, check the normal registration window
-    return await checkRegistrationWindow();
-}
-
-function showRegistrationClosed(message = 'Registration is currently closed') {
-    const closedDiv = document.querySelector('#registration-closed');
-    const registerForm = document.querySelector('#register-form');
-    const reRegisterForm = document.querySelector('#re-register-form');
-    
-    if (closedDiv) {
-        closedDiv.querySelector('p').textContent = message;
-        closedDiv.style.display = 'block';
-    }
-    if (registerForm) registerForm.style.display = 'none';
-    if (reRegisterForm) reRegisterForm.style.display = 'none';
-}
-
 // Initialize registration page
 if (window.location.pathname.endsWith('register.html')) {
     checkRegistrationWindow();
@@ -4638,8 +4673,8 @@ if (registerForm) {
                         whatsappConsent: whatsappConsent
                     }
                 },
-                isAdmin: false,
-                isTester: isTesterEmail(email) // Set isTester based on email
+                isAdmin: false
+                // isTester will be set via admin panel after registration
             });
             
             window.location.href = '/dashboard.html';
