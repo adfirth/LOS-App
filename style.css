@@ -5327,3 +5327,44 @@ a:hover {
     padding: 2px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
+
+/* Tester Edition Styles */
+.tester-edition {
+    color: #28a745 !important;
+    font-weight: bold;
+    position: relative;
+}
+
+.tester-edition::after {
+    content: "🧪";
+    margin-left: 4px;
+    font-size: 14px;
+}
+
+/* Edition indicator tooltip */
+.tester-edition:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+.tester-edition:hover::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    margin-bottom: -5px;
+}

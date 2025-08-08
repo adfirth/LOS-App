@@ -264,10 +264,18 @@ let currentEdition = 1;
 // The isTesterEmail function is defined in that file
 
 // Check registration window status
-async function checkRegistrationWindow() {
+async function checkRegistrationWindow(userId = null) {
     try {
-        // Get the current active edition from the global variable
-        const settingsDoc = await db.collection('settings').doc(`registration_edition_${currentActiveEdition}`).get();
+        // Get the appropriate edition for the user
+        let editionToCheck = currentActiveEdition;
+        
+        if (userId) {
+            const userEdition = await getUserEdition(userId);
+            editionToCheck = userEdition.editionNumber;
+        }
+        
+        // Get the settings for the appropriate edition
+        const settingsDoc = await db.collection('settings').doc(`registration_edition_${editionToCheck}`).get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
             
@@ -913,6 +921,24 @@ async function renderDashboard(user) {
         const userDoc = await db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
+                
+                // Get the appropriate edition for this user
+                const userEdition = await getUserEdition(user.uid);
+                
+                // Update edition displays with user-specific edition
+                document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
+                    if (el) {
+                        el.textContent = userEdition.editionNumber;
+                        // Add visual indicator for tester edition
+                        if (userEdition.isTesterEdition) {
+                            el.classList.add('tester-edition');
+                            el.title = `${userEdition.name} - ${userEdition.description}`;
+                        } else {
+                            el.classList.remove('tester-edition');
+                            el.title = userEdition.name;
+                        }
+                    }
+                });
                 
                 // Update welcome messages for both desktop and mobile
                 if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
@@ -4602,15 +4628,15 @@ if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Check registration window (allows testers to register even when closed)
-        if (!(await checkRegistrationWindowForTesters(email))) {
-            return;
-        }
-        
         const firstName = document.querySelector('#register-firstname').value;
         const surname = document.querySelector('#register-surname').value;
         const dob = document.querySelector('#register-dob').value;
         const email = document.querySelector('#register-email').value;
+        
+        // Check registration window (no user ID for new registrations)
+        if (!(await checkRegistrationWindow())) {
+            return;
+        }
         const mobile = document.querySelector('#register-mobile').value;
         const password = document.querySelector('#register-password').value;
         const confirmPassword = document.querySelector('#register-confirm-password').value;
@@ -4673,6 +4699,7 @@ if (registerForm) {
                         whatsappConsent: whatsappConsent
                     }
                 },
+                // Note: Edition will be determined dynamically based on tester status
                 isAdmin: false
                 // isTester will be set via admin panel after registration
             });
@@ -4709,12 +4736,12 @@ if (reRegisterForm) {
     reRegisterForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Check registration window (allows testers to register even when closed)
-        if (!(await checkRegistrationWindowForTesters(email))) {
+        const email = document.querySelector('#re-register-email').value;
+        
+        // Check registration window (no user ID for re-registrations)
+        if (!(await checkRegistrationWindow())) {
             return;
         }
-        
-        const email = document.querySelector('#re-register-email').value;
         const password = document.querySelector('#re-register-password').value;
         const paymentMethod = document.querySelector('#re-register-payment').value;
         const emailConsent = document.querySelector('#re-register-email-consent').checked;
