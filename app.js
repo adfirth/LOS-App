@@ -847,9 +847,84 @@ async function renderDashboard(user) {
             
             // Load fixtures for current gameweek to get deadline (with user data)
             loadFixturesForDeadline(currentGameWeek, userData, user.uid);
+            
+            // Handle tester access restrictions for scores and vidiprinter
+            handleTesterAccessRestrictions(userData);
         }
     } catch (error) {
         console.error("Error rendering dashboard:", error);
+    }
+}
+
+// Function to handle tester access restrictions for scores and vidiprinter
+function handleTesterAccessRestrictions(userData) {
+    const isTester = userData.isTester === true;
+    
+    // Get all scores and vidiprinter tab elements
+    const scoresTabs = document.querySelectorAll('[data-tab="scores"]');
+    const vidiprinterTabs = document.querySelectorAll('[data-tab="vidiprinter"]');
+    const scoresPanes = document.querySelectorAll('#scores-tab, #desktop-scores-tab');
+    const vidiprinterPanes = document.querySelectorAll('#vidiprinter-tab, #desktop-vidiprinter-tab');
+    
+    if (!isTester) {
+        // For non-testers, show "coming soon" message and disable tabs
+        scoresPanes.forEach(pane => {
+            if (pane) {
+                pane.innerHTML = `
+                    <div class="coming-soon-section">
+                        <h2>Live Scores & Results</h2>
+                        <div class="coming-soon-message">
+                            <div class="coming-soon-icon">🚧</div>
+                            <h3>Coming Soon!</h3>
+                            <p>Live scores and results will be available during the trial period.</p>
+                            <p>This feature is currently being tested by our beta users.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        vidiprinterPanes.forEach(pane => {
+            if (pane) {
+                pane.innerHTML = `
+                    <div class="coming-soon-section">
+                        <h2>Live Match Updates</h2>
+                        <div class="coming-soon-message">
+                            <div class="coming-soon-icon">📺</div>
+                            <h3>Coming Soon!</h3>
+                            <p>Live match updates and the vidiprinter will be available during the trial period.</p>
+                            <p>This feature is currently being tested by our beta users.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        // Disable tab clicks for non-testers
+        scoresTabs.forEach(tab => {
+            tab.style.opacity = '0.5';
+            tab.style.pointerEvents = 'none';
+            tab.title = 'Coming Soon - Currently in beta testing';
+        });
+        
+        vidiprinterTabs.forEach(tab => {
+            tab.style.opacity = '0.5';
+            tab.style.pointerEvents = 'none';
+            tab.title = 'Coming Soon - Currently in beta testing';
+        });
+    } else {
+        // For testers, enable normal functionality
+        scoresTabs.forEach(tab => {
+            tab.style.opacity = '1';
+            tab.style.pointerEvents = 'auto';
+            tab.title = '';
+        });
+        
+        vidiprinterTabs.forEach(tab => {
+            tab.style.opacity = '1';
+            tab.style.pointerEvents = 'auto';
+            tab.title = '';
+        });
     }
 }
 
@@ -4381,6 +4456,9 @@ if (logoutButton) {
 // --- REGISTRATION LOGIC ---
 let currentEdition = 1;
 
+// Tester configuration is now managed in tester-config.js
+// The isTesterEmail function is defined in that file
+
 // Check registration window status
 async function checkRegistrationWindow() {
     try {
@@ -4420,6 +4498,17 @@ async function checkRegistrationWindow() {
         console.error('Error checking registration window:', error);
         return true; // Default to open on error
     }
+}
+
+// Check registration window status for testers (allows registration even when closed)
+async function checkRegistrationWindowForTesters(email) {
+    // If it's a tester email, allow registration regardless of window status
+    if (isTesterEmail(email)) {
+        return true;
+    }
+    
+    // For regular users, check the normal registration window
+    return await checkRegistrationWindow();
 }
 
 function showRegistrationClosed(message = 'Registration is currently closed') {
@@ -4478,8 +4567,8 @@ if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Check registration window
-        if (!(await checkRegistrationWindow())) {
+        // Check registration window (allows testers to register even when closed)
+        if (!(await checkRegistrationWindowForTesters(email))) {
             return;
         }
         
@@ -4549,7 +4638,8 @@ if (registerForm) {
                         whatsappConsent: whatsappConsent
                     }
                 },
-                isAdmin: false
+                isAdmin: false,
+                isTester: isTesterEmail(email) // Set isTester based on email
             });
             
             window.location.href = '/dashboard.html';
@@ -4584,8 +4674,8 @@ if (reRegisterForm) {
     reRegisterForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Check registration window
-        if (!(await checkRegistrationWindow())) {
+        // Check registration window (allows testers to register even when closed)
+        if (!(await checkRegistrationWindowForTesters(email))) {
             return;
         }
         

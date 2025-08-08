@@ -5276,3 +5276,54 @@ a:hover {
     font-weight: 700;
     font-size: 0.95em;
 }
+
+/* Coming Soon Styles */
+.coming-soon-section {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 2rem 0;
+}
+
+.coming-soon-message {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.coming-soon-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.coming-soon-message h3 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.coming-soon-message p {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+/* Disabled tab styles */
+.tab-btn[style*="opacity: 0.5"],
+.desktop-tab-btn[style*="opacity: 0.5"] {
+    cursor: not-allowed;
+    position: relative;
+}
+
+.tab-btn[style*="opacity: 0.5"]::after,
+.desktop-tab-btn[style*="opacity: 0.5"]::after {
+    content: "🔒";
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.8rem;
+    background: #fff;
+    border-radius: 50%;
+    padding: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
