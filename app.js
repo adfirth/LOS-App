@@ -1011,11 +1011,11 @@ function initializeMobileTabs() {
             
             // Load content based on tab
             if (targetTab === 'scores') {
-                loadPlayerScores().then(fixtures => {
+                loadPlayerScores().then(async fixtures => {
                     console.log('loadPlayerScores returned:', fixtures);
                     // Get current gameweek for display
                     const currentGameweek = getActiveGameweek();
-                    renderPlayerScores(fixtures, currentGameweek);
+                    await renderPlayerScores(fixtures, currentGameweek);
                     renderMobilePlayerScores(fixtures, currentGameweek);
                 }).catch(error => {
                     console.error('Error loading player scores:', error);
@@ -1050,11 +1050,11 @@ function initializeDesktopTabs() {
             
             // Load content based on tab
             if (targetTab === 'scores') {
-                loadPlayerScores().then(fixtures => {
+                loadPlayerScores().then(async fixtures => {
                     console.log('loadPlayerScores returned:', fixtures);
                     // Get current gameweek for display
                     const currentGameweek = getActiveGameweek();
-                    renderPlayerScores(fixtures, currentGameweek);
+                    await renderPlayerScores(fixtures, currentGameweek);
                     renderMobilePlayerScores(fixtures, currentGameweek);
                 }).catch(error => {
                     console.error('Error loading player scores:', error);
@@ -7592,8 +7592,20 @@ async function loadPlayerScores(gameweek = null) {
         // Try new structure first, then fallback to old structure
         let fixtureDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
         if (!fixtureDoc.exists) {
+            console.log(`No fixture document found for ${editionGameweekKey}, trying fallback...`);
             // Fallback to old structure
             fixtureDoc = await db.collection('fixtures').doc(gameweekKey).get();
+            if (!fixtureDoc.exists) {
+                console.log(`No fixture document found for ${gameweekKey} either`);
+                // Try to find any fixtures for this edition
+                const editionFixturesQuery = await db.collection('fixtures').where('edition', '==', userEdition).limit(1).get();
+                if (!editionFixturesQuery.empty) {
+                    console.log('Found fixtures for this edition, using first available');
+                    fixtureDoc = editionFixturesQuery.docs[0];
+                } else {
+                    console.log('No fixtures found for this edition at all');
+                }
+            }
         }
         
         if (fixtureDoc.exists) {
@@ -7610,6 +7622,11 @@ async function loadPlayerScores(gameweek = null) {
             }
         } else {
             console.log(`No fixture document found for ${editionGameweekKey}`);
+            // For test edition, show a helpful message
+            if (userEdition === 'test') {
+                console.log('Test edition detected - no fixtures available yet');
+                return []; // Return empty array
+            }
             return []; // Return empty array
         }
         
@@ -7619,7 +7636,7 @@ async function loadPlayerScores(gameweek = null) {
     }
 }
 
-function renderPlayerScores(fixtures, gameweek) {
+async function renderPlayerScores(fixtures, gameweek) {
     console.log('renderPlayerScores called with:', { fixtures, gameweek });
     
     const desktopScoresDisplay = document.querySelector('#desktop-scores-display');
@@ -7630,7 +7647,21 @@ function renderPlayerScores(fixtures, gameweek) {
     
     if (!fixtures || fixtures.length === 0) {
         console.log('No fixtures to render');
-        showNoScoresMessage();
+        // Get current user edition for the message
+        const currentUser = auth.currentUser;
+        let userEdition = null;
+        if (currentUser) {
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    userEdition = getUserEdition(userData);
+                }
+            } catch (error) {
+                console.error('Error getting user edition:', error);
+            }
+        }
+        showNoScoresMessage(userEdition);
         return;
     }
     
@@ -7852,16 +7883,33 @@ function renderMobilePlayerScores(fixtures, gameweek) {
     mobileScoresDisplay.innerHTML = scoresHTML;
 }
 
-function showNoScoresMessage() {
+function showNoScoresMessage(edition = null) {
     const desktopScoresDisplay = document.querySelector('#desktop-scores-display');
     const mobileScoresDisplay = document.querySelector('#mobile-scores-display');
     
-    const noScoresMessage = `
-        <div class="no-scores-message">
-            <p>No scores available for this gameweek yet.</p>
-            <p>Scores will appear here once matches are played and results are updated.</p>
-        </div>
-    `;
+    let noScoresMessage = '';
+    
+    if (edition === 'test') {
+        noScoresMessage = `
+            <div class="no-scores-message">
+                <h3>Test Edition - No Fixtures Available</h3>
+                <p>This is the test edition. No fixtures have been created yet.</p>
+                <p>To see scores, you would need to:</p>
+                <ul>
+                    <li>Create fixtures in the admin panel</li>
+                    <li>Or switch to a different edition that has fixtures</li>
+                </ul>
+                <p>For now, you can explore the other tabs to see how the app works!</p>
+            </div>
+        `;
+    } else {
+        noScoresMessage = `
+            <div class="no-scores-message">
+                <p>No scores available for this gameweek yet.</p>
+                <p>Scores will appear here once matches are played and results are updated.</p>
+            </div>
+        `;
+    }
     
     if (desktopScoresDisplay) {
         desktopScoresDisplay.innerHTML = noScoresMessage;
