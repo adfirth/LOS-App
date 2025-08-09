@@ -504,6 +504,43 @@ a:hover {
     box-sizing: border-box;
 }
 
+/* Age verification buttons */
+.age-verification-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.age-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.age-btn:hover {
+    border-color: var(--alty-green);
+    background: #f8f9fa;
+}
+
+.age-btn.selected {
+    background: var(--alty-green);
+    color: white;
+    border-color: var(--alty-green);
+}
+
+.age-btn.disabled {
+    background: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+    border-color: #ddd;
+}
+
 .error-text {
     color: var(--alty-red);
     font-weight: bold;

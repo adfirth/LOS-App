@@ -4918,7 +4918,7 @@ if (registerForm) {
         
         const firstName = document.querySelector('#register-firstname').value;
         const surname = document.querySelector('#register-surname').value;
-        const dob = document.querySelector('#register-dob').value;
+        const ageVerified = document.querySelector('#register-age-verified').value;
         const email = document.querySelector('#register-email').value;
         const selectedEdition = document.querySelector('#edition-selection').value;
         
@@ -4956,6 +4956,16 @@ if (registerForm) {
             errorMessage.textContent = 'You must consent to receive emails about the competition';
             return;
         }
+        
+        if (!ageVerified) {
+            errorMessage.textContent = 'Please confirm your age (must be 16 or older)';
+            return;
+        }
+        
+        if (ageVerified === 'no') {
+            errorMessage.textContent = 'You must be 16 or older to register for this competition';
+            return;
+        }
 
         // Additional validation
         if (password.length < 6) {
@@ -4980,7 +4990,7 @@ if (registerForm) {
                 displayName: `${firstName} ${surname}`,
                 email: email,
                 mobile: mobile,
-                dateOfBirth: dob,
+                ageVerified: ageVerified === 'yes',
                 paymentMethod: paymentMethod,
                 emailConsent: emailConsent,
                 whatsappConsent: whatsappConsent,
@@ -5123,6 +5133,39 @@ if (loginForm) {
         });
     });
 }
+
+// Age verification button handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const ageYesBtn = document.getElementById('age-yes-btn');
+    const ageNoBtn = document.getElementById('age-no-btn');
+    const ageVerifiedInput = document.getElementById('register-age-verified');
+    
+    if (ageYesBtn && ageNoBtn && ageVerifiedInput) {
+        ageYesBtn.addEventListener('click', function() {
+            // Remove selected class from both buttons
+            ageYesBtn.classList.remove('selected');
+            ageNoBtn.classList.remove('selected');
+            
+            // Add selected class to yes button
+            ageYesBtn.classList.add('selected');
+            
+            // Set the hidden input value
+            ageVerifiedInput.value = 'yes';
+        });
+        
+        ageNoBtn.addEventListener('click', function() {
+            // Remove selected class from both buttons
+            ageYesBtn.classList.remove('selected');
+            ageNoBtn.classList.remove('selected');
+            
+            // Add selected class to no button
+            ageNoBtn.classList.add('selected');
+            
+            // Set the hidden input value
+            ageVerifiedInput.value = 'no';
+        });
+    }
+});
 
 // --- TEST SCORE GENERATION AND ENHANCED SCORE MANAGEMENT ---
 

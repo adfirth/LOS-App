@@ -56,8 +56,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="register-dob">Date of Birth *</label>
-                        <input type="date" id="register-dob" required>
+                        <label>Age Verification *</label>
+                        <div class="age-verification-buttons">
+                            <button type="button" id="age-yes-btn" class="age-btn">Yes, I am older than 16</button>
+                            <button type="button" id="age-no-btn" class="age-btn">No, I am under 16</button>
+                        </div>
+                        <input type="hidden" id="register-age-verified" required>
                     </div>
 
                     <div class="form-group">
