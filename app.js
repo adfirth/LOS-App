@@ -1515,14 +1515,8 @@ function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
     const userEdition = getUserEdition(userData);
     const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
 
-    // Try new structure first, then fallback to old structure
+    // Load edition-specific fixtures only
     db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
-        if (!doc.exists) {
-            // Fallback to old structure for backward compatibility
-            return db.collection('fixtures').doc(gameweekKey).get();
-        }
-        return doc;
-    }).then(doc => {
         if (doc.exists) {
             const fixtures = doc.data().fixtures;
             if (fixtures && fixtures.length > 0) {
@@ -1589,14 +1583,8 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
     const userEdition = getUserEdition(userData);
     const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
 
-    // Try new structure first, then fallback to old structure
+    // Load edition-specific fixtures only
     db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
-        if (!doc.exists) {
-            // Fallback to old structure for backward compatibility
-            return db.collection('fixtures').doc(gameweekKey).get();
-        }
-        return doc;
-    }).then(doc => {
         if (doc.exists) {
             const fixtures = doc.data().fixtures;
             if (fixtures && fixtures.length > 0) {
