@@ -7547,6 +7547,24 @@ function toggleAutoScroll() {
 // --- PLAYER SCORES DISPLAY FUNCTIONS ---
 async function loadPlayerScores(gameweek = null) {
     try {
+        // Get current user to determine their edition
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            console.error('No current user found');
+            return [];
+        }
+
+        // Get user data to determine their edition
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (!userDoc.exists) {
+            console.error('User document not found');
+            return [];
+        }
+
+        const userData = userDoc.data();
+        const userEdition = getUserEdition(userData);
+        console.log('User edition:', userEdition);
+
         // If no gameweek provided, get current active gameweek from settings
         if (!gameweek) {
             const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
@@ -7559,7 +7577,7 @@ async function loadPlayerScores(gameweek = null) {
         }
 
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-        const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+        const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
         
         console.log(`Loading player scores for ${editionGameweekKey}`);
         
