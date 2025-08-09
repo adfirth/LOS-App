@@ -6129,18 +6129,18 @@ function addScoreRow(fixture, index) {
     const halfTimeHtml = (hasHalfTimeScores || !isCompleted) ? `
                 <div class="half-time-scores">
                     <label>Half Time:</label>
-                    <input type="number" class="home-score-ht" placeholder="HT" value="${fixture.homeScoreHT || ''}" min="0">
+                    <input type="number" class="home-score-ht" placeholder="HT" value="${fixture.homeScoreHT !== null && fixture.homeScoreHT !== undefined ? fixture.homeScoreHT : ''}" min="0">
                     <span>-</span>
-                    <input type="number" class="away-score-ht" placeholder="HT" value="${fixture.awayScoreHT || ''}" min="0">
+                    <input type="number" class="away-score-ht" placeholder="HT" value="${fixture.awayScoreHT !== null && fixture.awayScoreHT !== undefined ? fixture.awayScoreHT : ''}" min="0">
                 </div>
                 ` : '';
     
     const fullTimeHtml = (hasFullTimeScores || !isCompleted) ? `
                 <div class="full-time-scores">
                     <label>Full Time:</label>
-                    <input type="number" class="home-score" placeholder="Home" value="${fixture.homeScore || ''}" min="0">
+                    <input type="number" class="home-score" placeholder="Home" value="${fixture.homeScore !== null && fixture.homeScore !== undefined ? fixture.homeScore : ''}" min="0">
                     <span>-</span>
-                    <input type="number" class="away-score" placeholder="Away" value="${fixture.awayScore || ''}" min="0">
+                    <input type="number" class="away-score" placeholder="Away" value="${fixture.awayScore !== null && fixture.awayScore !== undefined ? fixture.awayScore : ''}" min="0">
                 </div>
                 ` : '';
     
