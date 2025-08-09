@@ -1898,6 +1898,17 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         console.log('Debug - homeTeamPicked:', homeTeamPicked);
         console.log('Debug - awayTeamPicked:', awayTeamPicked);
         
+        // Additional debugging for the calculation
+        console.log('Debug - About to calculate homeTeamPicked and awayTeamPicked');
+        console.log('Debug - fixture.homeTeam:', fixture.homeTeam);
+        console.log('Debug - fixture.awayTeam:', fixture.awayTeam);
+        console.log('Debug - existingPicks.includes(fixture.homeTeam):', existingPicks.includes(fixture.homeTeam));
+        console.log('Debug - existingPicks.includes(fixture.awayTeam):', existingPicks.includes(fixture.awayTeam));
+        console.log('Debug - currentPick !== fixture.homeTeam:', currentPick !== fixture.homeTeam);
+        console.log('Debug - currentPick !== fixture.awayTeam:', currentPick !== fixture.awayTeam);
+        console.log('Debug - homeTeamPicked calculation result:', homeTeamPicked);
+        console.log('Debug - awayTeamPicked calculation result:', awayTeamPicked);
+        
         // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
         // The actual logic uses existingPicks.includes() directly in the status determination
         
