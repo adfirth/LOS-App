@@ -6502,11 +6502,20 @@ function saveScores() {
     });
 }
 
+// Track which gameweeks have been processed to prevent duplicate processing
+let processedGameweeks = new Set();
+
 function processResults(gameweek, fixtures) {
     // This function processes the results and deducts lives from players
     // who picked losing teams
     const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
     console.log(`Processing results for ${displayText}`);
+    
+    // Check if this gameweek has already been processed
+    if (processedGameweeks.has(gameweek)) {
+        console.log(`Gameweek ${gameweek} has already been processed, skipping to prevent duplicate life deduction`);
+        return;
+    }
     
     // Only process if we have completed fixtures
     const completedFixtures = fixtures.filter(fixture => fixture.completed && fixture.homeScore !== null && fixture.awayScore !== null);
@@ -6515,6 +6524,10 @@ function processResults(gameweek, fixtures) {
         console.log('No completed fixtures to process');
         return;
     }
+    
+    // Mark this gameweek as processed
+    processedGameweeks.add(gameweek);
+    console.log(`Marking gameweek ${gameweek} as processed`);
     
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     
