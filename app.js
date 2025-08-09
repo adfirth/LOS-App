@@ -1882,27 +1882,7 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         const homeTeamPicked = existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam;
         const awayTeamPicked = existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam;
         
-        // Debug: Log all fixtures to see what's happening with future picks
-        console.log('Fixture debug:', {
-            fixture: `${fixture.homeTeam} vs ${fixture.awayTeam}`,
-            existingPicks: existingPicks,
-            currentPick: currentPick,
-            homeTeamInPicks: existingPicks.includes(fixture.homeTeam),
-            awayTeamInPicks: existingPicks.includes(fixture.awayTeam),
-            homeTeamPicked: homeTeamPicked,
-            awayTeamPicked: awayTeamPicked
-        });
-        
-        // Debug: Check if teams should be future picks
-        if (existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam) {
-            console.log('Home team should be future pick:', fixture.homeTeam);
-        }
-        if (existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam) {
-            console.log('Away team should be future pick:', fixture.awayTeam);
-        }
-        
-        // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
-        // The actual logic uses existingPicks.includes() directly in the status determination
+
         
         // Create team pick buttons with improved status classes
         let homeTeamClasses = 'team-pick-button';
@@ -1929,6 +1909,10 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         } else {
             awayTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
         }
+        
+        // Apply status classes to team buttons
+        homeTeamClasses += ` ${homeTeamStatus.status}`;
+        awayTeamClasses += ` ${awayTeamStatus.status}`;
         
         // Determine if teams are clickable based on their status and create tooltips
         let homeTeamClickable = homeTeamStatus.clickable;
@@ -1998,12 +1982,7 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         // Check if teams are already picked by user in other gameweeks
         const existingPicks = userData ? Object.values(userData.picks || {}) : [];
         
-        // Calculate team pick status for mobile (minimal debugging)
-        const homeTeamPicked = existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam;
-        const awayTeamPicked = existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam;
-        
-        // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
-        // The actual logic uses existingPicks.includes() directly in the status determination
+
         
         // Create team pick buttons with improved status classes
         let homeTeamClasses = 'team-pick-button';
@@ -2030,6 +2009,10 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         } else {
             awayTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
         }
+        
+        // Apply status classes to team buttons
+        homeTeamClasses += ` ${homeTeamStatus.status}`;
+        awayTeamClasses += ` ${awayTeamStatus.status}`;
         
         // Determine if teams are clickable based on their status and create tooltips
         let homeTeamClickable = homeTeamStatus.clickable;
