@@ -6551,11 +6551,17 @@ async function resetAllPlayerLives() {
                                 (userData.editiontest_gw1 || userData.editiontest_gw2 || userData.editiontest_gw3) ||
                                 (userData.picks && (userData.picks.gw1 || userData.picks.gw2 || userData.picks.gw3));
             
+            // Since we're in the test edition, any user with picks is likely a test user
+            const hasAnyPicks = userData.picks && Object.keys(userData.picks).length > 0;
+            
             console.log(`${userData.displayName} - hasTestRegistration: ${hasTestRegistration}, hasTestPicks: ${hasTestPicks}`);
             console.log(`${userData.displayName} - picks object:`, userData.picks);
             console.log(`${userData.displayName} - picks.editiontest_gw1:`, userData.picks ? userData.picks.editiontest_gw1 : 'no picks object');
+            console.log(`${userData.displayName} - picks.gw1:`, userData.picks ? userData.picks.gw1 : 'no picks object');
+            console.log(`${userData.displayName} - picks.gw2:`, userData.picks ? userData.picks.gw2 : 'no picks object');
+            console.log(`${userData.displayName} - picks.gw3:`, userData.picks ? userData.picks.gw3 : 'no picks object');
             
-            if (hasTestRegistration || hasTestPicks) {
+            if (hasTestRegistration || hasTestPicks || hasAnyPicks) {
                 await db.collection('users').doc(doc.id).update({
                     lives: 2
                 });
