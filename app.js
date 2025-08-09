@@ -6538,13 +6538,20 @@ async function resetAllPlayerLives() {
         
         const updatePromises = usersSnapshot.docs.map(async (doc) => {
             const userData = doc.data();
-            // Only reset users who are registered for the test edition
-            if (userData.registeredEditions && userData.registeredEditions.includes('test')) {
+            console.log(`Checking user: ${userData.displayName}, registeredEditions:`, userData.registeredEditions);
+            
+            // Check if user is registered for test edition or has test picks
+            const hasTestRegistration = userData.registeredEditions && userData.registeredEditions.includes('test');
+            const hasTestPicks = userData.editiontest_gw1 || userData.editiontest_gw2 || userData.editiontest_gw3;
+            
+            if (hasTestRegistration || hasTestPicks) {
                 await db.collection('users').doc(doc.id).update({
                     lives: 2
                 });
                 resetCount++;
-                console.log(`Reset ${userData.displayName} to 2 lives`);
+                console.log(`Reset ${userData.displayName} to 2 lives (test user)`);
+            } else {
+                console.log(`Skipping ${userData.displayName} - not a test user`);
             }
         });
         
