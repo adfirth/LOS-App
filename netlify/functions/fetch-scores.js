@@ -84,6 +84,20 @@ exports.handler = async (event, context) => {
 
     console.log('API response received:', JSON.stringify(data, null, 2));
 
+    // Add detailed logging for the first fixture to understand structure
+    if (data.fixtures && data.fixtures.length > 0) {
+      console.log('First fixture structure:', JSON.stringify(data.fixtures[0], null, 2));
+      if (data.fixtures[0].match) {
+        console.log('First match structure:', JSON.stringify(data.fixtures[0].match, null, 2));
+        if (data.fixtures[0].match.home) {
+          console.log('Home team structure:', JSON.stringify(data.fixtures[0].match.home, null, 2));
+        }
+        if (data.fixtures[0].match.away) {
+          console.log('Away team structure:', JSON.stringify(data.fixtures[0].match.away, null, 2));
+        }
+      }
+    }
+
     if (!data || !data.fixtures) {
       return {
         statusCode: 404,
@@ -135,13 +149,47 @@ exports.handler = async (event, context) => {
         }
       }
 
+      // Fix half-time score mapping - check multiple possible locations
+      let homeScoreHT = null;
+      let awayScoreHT = null;
+      
+      // Try different possible locations for half-time scores
+      if (homeTeam.halfTimeScore !== undefined && awayTeam.halfTimeScore !== undefined) {
+        homeScoreHT = parseInt(homeTeam.halfTimeScore) || null;
+        awayScoreHT = parseInt(awayTeam.halfTimeScore) || null;
+        console.log(`Found half-time scores in halfTimeScore fields: ${homeScoreHT}-${awayScoreHT}`);
+      } else if (match.halfTimeScore) {
+        // If there's a single half-time score field, try to parse it
+        const htScore = match.halfTimeScore.toString();
+        const parts = htScore.split('-');
+        if (parts.length === 2) {
+          homeScoreHT = parseInt(parts[0]) || null;
+          awayScoreHT = parseInt(parts[1]) || null;
+          console.log(`Found half-time scores in match.halfTimeScore: ${homeScoreHT}-${awayScoreHT}`);
+        }
+      } else if (homeTeam.ht && awayTeam.ht) {
+        // Alternative field names
+        homeScoreHT = parseInt(homeTeam.ht) || null;
+        awayScoreHT = parseInt(awayTeam.ht) || null;
+        console.log(`Found half-time scores in ht fields: ${homeScoreHT}-${awayScoreHT}`);
+      } else {
+        console.log(`No half-time scores found for ${homeTeam.name} vs ${awayTeam.name}`);
+        console.log('Available home team fields:', Object.keys(homeTeam));
+        console.log('Available away team fields:', Object.keys(awayTeam));
+        console.log('Available match fields:', Object.keys(match));
+      }
+
+      // Ensure scores are properly parsed
+      const homeScore = parseInt(homeTeam.score) || 0;
+      const awayScore = parseInt(awayTeam.score) || 0;
+
       return {
         homeTeam: homeTeam.name || '',
         awayTeam: awayTeam.name || '',
-        homeScore: homeTeam.score || 0,
-        awayScore: awayTeam.score || 0,
-        homeScoreHT: homeTeam.halfTimeScore || 0,
-        awayScoreHT: awayTeam.halfTimeScore || 0,
+        homeScore: homeScore,
+        awayScore: awayScore,
+        homeScoreHT: homeScoreHT,
+        awayScoreHT: awayScoreHT,
         status: status,
         date: match.date || '',
         time: match.time || '',
@@ -154,10 +202,20 @@ exports.handler = async (event, context) => {
     // Filter fixtures to only include those that match existing fixtures (for new approach)
     if (hasNewParams && existingFixtures.length > 0) {
       transformedFixtures = transformedFixtures.filter(apiFixture => {
-        return existingFixtures.some(existingFixture => 
-          existingFixture.homeTeam === apiFixture.homeTeam && 
-          existingFixture.awayTeam === apiFixture.awayTeam
-        );
+        return existingFixtures.some(existingFixture => {
+          // Improve team name matching with multiple strategies
+          const homeMatch = 
+            existingFixture.homeTeam === apiFixture.homeTeam ||
+            existingFixture.homeTeam.toLowerCase() === apiFixture.homeTeam.toLowerCase() ||
+            existingFixture.homeTeam.replace(/[^a-zA-Z]/g, '').toLowerCase() === apiFixture.homeTeam.replace(/[^a-zA-Z]/g, '').toLowerCase();
+          
+          const awayMatch = 
+            existingFixture.awayTeam === apiFixture.awayTeam ||
+            existingFixture.awayTeam.toLowerCase() === apiFixture.awayTeam.toLowerCase() ||
+            existingFixture.awayTeam.replace(/[^a-zA-Z]/g, '').toLowerCase() === apiFixture.awayTeam.replace(/[^a-zA-Z]/g, '').toLowerCase();
+          
+          return homeMatch && awayMatch;
+        });
       });
       console.log('Filtered fixtures to match existing:', transformedFixtures.length);
     }
