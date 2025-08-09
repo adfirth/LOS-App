@@ -1665,7 +1665,7 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 }
 
 // Function to determine team status for improved UI
-// Cache for deadline status to avoid repeated Firebase calls
+// Global cache for deadline checks to avoid repeated Firebase calls
 const deadlineCache = new Map();
 
 // Optimized function to get team status without Firebase calls for simple cases
