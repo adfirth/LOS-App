@@ -6497,12 +6497,28 @@ function processResults(gameweek, fixtures) {
     // who picked losing teams
     const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
     console.log(`Processing results for ${displayText}`);
+    console.log('Total fixtures received:', fixtures.length);
+    console.log('All fixtures:', fixtures);
     
     // Only process if we have completed fixtures
     const completedFixtures = fixtures.filter(fixture => fixture.completed && fixture.homeScore !== null && fixture.awayScore !== null);
     
+    console.log('Completed fixtures:', completedFixtures);
+    console.log('Completed fixtures count:', completedFixtures.length);
+    
     if (completedFixtures.length === 0) {
         console.log('No completed fixtures to process');
+        console.log('Checking why fixtures are not completed:');
+        fixtures.forEach((fixture, index) => {
+            console.log(`Fixture ${index}:`, {
+                homeTeam: fixture.homeTeam,
+                awayTeam: fixture.awayTeam,
+                homeScore: fixture.homeScore,
+                awayScore: fixture.awayScore,
+                completed: fixture.completed,
+                status: fixture.status
+            });
+        });
         return;
     }
     
@@ -6510,6 +6526,7 @@ function processResults(gameweek, fixtures) {
     
     // Get all users and their picks for this gameweek
     db.collection('users').get().then(querySnapshot => {
+        console.log(`Found ${querySnapshot.size} users to process`);
         querySnapshot.forEach(userDoc => {
             const userData = userDoc.data();
             
@@ -6539,6 +6556,9 @@ function processResults(gameweek, fixtures) {
                 const awayTeam = fixture.awayTeam;
                 const homeScore = fixture.homeScore;
                 const awayScore = fixture.awayScore;
+                
+                console.log(`Processing fixture: ${homeTeam} vs ${awayTeam} (${homeScore}-${awayScore})`);
+                console.log(`User picked: ${userPick}`);
                 
                 // Determine the winner (or if it's a draw)
                 let winner = null;
