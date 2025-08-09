@@ -1882,6 +1882,17 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         const homeTeamPicked = existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam;
         const awayTeamPicked = existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam;
         
+        // Debug: Log the first fixture to see what's happening
+        if (fixtures.indexOf(fixture) === 0) {
+            console.log('First fixture debug:', {
+                fixture: `${fixture.homeTeam} vs ${fixture.awayTeam}`,
+                existingPicks: existingPicks,
+                currentPick: currentPick,
+                homeTeamPicked: homeTeamPicked,
+                awayTeamPicked: awayTeamPicked
+            });
+        }
+        
         // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
         // The actual logic uses existingPicks.includes() directly in the status determination
         
