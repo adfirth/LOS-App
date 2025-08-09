@@ -1893,6 +1893,14 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
             awayTeamPicked: awayTeamPicked
         });
         
+        // Debug: Check if teams should be future picks
+        if (existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam) {
+            console.log('Home team should be future pick:', fixture.homeTeam);
+        }
+        if (existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam) {
+            console.log('Away team should be future pick:', fixture.awayTeam);
+        }
+        
         // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
         // The actual logic uses existingPicks.includes() directly in the status determination
         
