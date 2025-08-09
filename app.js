@@ -1008,6 +1008,11 @@ function initializeMobileTabs() {
             if (targetPane) {
                 targetPane.classList.add('active');
             }
+            
+            // Load scores when scores tab is clicked
+            if (targetTab === 'scores') {
+                loadPlayerScores();
+            }
         });
     });
 }
@@ -1030,6 +1035,11 @@ function initializeDesktopTabs() {
             const targetPane = document.getElementById(`desktop-${targetTab}-tab`);
             if (targetPane) {
                 targetPane.classList.add('active');
+            }
+            
+            // Load scores when scores tab is clicked
+            if (targetTab === 'scores') {
+                loadPlayerScores();
             }
         });
     });
@@ -6136,10 +6146,11 @@ let autoUpdateInterval = null;
 
 async function startAutoScoreUpdates(gameweek) {
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
     
     try {
         // Get fixtures for this gameweek
-        const fixtureDoc = await db.collection('fixtures').doc(gameweekKey).get();
+        const fixtureDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
         if (!fixtureDoc.exists) {
             console.log('No fixtures found for auto-update');
             return;
@@ -6174,11 +6185,12 @@ async function stopAutoScoreUpdates() {
 
 async function checkAndUpdateScores(gameweek, fixtures) {
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
     const now = new Date();
     
     try {
         // Get updated fixtures from database
-        const fixtureDoc = await db.collection('fixtures').doc(gameweekKey).get();
+        const fixtureDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
         if (!fixtureDoc.exists) return;
         
         const currentFixtures = fixtureDoc.data().fixtures;
@@ -6232,9 +6244,10 @@ async function updateHalfTimeScores(gameweek, fixtureIndex, fixture) {
             // Check if we have half-time scores
             if (apiFixture.homeScoreHT !== null && apiFixture.awayScoreHT !== null) {
                 const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+                const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
                 
                 // Get current fixtures
-                const fixtureDoc = await db.collection('fixtures').doc(gameweekKey).get();
+                const fixtureDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
                 if (!fixtureDoc.exists) return false;
                 
                 const fixtures = fixtureDoc.data().fixtures;
@@ -6248,7 +6261,7 @@ async function updateHalfTimeScores(gameweek, fixtureIndex, fixture) {
                 };
                 
                 // Save updated fixtures
-                await db.collection('fixtures').doc(gameweekKey).update({
+                await db.collection('fixtures').doc(editionGameweekKey).update({
                     fixtures: fixtures
                 });
                 
@@ -6276,9 +6289,10 @@ async function updateFullTimeScores(gameweek, fixtureIndex, fixture) {
             // Check if we have full-time scores
             if (apiFixture.homeScore !== null && apiFixture.awayScore !== null) {
                 const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+                const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
                 
                 // Get current fixtures
-                const fixtureDoc = await db.collection('fixtures').doc(gameweekKey).get();
+                const fixtureDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
                 if (!fixtureDoc.exists) return false;
                 
                 const fixtures = fixtureDoc.data().fixtures;
@@ -6293,7 +6307,7 @@ async function updateFullTimeScores(gameweek, fixtureIndex, fixture) {
                 };
                 
                 // Save updated fixtures
-                await db.collection('fixtures').doc(gameweekKey).update({
+                await db.collection('fixtures').doc(editionGameweekKey).update({
                     fixtures: fixtures
                 });
                 
@@ -7513,5 +7527,256 @@ function toggleAutoScroll() {
     
     if (autoScrollEnabled && feed) {
         feed.scrollTop = feed.scrollHeight;
+    }
+}
+
+// --- PLAYER SCORES DISPLAY FUNCTIONS ---
+async function loadPlayerScores(gameweek = null) {
+    try {
+        // If no gameweek provided, get current active gameweek from settings
+        if (!gameweek) {
+            const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+            if (settingsDoc.exists) {
+                const settings = settingsDoc.data();
+                gameweek = settings.active_gameweek;
+            } else {
+                gameweek = '1'; // Default fallback
+            }
+        }
+
+        const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+        const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+        
+        console.log(`Loading player scores for ${editionGameweekKey}`);
+        
+        // Try new structure first, then fallback to old structure
+        let fixtureDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
+        if (!fixtureDoc.exists) {
+            // Fallback to old structure
+            fixtureDoc = await db.collection('fixtures').doc(gameweekKey).get();
+        }
+        
+        if (fixtureDoc.exists) {
+            const fixtures = fixtureDoc.data().fixtures;
+            if (fixtures && fixtures.length > 0) {
+                renderPlayerScores(fixtures, gameweek);
+                renderMobilePlayerScores(fixtures, gameweek);
+            } else {
+                showNoScoresMessage();
+            }
+        } else {
+            showNoScoresMessage();
+        }
+        
+    } catch (error) {
+        console.error('Error loading player scores:', error);
+        showNoScoresMessage();
+    }
+}
+
+function renderPlayerScores(fixtures, gameweek) {
+    const desktopScoresDisplay = document.querySelector('#desktop-scores-display');
+    if (!desktopScoresDisplay) return;
+    
+    // Sort fixtures by date
+    const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let scoresHTML = `
+        <div class="scores-header">
+            <h3>Game Week ${gameweek === 'tiebreak' ? 'Tiebreak' : gameweek} Results</h3>
+        </div>
+        <div class="scores-container">
+    `;
+    
+    for (const fixture of sortedFixtures) {
+        const fixtureDate = new Date(fixture.date);
+        const homeBadge = getTeamBadge(fixture.homeTeam);
+        const awayBadge = getTeamBadge(fixture.awayTeam);
+        
+        const homeBadgeHtml = homeBadge ? `<img src="${homeBadge}" alt="${fixture.homeTeam}" class="team-badge">` : '';
+        const awayBadgeHtml = awayBadge ? `<img src="${awayBadge}" alt="${fixture.awayTeam}" class="team-badge">` : '';
+        
+        // Determine score display
+        let scoreDisplay = '';
+        let statusClass = '';
+        
+        if (fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+            // Full-time result
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score">${fixture.homeScore || 0}</span>
+                    <span class="score-separator">-</span>
+                    <span class="score">${fixture.awayScore || 0}</span>
+                </div>
+            `;
+            statusClass = 'completed';
+        } else if (fixture.status === 'HT' && fixture.homeScoreHT !== null && fixture.awayScoreHT !== null) {
+            // Half-time result
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score">${fixture.homeScoreHT}</span>
+                    <span class="score-separator">-</span>
+                    <span class="score">${fixture.awayScoreHT}</span>
+                    <span class="score-status">HT</span>
+                </div>
+            `;
+            statusClass = 'half-time';
+        } else if (fixture.status === '1H' || fixture.status === '2H') {
+            // Live match
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score">${fixture.homeScore || 0}</span>
+                    <span class="score-separator">-</span>
+                    <span class="score">${fixture.awayScore || 0}</span>
+                    <span class="score-status live">LIVE</span>
+                </div>
+            `;
+            statusClass = 'live';
+        } else {
+            // Not started
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score-placeholder">vs</span>
+                </div>
+            `;
+            statusClass = 'not-started';
+        }
+        
+        scoresHTML += `
+            <div class="score-fixture ${statusClass}">
+                <div class="fixture-teams">
+                    <div class="team home-team">
+                        ${homeBadgeHtml}
+                        <span class="team-name">${fixture.homeTeam}</span>
+                    </div>
+                    ${scoreDisplay}
+                    <div class="team away-team">
+                        <span class="team-name">${fixture.awayTeam}</span>
+                        ${awayBadgeHtml}
+                    </div>
+                </div>
+                <div class="fixture-info">
+                    <div class="fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                    <div class="fixture-status">${getStatusDisplay(fixture.status)}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    scoresHTML += '</div>';
+    desktopScoresDisplay.innerHTML = scoresHTML;
+}
+
+function renderMobilePlayerScores(fixtures, gameweek) {
+    const mobileScoresDisplay = document.querySelector('#mobile-scores-display');
+    if (!mobileScoresDisplay) return;
+    
+    // Sort fixtures by date
+    const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let scoresHTML = `
+        <div class="mobile-scores-header">
+            <h4>Game Week ${gameweek === 'tiebreak' ? 'Tiebreak' : gameweek} Results</h4>
+        </div>
+        <div class="mobile-scores-container">
+    `;
+    
+    for (const fixture of sortedFixtures) {
+        const fixtureDate = new Date(fixture.date);
+        const homeBadge = getTeamBadge(fixture.homeTeam);
+        const awayBadge = getTeamBadge(fixture.awayTeam);
+        
+        const homeBadgeHtml = homeBadge ? `<img src="${homeBadge}" alt="${fixture.homeTeam}" class="team-badge">` : '';
+        const awayBadgeHtml = awayBadge ? `<img src="${awayBadge}" alt="${fixture.awayTeam}" class="team-badge">` : '';
+        
+        // Determine score display
+        let scoreDisplay = '';
+        let statusClass = '';
+        
+        if (fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+            // Full-time result
+            scoreDisplay = `
+                <div class="mobile-score-result">
+                    <span class="mobile-score">${fixture.homeScore || 0}</span>
+                    <span class="mobile-score-separator">-</span>
+                    <span class="mobile-score">${fixture.awayScore || 0}</span>
+                </div>
+            `;
+            statusClass = 'completed';
+        } else if (fixture.status === 'HT' && fixture.homeScoreHT !== null && fixture.awayScoreHT !== null) {
+            // Half-time result
+            scoreDisplay = `
+                <div class="mobile-score-result">
+                    <span class="mobile-score">${fixture.homeScoreHT}</span>
+                    <span class="mobile-score-separator">-</span>
+                    <span class="mobile-score">${fixture.awayScoreHT}</span>
+                    <span class="mobile-score-status">HT</span>
+                </div>
+            `;
+            statusClass = 'half-time';
+        } else if (fixture.status === '1H' || fixture.status === '2H') {
+            // Live match
+            scoreDisplay = `
+                <div class="mobile-score-result">
+                    <span class="mobile-score">${fixture.homeScore || 0}</span>
+                    <span class="mobile-score-separator">-</span>
+                    <span class="mobile-score">${fixture.awayScore || 0}</span>
+                    <span class="mobile-score-status live">LIVE</span>
+                </div>
+            `;
+            statusClass = 'live';
+        } else {
+            // Not started
+            scoreDisplay = `
+                <div class="mobile-score-result">
+                    <span class="mobile-score-placeholder">vs</span>
+                </div>
+            `;
+            statusClass = 'not-started';
+        }
+        
+        scoresHTML += `
+            <div class="mobile-score-fixture ${statusClass}">
+                <div class="mobile-fixture-teams">
+                    <div class="mobile-team home-team">
+                        ${homeBadgeHtml}
+                        <span class="mobile-team-name">${fixture.homeTeam}</span>
+                    </div>
+                    ${scoreDisplay}
+                    <div class="mobile-team away-team">
+                        <span class="mobile-team-name">${fixture.awayTeam}</span>
+                        ${awayBadgeHtml}
+                    </div>
+                </div>
+                <div class="mobile-fixture-info">
+                    <div class="mobile-fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="mobile-fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                    <div class="mobile-fixture-status">${getStatusDisplay(fixture.status)}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    scoresHTML += '</div>';
+    mobileScoresDisplay.innerHTML = scoresHTML;
+}
+
+function showNoScoresMessage() {
+    const desktopScoresDisplay = document.querySelector('#desktop-scores-display');
+    const mobileScoresDisplay = document.querySelector('#mobile-scores-display');
+    
+    const noScoresMessage = `
+        <div class="no-scores-message">
+            <p>No scores available for this gameweek yet.</p>
+            <p>Scores will appear here once matches are played and results are updated.</p>
+        </div>
+    `;
+    
+    if (desktopScoresDisplay) {
+        desktopScoresDisplay.innerHTML = noScoresMessage;
+    }
+    if (mobileScoresDisplay) {
+        mobileScoresDisplay.innerHTML = noScoresMessage;
     }
 }
