@@ -1,0 +1,15 @@
+[33m40e901e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix merge conflict and resolve debugger pauses in app.js - Remove merge conflict markers and fix deadlineCache scope issue - Update renderFixturesDisplay to async function - Ensure single global deadlineCache declaration
+[33m2fb981f[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Resolve merge conflicts and finalize async/await improvements
+[33mace36d6[m Update app.js with async/await improvements and code cleanup
+[33m9402f5a[m Remove excessive logging and optimize getTeamStatus performance
+[33mb322e79[m Add timeout and error handling to prevent hanging in getTeamStatus and checkDeadlineForGameweek functions
+[33m40e901e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix merge conflict and resolve debugger pauses in app.js - Remove merge conflict markers and fix deadlineCache scope issue - Update renderFixturesDisplay to async function - Ensure single global deadlineCache declaration
+[33m2fb981f[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Resolve merge conflicts and finalize async/await improvements
+[33mace36d6[m Update app.js with async/await improvements and code cleanup
+[33m9402f5a[m Remove excessive logging and optimize getTeamStatus performance
+[33mb322e79[m Add timeout and error handling to prevent hanging in getTeamStatus and checkDeadlineForGameweek functions
+[33m9282566[m Add debugging to getTeamStatus function to investigate breakpoint issue
+[33m8a6967a[m Add deadline caching to fix hanging issues on lines 1763 and 1882 - reduces Firebase calls and improves performance
+[33m5ff7204[m Fix hanging issue on line 1759 - update checkDeadlineForGameweek to use user's edition instead of active edition
+[33mce1b88c[m Add edition selection system for users registered for multiple editions - allows users to choose which edition to participate in
+[33m34c0dd8[m Fix fixture loading to use user's edition instead of active edition - Edition 1 users now see Edition 1 fixtures, Test Weeks users see Test Weeks fixtures

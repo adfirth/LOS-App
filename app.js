@@ -6518,6 +6518,9 @@ function displayPlayers(players) {
             latestEdition = latest.replace('edition', 'Edition ');
         }
         
+        // Check if player is already in Test Weeks
+        const isInTestWeeks = player.registrations && player.registrations.editiontest;
+        
         row.innerHTML = `
             <td>${name}</td>
             <td>${player.email}</td>
@@ -6526,6 +6529,10 @@ function displayPlayers(players) {
             <td>${latestEdition}</td>
             <td class="player-action-buttons">
                 <button class="edit-player-btn" onclick="editPlayer('${player.id}')">Edit</button>
+                ${!isInTestWeeks ? 
+                    `<button class="add-test-weeks-btn" onclick="addToTestWeeks('${player.id}')" style="background-color: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-left: 4px; font-size: 12px;">Add to Test Weeks</button>` :
+                    `<span style="color: #28a745; font-size: 12px; margin-left: 4px;">✓ Test Weeks</span>`
+                }
                 ${player.status === 'active' ? 
                     `<button class="archive-player-btn" onclick="archivePlayer('${player.id}')">Archive</button>` :
                     `<button class="unarchive-player-btn" onclick="unarchivePlayer('${player.id}')">Unarchive</button>
@@ -6571,6 +6578,14 @@ async function editPlayer(playerId) {
     document.getElementById('edit-status').value = player.status;
     document.getElementById('edit-notes').value = player.adminNotes;
     
+    // Populate edition checkboxes based on player's registrations
+    const editions = player.registrations || {};
+    document.getElementById('edit-edition-1').checked = !!editions.edition1;
+    document.getElementById('edit-edition-2').checked = !!editions.edition2;
+    document.getElementById('edit-edition-3').checked = !!editions.edition3;
+    document.getElementById('edit-edition-4').checked = !!editions.edition4;
+    document.getElementById('edit-edition-test').checked = !!editions.editiontest;
+    
     // Store player ID for save operation
     document.getElementById('player-edit-form').setAttribute('data-player-id', playerId);
     
@@ -6585,6 +6600,37 @@ async function savePlayerEdit(event) {
     if (!playerId) return;
     
     try {
+        // Get current player data to preserve existing registrations
+        const playerDoc = await db.collection('users').doc(playerId).get();
+        const currentData = playerDoc.data();
+        const currentRegistrations = currentData.registrations || {};
+        
+        // Build registration updates based on checkboxes
+        const registrationUpdates = {};
+        const editionCheckboxes = [
+            { id: 'edit-edition-1', key: 'edition1' },
+            { id: 'edit-edition-2', key: 'edition2' },
+            { id: 'edit-edition-3', key: 'edition3' },
+            { id: 'edit-edition-4', key: 'edition4' },
+            { id: 'edit-edition-test', key: 'editiontest' }
+        ];
+        
+        editionCheckboxes.forEach(({ id, key }) => {
+            const isChecked = document.getElementById(id).checked;
+            if (isChecked && !currentRegistrations[key]) {
+                // Add registration if checked and not already registered
+                registrationUpdates[`registrations.${key}`] = {
+                    registrationDate: new Date(),
+                    paymentMethod: 'Admin Added',
+                    emailConsent: true,
+                    whatsappConsent: true
+                };
+            } else if (!isChecked && currentRegistrations[key]) {
+                // Remove registration if unchecked and currently registered
+                registrationUpdates[`registrations.${key}`] = firebase.firestore.FieldValue.delete();
+            }
+        });
+        
         const updates = {
             firstName: document.getElementById('edit-first-name').value,
             surname: document.getElementById('edit-surname').value,
@@ -6592,7 +6638,8 @@ async function savePlayerEdit(event) {
             lives: parseInt(document.getElementById('edit-lives').value),
             status: document.getElementById('edit-status').value,
             adminNotes: document.getElementById('edit-notes').value,
-            lastUpdated: new Date()
+            lastUpdated: new Date(),
+            ...registrationUpdates
         };
         
         await db.collection('users').doc(playerId).update(updates);
@@ -6669,6 +6716,45 @@ async function unarchivePlayer(playerId) {
     } catch (error) {
         console.error('Error unarchiving player:', error);
         alert('Error unarchiving player: ' + error.message);
+    }
+}
+
+async function addToTestWeeks(playerId) {
+    if (!confirm('Add this player to Test Weeks edition?')) return;
+    
+    try {
+        await db.collection('users').doc(playerId).update({
+            [`registrations.editiontest`]: {
+                registrationDate: new Date(),
+                paymentMethod: 'Admin Added',
+                emailConsent: true,
+                whatsappConsent: true
+            },
+            lastUpdated: new Date()
+        });
+        
+        // Update local data
+        const playerIndex = allPlayers.findIndex(p => p.id === playerId);
+        if (playerIndex !== -1) {
+            if (!allPlayers[playerIndex].registrations) {
+                allPlayers[playerIndex].registrations = {};
+            }
+            allPlayers[playerIndex].registrations.editiontest = {
+                registrationDate: new Date(),
+                paymentMethod: 'Admin Added',
+                emailConsent: true,
+                whatsappConsent: true
+            };
+        }
+        
+        // Refresh display
+        displayPlayers(allPlayers);
+        
+        alert('Player added to Test Weeks successfully!');
+        
+    } catch (error) {
+        console.error('Error adding player to Test Weeks:', error);
+        alert('Error adding player to Test Weeks: ' + error.message);
     }
 }
 

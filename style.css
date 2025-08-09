@@ -259,6 +259,41 @@ a {
     flex: 1;
 }
 
+/* Edition checkboxes styling */
+.edition-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.edition-checkboxes .checkbox-label {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.edition-checkboxes .checkbox-label:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.edition-checkboxes .checkbox-label input[type="checkbox"] {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--alty-red);
+}
+
+.edition-checkboxes .checkbox-label input[type="checkbox"]:checked + span {
+    font-weight: 600;
+    color: var(--alty-red);
+}
+
 /* Registration Management Styles */
 .registration-window-controls {
     background: #f8f9fa;
