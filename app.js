@@ -1115,14 +1115,14 @@ async function renderDashboard(user) {
                 if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
                 if (mobileWelcomeMessage) mobileWelcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
             
-            // Display card emoji based on lives remaining
+            // Display card status based on lives remaining
             let cardDisplay = '';
             if (userData.lives === 2) {
-                cardDisplay = '<span style="color: green;">None</span>';
+                cardDisplay = 'None';
             } else if (userData.lives === 1) {
-                cardDisplay = '🟨';
+                cardDisplay = '<img src="images/Yellow Card.png" alt="Yellow Card" style="width: 20px; height: 20px; vertical-align: middle;">';
             } else if (userData.lives === 0) {
-                cardDisplay = '🟥';
+                cardDisplay = '<img src="images/redcard.png" alt="Red Card" style="width: 20px; height: 20px; vertical-align: middle;">';
             }
             
             // Update lives remaining for desktop, mobile, and legacy
