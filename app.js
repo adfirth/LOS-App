@@ -6199,9 +6199,9 @@ function addScoreRow(fixture, index) {
     const halfTimeHtml = (hasHalfTimeScores || !isCompleted) ? `
                 <div class="half-time-scores">
                     <label>Half Time:</label>
-                    <input type="number" class="home-score-ht" placeholder="HT" value="${fixture.homeScoreHT !== null && fixture.homeScoreHT !== undefined && fixture.homeScoreHT !== '' ? fixture.homeScoreHT : ''}" min="0">
+                    <input type="number" class="home-score-ht" placeholder="HT" value="${fixture.homeScoreHT !== null && fixture.homeScoreHT !== undefined ? fixture.homeScoreHT : ''}" min="0">
                     <span>-</span>
-                    <input type="number" class="away-score-ht" placeholder="HT" value="${fixture.awayScoreHT !== null && fixture.awayScoreHT !== undefined && fixture.awayScoreHT !== '' ? fixture.awayScoreHT : ''}" min="0">
+                    <input type="number" class="away-score-ht" placeholder="HT" value="${fixture.awayScoreHT !== null && fixture.awayScoreHT !== undefined ? fixture.awayScoreHT : ''}" min="0">
                 </div>
                 ` : '';
     

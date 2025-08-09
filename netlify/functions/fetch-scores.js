@@ -26,6 +26,7 @@ exports.handler = async (event, context) => {
     
     if (event.httpMethod === 'POST') {
       // Parse from POST body
+      console.log('Processing POST request with body:', event.body);
       const body = JSON.parse(event.body || '{}');
       league = body.league;
       season = body.season;
@@ -33,6 +34,7 @@ exports.handler = async (event, context) => {
       fixtures = body.fixtures;
       startDate = body.startDate;
       endDate = body.endDate;
+      console.log('Parsed POST parameters:', { league, season, matchday, fixtures: fixtures ? 'provided' : 'not provided', startDate, endDate });
     } else {
       // Parse from query string (GET)
       const params = event.queryStringParameters || {};
@@ -42,21 +44,26 @@ exports.handler = async (event, context) => {
       fixtures = params.fixtures;
       startDate = params.startDate;
       endDate = params.endDate;
+      console.log('Parsed GET parameters:', { league, season, matchday, fixtures: fixtures ? 'provided' : 'not provided', startDate, endDate });
     }
     
-    console.log('Parameters:', { league, season, matchday, fixtures: fixtures ? 'provided' : 'not provided', startDate, endDate });
+    console.log('Final parameters:', { league, season, matchday, fixtures: fixtures ? 'provided' : 'not provided', startDate, endDate });
     
     // Check if we have the required parameters for either approach
     const hasOldParams = league && season && matchday;
     const hasNewParams = league && startDate && endDate && fixtures;
     
+    console.log('Parameter validation:', { hasOldParams, hasNewParams, league: !!league, startDate: !!startDate, endDate: !!endDate, fixtures: !!fixtures });
+    
     if (!hasOldParams && !hasNewParams) {
+      console.log('Missing required parameters. Returning 400 error.');
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          error: 'Missing required parameters. Need either: league, season, matchday OR league, startDate, endDate, fixtures'
+          error: 'Missing required parameters. Need either: league, season, matchday OR league, startDate, endDate, fixtures',
+          receivedParams: { league, season, matchday, startDate, endDate, hasFixtures: !!fixtures }
         })
       };
     }
