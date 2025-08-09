@@ -261,6 +261,33 @@ function handleAdminLogout() {
 // --- REGISTRATION LOGIC ---
 let currentEdition = 1;
 
+// Function to update edition displays on registration page
+function updateRegistrationPageEdition() {
+    document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
+        if (el) {
+            if (currentActiveEdition === 'test') {
+                el.textContent = 'Test Weeks';
+            } else {
+                el.textContent = currentActiveEdition;
+            }
+        }
+    });
+}
+
+// Function to load current edition and update registration page
+async function loadCurrentEditionForRegistration() {
+    try {
+        const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+        if (settingsDoc.exists) {
+            const settings = settingsDoc.data();
+            currentActiveEdition = settings.active_edition || 1;
+            updateRegistrationPageEdition();
+        }
+    } catch (error) {
+        console.error('Error loading current edition for registration:', error);
+    }
+}
+
 // Check registration window status
 async function checkRegistrationWindow() {
     try {
@@ -5145,6 +5172,8 @@ function initializeAdminTabs() {
 // Initialize admin tabs when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeAdminTabs();
+    // Load current edition for registration page
+    loadCurrentEditionForRegistration();
 });
 
 // Simple tab functionality for admin panel
