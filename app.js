@@ -1885,28 +1885,25 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         let awayTeamClasses = 'team-pick-button';
         
         // Use simple status checking to avoid async calls during rendering
-        const homeTeamStatus = getTeamStatusSimple(fixture.homeTeam, userData, currentGameWeek, userId);
-        const awayTeamStatus = getTeamStatusSimple(fixture.awayTeam, userData, currentGameWeek, userId);
+        // Inline logic to avoid function call issues
+        let homeTeamStatus, awayTeamStatus;
         
-        // Apply status classes based on the centralized logic
-        if (homeTeamStatus.status === 'current-pick') {
-            homeTeamClasses += ' current-pick';
-        } else if (homeTeamStatus.status === 'future-pick') {
-            homeTeamClasses += ' future-pick';
-        } else if (homeTeamStatus.status === 'completed-pick') {
-            homeTeamClasses += ' completed-pick';
+        // Simple inline logic for home team
+        if (currentPick === fixture.homeTeam) {
+            homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+        } else if (existingPicks.includes(fixture.homeTeam)) {
+            homeTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
         } else {
-            homeTeamClasses += ' available';
+            homeTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
         }
         
-        if (awayTeamStatus.status === 'current-pick') {
-            awayTeamClasses += ' current-pick';
-        } else if (awayTeamStatus.status === 'future-pick') {
-            awayTeamClasses += ' future-pick';
-        } else if (awayTeamStatus.status === 'completed-pick') {
-            awayTeamClasses += ' completed-pick';
+        // Simple inline logic for away team
+        if (currentPick === fixture.awayTeam) {
+            awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+        } else if (existingPicks.includes(fixture.awayTeam)) {
+            awayTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
         } else {
-            awayTeamClasses += ' available';
+            awayTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
         }
         
         // Determine if teams are clickable based on their status and create tooltips
@@ -1984,28 +1981,25 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         let awayTeamClasses = 'team-pick-button';
         
         // Use simple status checking to avoid async calls during rendering
-        const homeTeamStatus = getTeamStatusSimple(fixture.homeTeam, userData, currentGameWeek, userId);
-        const awayTeamStatus = getTeamStatusSimple(fixture.awayTeam, userData, currentGameWeek, userId);
+        // Inline logic to avoid function call issues
+        let homeTeamStatus, awayTeamStatus;
         
-        // Apply status classes based on the centralized logic
-        if (homeTeamStatus.status === 'current-pick') {
-            homeTeamClasses += ' current-pick';
-        } else if (homeTeamStatus.status === 'future-pick') {
-            homeTeamClasses += ' future-pick';
-        } else if (homeTeamStatus.status === 'completed-pick') {
-            homeTeamClasses += ' completed-pick';
+        // Simple inline logic for home team
+        if (currentPick === fixture.homeTeam) {
+            homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+        } else if (existingPicks.includes(fixture.homeTeam)) {
+            homeTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
         } else {
-            homeTeamClasses += ' available';
+            homeTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
         }
         
-        if (awayTeamStatus.status === 'current-pick') {
-            awayTeamClasses += ' current-pick';
-        } else if (awayTeamStatus.status === 'future-pick') {
-            awayTeamClasses += ' future-pick';
-        } else if (awayTeamStatus.status === 'completed-pick') {
-            awayTeamClasses += ' completed-pick';
+        // Simple inline logic for away team
+        if (currentPick === fixture.awayTeam) {
+            awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+        } else if (existingPicks.includes(fixture.awayTeam)) {
+            awayTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
         } else {
-            awayTeamClasses += ' available';
+            awayTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
         }
         
         // Determine if teams are clickable based on their status and create tooltips
