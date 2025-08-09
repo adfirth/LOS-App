@@ -1005,6 +1005,15 @@ async function renderDashboard(user) {
     initializeMobileTabs();
     initializeDesktopTabs();
     
+    // Pre-load all deadlines for this user's edition to avoid individual calls during rendering
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (userDoc.exists) {
+        const userData = userDoc.data();
+        const userEdition = getUserEdition(userData);
+        const allGameweeks = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'tiebreak'];
+        await batchCheckDeadlines(allGameweeks, userEdition);
+    }
+    
     const welcomeMessage = document.querySelector('#welcome-message');
     const mobileWelcomeMessage = document.querySelector('#mobile-welcome-message');
     const livesRemaining = document.querySelector('#lives-remaining');
@@ -1667,6 +1676,83 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 // Function to determine team status for improved UI
 // Global cache for deadline checks to avoid repeated Firebase calls
 const deadlineCache = new Map();
+// Global cache for batch deadline checks
+const batchDeadlineCache = new Map();
+
+// NEW: Batch deadline checking function
+async function batchCheckDeadlines(gameweeks, edition) {
+    const cacheKey = `batch_${edition}`;
+    
+    // Check if we have a recent batch cache
+    if (batchDeadlineCache.has(cacheKey)) {
+        const cached = batchDeadlineCache.get(cacheKey);
+        const now = Date.now();
+        if (now - cached.timestamp < 5 * 60 * 1000) { // 5 minutes
+            return cached.results;
+        }
+    }
+    
+    // Fetch all deadlines in one operation
+    const results = {};
+    const promises = [];
+    
+    for (const gameweek of gameweeks) {
+        const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+        const editionGameweekKey = `edition${edition}_${gameweekKey}`;
+        
+        const promise = db.collection('fixtures').doc(editionGameweekKey).get()
+            .then(doc => {
+                if (!doc.exists) {
+                    // Fallback to old structure
+                    return db.collection('fixtures').doc(gameweekKey).get();
+                }
+                return doc;
+            })
+            .then(doc => {
+                if (doc.exists) {
+                    const fixtures = doc.data().fixtures;
+                    if (fixtures && fixtures.length > 0) {
+                        const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                            const fixtureDate = new Date(fixture.date);
+                            const earliestDate = new Date(earliest.date);
+                            return fixtureDate < earliestDate ? fixture : earliest;
+                        });
+                        const deadlineDate = new Date(earliestFixture.date);
+                        const now = new Date();
+                        return { gameweek, isDeadlinePassed: deadlineDate <= now };
+                    }
+                }
+                return { gameweek, isDeadlinePassed: false };
+            })
+            .catch(error => {
+                console.log('Batch deadline check error for gameweek:', gameweek, error);
+                return { gameweek, isDeadlinePassed: false };
+            });
+        
+        promises.push(promise);
+    }
+    
+    try {
+        const batchResults = await Promise.all(promises);
+        batchResults.forEach(result => {
+            results[result.gameweek] = result.isDeadlinePassed;
+        });
+        
+        // Cache the results
+        batchDeadlineCache.set(cacheKey, {
+            results,
+            timestamp: Date.now()
+        });
+        
+        // Clear cache after 5 minutes
+        setTimeout(() => batchDeadlineCache.delete(cacheKey), 5 * 60 * 1000);
+        
+        return results;
+    } catch (error) {
+        console.log('Batch deadline check failed:', error);
+        return {};
+    }
+}
 
 // Optimized function to get team status without Firebase calls for simple cases
 function getTeamStatusSimple(teamName, userData, currentGameWeek, userId) {
@@ -1731,29 +1817,25 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
         }
         
         if (pickedGameweek) {
-            // Check if that gameweek has completed (deadline passed)
+            // Use batch deadline checking instead of individual calls
             const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
             const userEdition = getUserEdition(userData);
             
-            // Create cache key
-            const cacheKey = `${pickedGameweekNum}_${userEdition}`;
+            // Get all unique gameweeks from user's picks for batch processing
+            const userGameweeks = Object.keys(userData.picks || {}).map(key => 
+                key === 'gwtiebreak' ? 'tiebreak' : key.replace('gw', '')
+            );
             
-            // Check cache first
-            if (!deadlineCache.has(cacheKey)) {
-                try {
-                    const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum, userEdition);
-                    deadlineCache.set(cacheKey, isDeadlinePassed);
-                    
-                    // Clear cache after 5 minutes to ensure fresh data
-                    setTimeout(() => deadlineCache.delete(cacheKey), 5 * 60 * 1000);
-                } catch (error) {
-                    console.log('getTeamStatus error calling checkDeadlineForGameweek:', error);
-                    // Default to false (deadline not passed) on error
-                    deadlineCache.set(cacheKey, false);
-                }
+            // Use batch deadline checking with fallback
+            let isDeadlinePassed = false;
+            try {
+                const deadlineResults = await batchCheckDeadlines(userGameweeks, userEdition);
+                isDeadlinePassed = deadlineResults[pickedGameweekNum] || false;
+            } catch (error) {
+                console.log('Batch deadline check failed, using fallback:', error);
+                // Fallback to simple logic - assume future pick if we can't determine
+                return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
             }
-            
-            const isDeadlinePassed = deadlineCache.get(cacheKey);
             
             if (isDeadlinePassed) {
                 return { status: 'completed-pick', clickable: false, reason: `Picked in completed ${pickedGameweek}` };
@@ -1774,6 +1856,9 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
         fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
         return;
     }
+    
+    // Show loading state while processing team statuses
+    fixturesDisplay.innerHTML = '<p>Loading fixtures...</p>';
 
     // Sort fixtures by date
     const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
