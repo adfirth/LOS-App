@@ -302,6 +302,11 @@ function getUserEdition(userData) {
         return 1; // Default to Edition 1 if no registration data
     }
     
+    // If user has a preferred edition set, use that
+    if (userData.preferredEdition) {
+        return userData.preferredEdition;
+    }
+    
     // Check for Test Weeks registration first
     if (userData.registrations.editiontest) {
         return 'test';
@@ -320,6 +325,41 @@ function getUserEdition(userData) {
     }
     
     return 1; // Default to Edition 1
+}
+
+// Function to get all editions user is registered for
+function getUserRegisteredEditions(userData) {
+    if (!userData || !userData.registrations) {
+        return [];
+    }
+    
+    const editions = [];
+    Object.keys(userData.registrations).forEach(editionKey => {
+        if (editionKey.startsWith('edition')) {
+            const edition = editionKey.replace('edition', '');
+            editions.push(edition);
+        }
+    });
+    
+    return editions;
+}
+
+// Function to save user's edition preference
+async function saveEditionPreference(edition, userId) {
+    try {
+        await db.collection('users').doc(userId).update({
+            preferredEdition: edition
+        });
+        
+        // Show success message
+        alert(`Edition preference saved! You are now participating in ${edition === 'test' ? 'Test Weeks' : `Edition ${edition}`}.`);
+        
+        // Reload the page to update fixtures and displays
+        window.location.reload();
+    } catch (error) {
+        console.error('Error saving edition preference:', error);
+        alert('Error saving edition preference. Please try again.');
+    }
 }
 
 // Function to load current edition and update registration page
@@ -957,6 +997,58 @@ async function renderDashboard(user) {
                 
                 // Get user's edition from registration data
                 const userEdition = getUserEdition(userData);
+                const userRegisteredEditions = getUserRegisteredEditions(userData);
+                
+                // Show edition selection if user is registered for multiple editions
+                if (userRegisteredEditions.length > 1) {
+                    const desktopContainer = document.getElementById('edition-selection-container');
+                    const mobileContainer = document.getElementById('mobile-edition-selection-container');
+                    const desktopSelector = document.getElementById('dashboard-edition-selector');
+                    const mobileSelector = document.getElementById('mobile-dashboard-edition-selector');
+                    
+                    if (desktopContainer && mobileContainer) {
+                        desktopContainer.style.display = 'block';
+                        mobileContainer.style.display = 'block';
+                        
+                        // Populate edition selectors
+                        if (desktopSelector && mobileSelector) {
+                            desktopSelector.innerHTML = '';
+                            mobileSelector.innerHTML = '';
+                            
+                            userRegisteredEditions.forEach(edition => {
+                                const optionText = edition === 'test' ? 'Test Weeks' : `Edition ${edition}`;
+                                const optionValue = edition;
+                                
+                                const desktopOption = document.createElement('option');
+                                desktopOption.value = optionValue;
+                                desktopOption.textContent = optionText;
+                                if (edition === userEdition) {
+                                    desktopOption.selected = true;
+                                }
+                                desktopSelector.appendChild(desktopOption);
+                                
+                                const mobileOption = document.createElement('option');
+                                mobileOption.value = optionValue;
+                                mobileOption.textContent = optionText;
+                                if (edition === userEdition) {
+                                    mobileOption.selected = true;
+                                }
+                                mobileSelector.appendChild(mobileOption);
+                            });
+                        }
+                        
+                        // Add event listeners for save buttons
+                        const desktopSaveBtn = document.getElementById('save-edition-preference');
+                        const mobileSaveBtn = document.getElementById('mobile-save-edition-preference');
+                        
+                        if (desktopSaveBtn) {
+                            desktopSaveBtn.onclick = () => saveEditionPreference(desktopSelector.value, user.uid);
+                        }
+                        if (mobileSaveBtn) {
+                            mobileSaveBtn.onclick = () => saveEditionPreference(mobileSelector.value, user.uid);
+                        }
+                    }
+                }
                 
                 // Update edition displays
                 document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
