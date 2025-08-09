@@ -1624,6 +1624,9 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 }
 
 // Function to determine team status for improved UI
+// Cache for deadline status to avoid repeated Firebase calls
+const deadlineCache = new Map();
+
 async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     if (!userData || !currentGameWeek || !userId) {
         return { status: 'normal', clickable: false, reason: 'No user data' };
@@ -1652,9 +1655,21 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
         if (pickedGameweek) {
             // Check if that gameweek has completed (deadline passed)
             const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-            // Get user's edition to check the correct deadline
             const userEdition = getUserEdition(userData);
-            const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum, userEdition);
+            
+            // Create cache key
+            const cacheKey = `${pickedGameweekNum}_${userEdition}`;
+            
+            // Check cache first
+            if (!deadlineCache.has(cacheKey)) {
+                const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum, userEdition);
+                deadlineCache.set(cacheKey, isDeadlinePassed);
+                
+                // Clear cache after 5 minutes to ensure fresh data
+                setTimeout(() => deadlineCache.delete(cacheKey), 5 * 60 * 1000);
+            }
+            
+            const isDeadlinePassed = deadlineCache.get(cacheKey);
             
             if (isDeadlinePassed) {
                 return { status: 'completed-pick', clickable: false, reason: `Picked in completed ${pickedGameweek}` };
