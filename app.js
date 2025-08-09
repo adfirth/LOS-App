@@ -271,6 +271,24 @@ function updateRegistrationPageEdition() {
             }
         }
     });
+    
+    // Update registration information based on current active edition
+    const registrationInfo = document.getElementById('registration-info');
+    if (registrationInfo) {
+        if (currentActiveEdition === 'test') {
+            registrationInfo.innerHTML = `
+                <h4>Registration Information</h4>
+                <p><strong>Status:</strong> By invitation only</p>
+            `;
+        } else {
+            registrationInfo.innerHTML = `
+                <h4>Registration Information</h4>
+                <p><strong>Entry Fee:</strong> £10 per edition</p>
+                <p><strong>Prize Pool:</strong> 50% of total entry fees</p>
+                <p><strong>Format:</strong> 10 game weeks</p>
+            `;
+        }
+    }
 }
 
 // Function to update edition display based on selection
@@ -293,6 +311,24 @@ function updateEditionDisplay() {
             el.textContent = displayText;
         }
     });
+    
+    // Update registration information based on edition selection
+    const registrationInfo = document.getElementById('registration-info');
+    if (registrationInfo) {
+        if (selectedEdition === 'test') {
+            registrationInfo.innerHTML = `
+                <h4>Registration Information</h4>
+                <p><strong>Status:</strong> By invitation only</p>
+            `;
+        } else {
+            registrationInfo.innerHTML = `
+                <h4>Registration Information</h4>
+                <p><strong>Entry Fee:</strong> £10 per edition</p>
+                <p><strong>Prize Pool:</strong> 50% of total entry fees</p>
+                <p><strong>Format:</strong> 10 game weeks</p>
+            `;
+        }
+    }
 }
 
 // Function to get user's edition from registration data
