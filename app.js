@@ -5318,15 +5318,21 @@ async function importScoresFromFootballWebPages(gameweek) {
         }
         
         // Merge API data with existing fixtures to preserve original time format
+        console.log('API fixtures received:', data.fixtures);
+        console.log('Existing fixtures:', existingFixtures);
+        
         const mergedFixtures = existingFixtures.map(existingFixture => {
             const apiFixture = data.fixtures.find(api => 
                 api.homeTeam === existingFixture.homeTeam && 
                 api.awayTeam === existingFixture.awayTeam
             );
             
+            console.log(`Looking for match: ${existingFixture.homeTeam} vs ${existingFixture.awayTeam}`);
+            console.log(`Found API fixture:`, apiFixture);
+            
             if (apiFixture) {
                 // Merge API data with existing fixture, preserving original time
-                return {
+                const mergedFixture = {
                     ...existingFixture, // Keep original data (including time format)
                     homeScore: apiFixture.homeScore,
                     awayScore: apiFixture.awayScore,
@@ -5335,7 +5341,12 @@ async function importScoresFromFootballWebPages(gameweek) {
                     status: apiFixture.status,
                     completed: apiFixture.completed
                 };
+                
+                console.log(`Merged fixture:`, mergedFixture);
+                return mergedFixture;
             }
+            
+            console.log(`No API match found for ${existingFixture.homeTeam} vs ${existingFixture.awayTeam}`);
             return existingFixture; // Keep unchanged if no API match found
         });
         
@@ -5346,6 +5357,7 @@ async function importScoresFromFootballWebPages(gameweek) {
         });
         
         console.log('Updated fixtures with scores:', mergedFixtures);
+        console.log('Sample API fixture with half-time scores:', data.fixtures.find(f => f.homeScoreHT || f.awayScoreHT));
         
         // Refresh the display with a small delay to ensure database update is complete
         setTimeout(() => {
