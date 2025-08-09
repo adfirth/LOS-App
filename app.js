@@ -1012,7 +1012,10 @@ function initializeMobileTabs() {
             // Load content based on tab
             if (targetTab === 'scores') {
                 loadPlayerScores().then(fixtures => {
-                    renderPlayerScores(fixtures);
+                    // Get current gameweek for display
+                    const currentGameweek = getActiveGameweek();
+                    renderPlayerScores(fixtures, currentGameweek);
+                    renderMobilePlayerScores(fixtures, currentGameweek);
                 });
             } else if (targetTab === 'vidiprinter') {
                 initializePlayerVidiprinter();
@@ -1044,7 +1047,10 @@ function initializeDesktopTabs() {
             // Load content based on tab
             if (targetTab === 'scores') {
                 loadPlayerScores().then(fixtures => {
-                    renderPlayerScores(fixtures);
+                    // Get current gameweek for display
+                    const currentGameweek = getActiveGameweek();
+                    renderPlayerScores(fixtures, currentGameweek);
+                    renderMobilePlayerScores(fixtures, currentGameweek);
                 });
             } else if (targetTab === 'vidiprinter') {
                 initializePlayerVidiprinter();
@@ -7609,13 +7615,19 @@ function renderPlayerScores(fixtures, gameweek) {
         let statusClass = '';
         
         if (fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
-            // Full-time result
+            // Full-time result with half-time scores if available
+            const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.awayScoreHT !== null;
             scoreDisplay = `
                 <div class="score-result">
                     <span class="score">${fixture.homeScore || 0}</span>
                     <span class="score-separator">-</span>
                     <span class="score">${fixture.awayScore || 0}</span>
                 </div>
+                ${hasHalfTimeScores ? `
+                    <div class="half-time-scores">
+                        <small>Half Time: ${fixture.homeScoreHT} - ${fixture.awayScoreHT}</small>
+                    </div>
+                ` : ''}
             `;
             statusClass = 'completed';
         } else if (fixture.status === 'HT' && fixture.homeScoreHT !== null && fixture.awayScoreHT !== null) {
@@ -7629,8 +7641,9 @@ function renderPlayerScores(fixtures, gameweek) {
                 </div>
             `;
             statusClass = 'half-time';
-        } else if (fixture.status === '1H' || fixture.status === '2H') {
-            // Live match
+        } else if (fixture.status === '1H' || fixture.status === '2H' || fixture.status === 'LIVE') {
+            // Live match with current scores and half-time if available
+            const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.awayScoreHT !== null;
             scoreDisplay = `
                 <div class="score-result">
                     <span class="score">${fixture.homeScore || 0}</span>
@@ -7638,6 +7651,11 @@ function renderPlayerScores(fixtures, gameweek) {
                     <span class="score">${fixture.awayScore || 0}</span>
                     <span class="score-status live">LIVE</span>
                 </div>
+                ${hasHalfTimeScores ? `
+                    <div class="half-time-scores">
+                        <small>Half Time: ${fixture.homeScoreHT} - ${fixture.awayScoreHT}</small>
+                    </div>
+                ` : ''}
             `;
             statusClass = 'live';
         } else {
@@ -7703,13 +7721,19 @@ function renderMobilePlayerScores(fixtures, gameweek) {
         let statusClass = '';
         
         if (fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
-            // Full-time result
+            // Full-time result with half-time scores if available
+            const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.awayScoreHT !== null;
             scoreDisplay = `
                 <div class="mobile-score-result">
                     <span class="mobile-score">${fixture.homeScore || 0}</span>
                     <span class="mobile-score-separator">-</span>
                     <span class="mobile-score">${fixture.awayScore || 0}</span>
                 </div>
+                ${hasHalfTimeScores ? `
+                    <div class="mobile-half-time-scores">
+                        <small>Half Time: ${fixture.homeScoreHT} - ${fixture.awayScoreHT}</small>
+                    </div>
+                ` : ''}
             `;
             statusClass = 'completed';
         } else if (fixture.status === 'HT' && fixture.homeScoreHT !== null && fixture.awayScoreHT !== null) {
@@ -7723,8 +7747,9 @@ function renderMobilePlayerScores(fixtures, gameweek) {
                 </div>
             `;
             statusClass = 'half-time';
-        } else if (fixture.status === '1H' || fixture.status === '2H') {
-            // Live match
+        } else if (fixture.status === '1H' || fixture.status === '2H' || fixture.status === 'LIVE') {
+            // Live match with current scores and half-time if available
+            const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.awayScoreHT !== null;
             scoreDisplay = `
                 <div class="mobile-score-result">
                     <span class="mobile-score">${fixture.homeScore || 0}</span>
@@ -7732,6 +7757,11 @@ function renderMobilePlayerScores(fixtures, gameweek) {
                     <span class="mobile-score">${fixture.awayScore || 0}</span>
                     <span class="mobile-score-status live">LIVE</span>
                 </div>
+                ${hasHalfTimeScores ? `
+                    <div class="mobile-half-time-scores">
+                        <small>Half Time: ${fixture.homeScoreHT} - ${fixture.awayScoreHT}</small>
+                    </div>
+                ` : ''}
             `;
             statusClass = 'live';
         } else {
