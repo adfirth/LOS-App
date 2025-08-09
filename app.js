@@ -6512,12 +6512,24 @@ function processResults(gameweek, fixtures) {
     db.collection('users').get().then(querySnapshot => {
         querySnapshot.forEach(userDoc => {
             const userData = userDoc.data();
-            const userPick = userData.picks && userData.picks[gameweekKey];
+            
+            // Get user's edition to determine the correct pick key
+            const userEdition = getUserEdition(userData);
+            const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
+            
+            // Try new structure first, then fallback to old structure
+            let userPick = userData.picks && userData.picks[editionGameweekKey];
+            if (!userPick && userData.picks && userData.picks[gameweekKey]) {
+                userPick = userData.picks[gameweekKey];
+                console.log(`Using old pick structure for user ${userData.displayName}`);
+            }
             
             if (!userPick) {
-                console.log(`No pick found for user ${userData.displayName} in ${gameweekKey}`);
+                console.log(`No pick found for user ${userData.displayName} in ${editionGameweekKey} or ${gameweekKey}`);
                 return;
             }
+            
+            console.log(`Processing results for ${userData.displayName}: picked ${userPick} in ${editionGameweekKey}`);
             
             // Check if the user's pick lost any matches
             let livesLost = 0;
@@ -6541,6 +6553,10 @@ function processResults(gameweek, fixtures) {
                 if (winner !== null && userPick === (winner === homeTeam ? awayTeam : homeTeam)) {
                     livesLost++;
                     console.log(`${userData.displayName} lost a life: picked ${userPick} but ${winner} won (${homeScore}-${awayScore})`);
+                } else if (winner !== null) {
+                    console.log(`${userData.displayName} didn't lose a life: picked ${userPick}, ${winner} won (${homeScore}-${awayScore})`);
+                } else {
+                    console.log(`${userData.displayName}: ${homeTeam} vs ${awayTeam} was a draw (${homeScore}-${awayScore})`);
                 }
             });
             
@@ -6697,11 +6713,24 @@ function displayPlayers(players) {
         // Check if player is already in Test Weeks
         const isInTestWeeks = player.registrations && player.registrations.editiontest;
         
+        // Get card emoji based on lives
+        const getLivesDisplay = (lives) => {
+            if (lives === 0) {
+                return '<span style="color: #dc3545; font-size: 1.2em;">🟥</span> <span style="color: #dc3545; font-weight: bold;">ELIMINATED</span>';
+            } else if (lives === 1) {
+                return '<span style="color: #ffc107; font-size: 1.2em;">🟨</span> <span style="color: #ffc107; font-weight: bold;">1 Life</span>';
+            } else if (lives === 2) {
+                return '<span style="color: #28a745; font-size: 1.2em;">🟢</span> <span style="color: #28a745; font-weight: bold;">2 Lives</span>';
+            } else {
+                return `<span style="color: #6c757d;">${lives} Lives</span>`;
+            }
+        };
+        
         row.innerHTML = `
             <td>${name}</td>
             <td>${player.email}</td>
             <td><span class="${statusClass}">${statusText}</span></td>
-            <td>${player.lives}</td>
+            <td>${getLivesDisplay(player.lives)}</td>
             <td>${latestEdition}</td>
             <td class="player-action-buttons">
                 <button class="edit-player-btn" onclick="editPlayer('${player.id}')">Edit</button>
