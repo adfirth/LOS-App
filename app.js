@@ -2844,10 +2844,34 @@ async function navigateToMobileGameweek(gameweek, userData, userId) {
 // --- COMPETITION SETTINGS FUNCTIONS ---
 function initializeCompetitionSettings() {
     const saveSettingsBtn = document.querySelector('#save-settings-btn');
+    const resetTestLivesBtn = document.querySelector('#reset-test-lives-btn');
     const activeGameweekSelect = document.querySelector('#active-gameweek-select');
     
     if (saveSettingsBtn) {
         saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+    }
+    
+    if (resetTestLivesBtn) {
+        resetTestLivesBtn.addEventListener('click', async () => {
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = 'Resetting players...';
+                statusElement.className = 'status-message info';
+            }
+            
+            try {
+                await resetAllPlayerLives();
+                if (statusElement) {
+                    statusElement.textContent = 'Successfully reset all test players to 2 lives!';
+                    statusElement.className = 'status-message success';
+                }
+            } catch (error) {
+                if (statusElement) {
+                    statusElement.textContent = 'Error resetting players: ' + error.message;
+                    statusElement.className = 'status-message error';
+                }
+            }
+        });
     }
     
     // Load current settings
