@@ -1154,7 +1154,7 @@ async function renderDashboard(user) {
             // Display card status based on lives remaining
             let cardDisplay = '';
             if (userData.lives === 2) {
-                cardDisplay = ''; // No card - show nothing
+                cardDisplay = '<p style="text-align: center; margin-top: 10px; color: #28a745; font-weight: bold;">All is well, you haven\'t got a card yet</p>';
             } else if (userData.lives === 1) {
                 cardDisplay = '<img src="images/Yellow Card.png" alt="Yellow Card" style="width: 240px; height: 240px; display: block; margin: 0 auto; margin-top: 10px;">';
             } else if (userData.lives === 0) {
