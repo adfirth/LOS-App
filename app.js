@@ -5275,42 +5275,21 @@ async function importScoresFromFootballWebPages(gameweek) {
             return;
         }
         
-        // Determine the matchday from the first fixture's date
-        const firstFixture = existingFixtures[0];
-        const fixtureDate = new Date(firstFixture.date);
-        const matchday = Math.ceil((fixtureDate.getTime() - new Date('2025-08-01').getTime()) / (7 * 24 * 60 * 60 * 1000));
-        
         // Get league from the current settings
         const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
         const settings = settingsDoc.exists ? settingsDoc.data() : {};
         const league = settings.footballWebPagesLeague || '5'; // Default to National League
         
-        // Calculate date range from existing fixtures to limit API request
-        const fixtureDates = existingFixtures.map(f => new Date(f.date));
-        const minDate = new Date(Math.min(...fixtureDates));
-        const maxDate = new Date(Math.max(...fixtureDates));
+        // Calculate matchday from the first fixture's date
+        const firstFixture = existingFixtures[0];
+        const fixtureDate = new Date(firstFixture.date);
+        const seasonStart = new Date('2025-08-01');
+        const matchday = Math.ceil((fixtureDate.getTime() - seasonStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        const season = '2025-2026';
         
-        // Format dates as YYYY-MM-DD for API
-        const startDate = minDate.toISOString().split('T')[0];
-        const endDate = maxDate.toISOString().split('T')[0];
+        console.log('Using old API format:', { league, season, matchday });
         
-        console.log('Date range for API request:', { startDate, endDate, fixtureCount: existingFixtures.length });
-        console.log('POST request body:', { league, startDate, endDate, fixtures: existingFixtures });
-        
-        // Fetch scores from Football Web Pages API with date range and specific fixtures
-        // Use POST to avoid URL length issues with large fixture data
-        const response = await fetch(`/.netlify/functions/fetch-scores`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                league: league,
-                startDate: startDate,
-                endDate: endDate,
-                fixtures: existingFixtures
-            })
-        });
+        const response = await fetch(`/.netlify/functions/fetch-scores?league=${league}&season=${season}&matchday=${matchday}`);
         
         // Check if response is ok
         if (!response.ok) {
@@ -5483,18 +5462,15 @@ async function startRealTimeScoreUpdates(gameweek) {
     
     const performUpdate = async () => {
         try {
-            // Calculate date range from existing fixtures to limit API request
-            const fixtureDates = existingFixtures.map(f => new Date(f.date));
-            const minDate = new Date(Math.min(...fixtureDates));
-            const maxDate = new Date(Math.max(...fixtureDates));
+            // Calculate matchday from the first fixture's date for the old API format
+            const firstFixture = existingFixtures[0];
+            const fixtureDate = new Date(firstFixture.date);
+            const seasonStart = new Date('2025-08-01');
+            const matchday = Math.ceil((fixtureDate.getTime() - seasonStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+            const season = '2025-2026';
             
-            // Format dates as YYYY-MM-DD for API
-            const startDate = minDate.toISOString().split('T')[0];
-            const endDate = maxDate.toISOString().split('T')[0];
-            
-            // Fetch latest scores from Football Web Pages API with date range and specific fixtures
-            const fixturesParam = encodeURIComponent(JSON.stringify(existingFixtures));
-            const response = await fetch(`/.netlify/functions/fetch-scores?league=${league}&startDate=${startDate}&endDate=${endDate}&fixtures=${fixturesParam}`);
+            // Fetch latest scores from Football Web Pages API using the old GET format
+            const response = await fetch(`/.netlify/functions/fetch-scores?league=${league}&season=${season}&matchday=${matchday}`);
             
             // Check if response is ok
             if (!response.ok) {

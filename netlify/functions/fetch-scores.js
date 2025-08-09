@@ -34,7 +34,17 @@ exports.handler = async (event, context) => {
       fixtures = body.fixtures;
       startDate = body.startDate;
       endDate = body.endDate;
-      console.log('Parsed POST parameters:', { league, season, matchday, fixtures: fixtures ? 'provided' : 'not provided', startDate, endDate });
+      console.log('Parsed POST parameters:', { 
+        league, 
+        season, 
+        matchday, 
+        fixtures: fixtures ? 'provided' : 'not provided', 
+        fixturesType: typeof fixtures,
+        fixturesIsArray: Array.isArray(fixtures),
+        fixturesLength: fixtures ? fixtures.length : 'N/A',
+        startDate, 
+        endDate 
+      });
     } else {
       // Parse from query string (GET)
       const params = event.queryStringParameters || {};
@@ -51,20 +61,20 @@ exports.handler = async (event, context) => {
     
     // Check if we have the required parameters for either approach
     const hasOldParams = league && season && matchday;
-    const hasNewParams = league && startDate && endDate && fixtures !== undefined;
+    const hasNewParams = league && startDate && endDate && Array.isArray(fixtures);
     
-    console.log('Parameter validation:', { hasOldParams, hasNewParams, league: !!league, startDate: !!startDate, endDate: !!endDate, fixtures: !!fixtures, fixturesType: typeof fixtures, fixturesLength: fixtures ? fixtures.length : 'N/A' });
+    console.log('Parameter validation:', { hasOldParams, hasNewParams, league: !!league, startDate: !!startDate, endDate: !!endDate, fixtures: !!fixtures, fixturesType: typeof fixtures, fixturesLength: fixtures ? fixtures.length : 'N/A', isArray: Array.isArray(fixtures) });
     
     if (!hasOldParams && !hasNewParams) {
       console.log('Missing required parameters. Returning 400 error.');
-      console.log('Debug info - league:', league, 'startDate:', startDate, 'endDate:', endDate, 'fixtures:', fixtures);
+      console.log('Debug info - league:', league, 'startDate:', startDate, 'endDate:', endDate, 'fixtures:', fixtures, 'isArray:', Array.isArray(fixtures));
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          error: 'Missing required parameters. Need either: league, season, matchday OR league, startDate, endDate, fixtures',
-          receivedParams: { league, season, matchday, startDate, endDate, hasFixtures: !!fixtures, fixturesType: typeof fixtures }
+          error: 'Missing required parameters. Need either: league, season, matchday OR league, startDate, endDate, fixtures (must be an array)',
+          receivedParams: { league, season, matchday, startDate, endDate, hasFixtures: !!fixtures, fixturesType: typeof fixtures, isArray: Array.isArray(fixtures) }
         })
       };
     }
@@ -141,7 +151,7 @@ exports.handler = async (event, context) => {
 
     // Parse existing fixtures if provided (for new approach)
     let existingFixtures = [];
-    if (hasNewParams && fixtures) {
+    if (hasNewParams && Array.isArray(fixtures)) {
       try {
         // Handle both string (from GET) and object (from POST) formats
         if (typeof fixtures === 'string') {
@@ -150,8 +160,18 @@ exports.handler = async (event, context) => {
           existingFixtures = fixtures; // Already an object from POST
         }
         console.log('Parsed existing fixtures:', existingFixtures.length);
+        console.log('First fixture sample:', existingFixtures[0]);
       } catch (error) {
         console.error('Error parsing existing fixtures:', error);
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Failed to parse fixtures data',
+            message: error.message
+          })
+        };
       }
     }
     
