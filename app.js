@@ -1120,9 +1120,9 @@ async function renderDashboard(user) {
             if (userData.lives === 2) {
                 cardDisplay = ''; // No card - show nothing
             } else if (userData.lives === 1) {
-                cardDisplay = '<img src="images/Yellow Card.png" alt="Yellow Card" style="width: 40px; height: 40px; vertical-align: middle;">';
+                cardDisplay = '<img src="images/Yellow Card.png" alt="Yellow Card" style="width: 80px; height: 80px; vertical-align: middle;">';
             } else if (userData.lives === 0) {
-                cardDisplay = '<img src="images/redcard.png" alt="Red Card" style="width: 40px; height: 40px; vertical-align: middle;">';
+                cardDisplay = '<img src="images/redcard.png" alt="Red Card" style="width: 80px; height: 80px; vertical-align: middle;">';
             }
             
             // Update lives remaining for desktop, mobile, and legacy
