@@ -1012,10 +1012,14 @@ function initializeMobileTabs() {
             // Load content based on tab
             if (targetTab === 'scores') {
                 loadPlayerScores().then(fixtures => {
+                    console.log('loadPlayerScores returned:', fixtures);
                     // Get current gameweek for display
                     const currentGameweek = getActiveGameweek();
                     renderPlayerScores(fixtures, currentGameweek);
                     renderMobilePlayerScores(fixtures, currentGameweek);
+                }).catch(error => {
+                    console.error('Error loading player scores:', error);
+                    showNoScoresMessage();
                 });
             } else if (targetTab === 'vidiprinter') {
                 initializePlayerVidiprinter();
@@ -1047,10 +1051,14 @@ function initializeDesktopTabs() {
             // Load content based on tab
             if (targetTab === 'scores') {
                 loadPlayerScores().then(fixtures => {
+                    console.log('loadPlayerScores returned:', fixtures);
                     // Get current gameweek for display
                     const currentGameweek = getActiveGameweek();
                     renderPlayerScores(fixtures, currentGameweek);
                     renderMobilePlayerScores(fixtures, currentGameweek);
+                }).catch(error => {
+                    console.error('Error loading player scores:', error);
+                    showNoScoresMessage();
                 });
             } else if (targetTab === 'vidiprinter') {
                 initializePlayerVidiprinter();
@@ -7589,13 +7597,19 @@ async function loadPlayerScores(gameweek = null) {
         }
         
         if (fixtureDoc.exists) {
-            const fixtures = fixtureDoc.data().fixtures;
+            const fixtureData = fixtureDoc.data();
+            console.log('Fixture document data:', fixtureData);
+            
+            const fixtures = fixtureData.fixtures;
             if (fixtures && fixtures.length > 0) {
+                console.log(`Found ${fixtures.length} fixtures`);
                 return fixtures; // Return fixtures instead of rendering
             } else {
+                console.log('No fixtures found in document');
                 return []; // Return empty array
             }
         } else {
+            console.log(`No fixture document found for ${editionGameweekKey}`);
             return []; // Return empty array
         }
         
