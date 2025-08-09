@@ -6150,6 +6150,10 @@ function addScoreRow(fixture, index) {
         console.log(`Fixture ${index}: Raw score values - homeScore: "${fixture.homeScore}" (type: ${typeof fixture.homeScore}), awayScore: "${fixture.awayScore}" (type: ${typeof fixture.awayScore})`);
     }
     
+    // Debug half-time scores
+    console.log(`Fixture ${index}: Half-time score values - homeScoreHT: "${fixture.homeScoreHT}" (type: ${typeof fixture.homeScoreHT}), awayScoreHT: "${fixture.awayScoreHT}" (type: ${typeof fixture.awayScoreHT})`);
+    console.log(`Fixture ${index}: Half-time HTML:`, halfTimeHtml);
+    
     scoreRow.innerHTML = `
         <div class="score-inputs">
             <div class="fixture-info">
