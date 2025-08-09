@@ -1756,60 +1756,32 @@ async function batchCheckDeadlines(gameweeks, edition) {
 
 // Optimized function to get team status without Firebase calls for simple cases
 function getTeamStatusSimple(teamName, userData, currentGameWeek, userId) {
+    // Simple fallback implementation to avoid any complex logic that might cause issues
     try {
-        // Input validation
+        // Basic validation
         if (!teamName || !userData || !currentGameWeek || !userId) {
-            console.log('getTeamStatusSimple: Missing required parameters', { teamName, userData, currentGameWeek, userId });
             return { status: 'normal', clickable: false, reason: 'No user data' };
         }
         
+        // Simple check for current pick
         const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
         const currentPick = userData.picks && userData.picks[gameweekKey];
         
-        // Check if this is the current pick for this gameweek
         if (currentPick === teamName) {
             return { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
         }
         
-        // Check if team is picked in another gameweek
+        // Simple check for existing picks
         const existingPicks = Object.values(userData.picks || {});
         if (existingPicks.includes(teamName)) {
-            // Find which gameweek this team was picked in
-            let pickedGameweek = null;
-            for (const [key, pick] of Object.entries(userData.picks || {})) {
-                if (pick === teamName) {
-                    pickedGameweek = key;
-                    break;
-                }
-            }
-            
-            if (pickedGameweek) {
-                // Use cached deadline data if available, otherwise assume future pick
-                const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-                const userEdition = getUserEdition(userData);
-                const cacheKey = `batch_${userEdition}`;
-                
-                if (batchDeadlineCache && batchDeadlineCache.has(cacheKey)) {
-                    const cached = batchDeadlineCache.get(cacheKey);
-                    const isDeadlinePassed = cached.results && cached.results[pickedGameweekNum] || false;
-                    
-                    if (isDeadlinePassed) {
-                        return { status: 'completed-pick', clickable: false, reason: `Picked in completed ${pickedGameweek}` };
-                    } else {
-                        return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
-                    }
-                } else {
-                    // Fallback to future pick if no cached data
-                    return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
-                }
-            }
+            return { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
         }
         
-        // Team is available for picking
+        // Default to available
         return { status: 'available', clickable: true, reason: 'Available for picking' };
         
     } catch (error) {
-        console.error('Error in getTeamStatusSimple:', error, { teamName, userData, currentGameWeek, userId });
+        console.error('Error in getTeamStatusSimple:', error);
         return { status: 'available', clickable: true, reason: 'Available for picking' };
     }
 }
