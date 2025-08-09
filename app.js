@@ -6505,6 +6505,40 @@ function saveScores() {
 // Track which gameweeks have been processed to prevent duplicate processing
 let processedGameweeks = new Set();
 
+// Function to reset all players' lives to 2 for testing
+async function resetAllPlayerLives() {
+    try {
+        console.log('Resetting all players to 2 lives...');
+        const usersSnapshot = await db.collection('users').get();
+        let resetCount = 0;
+        
+        const updatePromises = usersSnapshot.docs.map(async (doc) => {
+            const userData = doc.data();
+            // Only reset users who are registered for the test edition
+            if (userData.registeredEditions && userData.registeredEditions.includes('test')) {
+                await db.collection('users').doc(doc.id).update({
+                    lives: 2
+                });
+                resetCount++;
+                console.log(`Reset ${userData.displayName} to 2 lives`);
+            }
+        });
+        
+        await Promise.all(updatePromises);
+        console.log(`Successfully reset ${resetCount} players to 2 lives`);
+        
+        // Clear the processed gameweeks set so we can test again
+        processedGameweeks.clear();
+        console.log('Cleared processed gameweeks set');
+        
+        alert(`Successfully reset ${resetCount} players to 2 lives and cleared processed gameweeks`);
+        
+    } catch (error) {
+        console.error('Error resetting player lives:', error);
+        alert('Error resetting player lives: ' + error.message);
+    }
+}
+
 function processResults(gameweek, fixtures) {
     // This function processes the results and deducts lives from players
     // who picked losing teams
