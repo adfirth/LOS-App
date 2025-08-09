@@ -362,6 +362,34 @@ async function saveEditionPreference(edition, userId) {
     }
 }
 
+// Function to update user's default edition (admin function)
+function updateUserDefaultEdition(userId, edition) {
+    // Store the selected edition temporarily
+    window.tempUserEdition = edition;
+}
+
+// Function to save user's default edition (admin function)
+async function saveUserDefaultEdition(userId) {
+    try {
+        const edition = window.tempUserEdition || '';
+        
+        await db.collection('users').doc(userId).update({
+            preferredEdition: edition || null
+        });
+        
+        // Show success message
+        const editionText = edition === 'test' ? 'Test Weeks' : edition === '1' ? 'Edition 1' : 'No default';
+        alert(`Default edition updated to: ${editionText}`);
+        
+        // Refresh the user details modal to show updated selection
+        viewUserDetails(userId);
+        
+    } catch (error) {
+        console.error('Error saving user default edition:', error);
+        alert('Error saving default edition. Please try again.');
+    }
+}
+
 // Function to load current edition and update registration page
 async function loadCurrentEditionForRegistration() {
     try {
@@ -810,6 +838,20 @@ async function viewUserDetails(userId) {
                     <div class="pick-history">
                         <h4>Pick History</h4>
                         ${generatePickHistory(userData.picks || {})}
+                    </div>
+                    
+                    <div class="edition-settings">
+                        <h4>Edition Settings</h4>
+                        <div class="edition-controls">
+                            <label for="default-edition-${doc.id}">Default Edition:</label>
+                            <select id="default-edition-${doc.id}" onchange="updateUserDefaultEdition('${doc.id}', this.value)">
+                                <option value="">No Default Set</option>
+                                <option value="1" ${userData.preferredEdition === 1 ? 'selected' : ''}>Edition 1</option>
+                                <option value="test" ${userData.preferredEdition === 'test' ? 'selected' : ''}>Test Weeks</option>
+                            </select>
+                            <button class="secondary-button" onclick="saveUserDefaultEdition('${doc.id}')">Save Default</button>
+                        </div>
+                        <p class="edition-help">This sets which edition the user sees by default when they log in.</p>
                     </div>
                 </div>
             </div>
@@ -1628,7 +1670,9 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 const deadlineCache = new Map();
 
 async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
+    console.log('getTeamStatus called for:', teamName, 'userData:', !!userData, 'currentGameWeek:', currentGameWeek, 'userId:', userId);
     if (!userData || !currentGameWeek || !userId) {
+        console.log('getTeamStatus returning early - missing data');
         return { status: 'normal', clickable: false, reason: 'No user data' };
     }
     
@@ -1661,12 +1705,17 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
             const cacheKey = `${pickedGameweekNum}_${userEdition}`;
             
             // Check cache first
+            console.log('Checking cache for key:', cacheKey);
             if (!deadlineCache.has(cacheKey)) {
+                console.log('Cache miss, calling checkDeadlineForGameweek for:', pickedGameweekNum, userEdition);
                 const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum, userEdition);
                 deadlineCache.set(cacheKey, isDeadlinePassed);
+                console.log('Cached result:', isDeadlinePassed);
                 
                 // Clear cache after 5 minutes to ensure fresh data
                 setTimeout(() => deadlineCache.delete(cacheKey), 5 * 60 * 1000);
+            } else {
+                console.log('Cache hit for key:', cacheKey);
             }
             
             const isDeadlinePassed = deadlineCache.get(cacheKey);
