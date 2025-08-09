@@ -5328,21 +5328,46 @@ async function importScoresFromFootballWebPages(gameweek) {
             );
             
             console.log(`Looking for match: ${existingFixture.homeTeam} vs ${existingFixture.awayTeam}`);
+            console.log(`Existing fixture HT scores: ${existingFixture.homeScoreHT}-${existingFixture.awayScoreHT}`);
             console.log(`Found API fixture:`, apiFixture);
             
             if (apiFixture) {
                 // Merge API data with existing fixture, preserving original time
+                // Only update half-time scores if API provides non-null values (null means no data)
+                // If API returns 0 for both scores, it might mean no data rather than actual 0-0
+                let homeScoreHT, awayScoreHT;
+                
+                if (apiFixture.homeScoreHT !== null && apiFixture.homeScoreHT !== undefined) {
+                    // API provided a value, use it
+                    homeScoreHT = apiFixture.homeScoreHT;
+                    awayScoreHT = apiFixture.awayScoreHT;
+                } else {
+                    // API provided null/undefined, preserve existing values
+                    homeScoreHT = existingFixture.homeScoreHT;
+                    awayScoreHT = existingFixture.awayScoreHT;
+                }
+                
                 const mergedFixture = {
                     ...existingFixture, // Keep original data (including time format)
                     homeScore: apiFixture.homeScore,
                     awayScore: apiFixture.awayScore,
-                    homeScoreHT: apiFixture.homeScoreHT,
-                    awayScoreHT: apiFixture.awayScoreHT,
+                    homeScoreHT: homeScoreHT,
+                    awayScoreHT: awayScoreHT,
                     status: apiFixture.status,
                     completed: apiFixture.completed
                 };
                 
                 console.log(`Merged fixture:`, mergedFixture);
+                console.log(`Half-time score logic - API: ${apiFixture.homeScoreHT}-${apiFixture.awayScoreHT}, Existing: ${existingFixture.homeScoreHT}-${existingFixture.awayScoreHT}, Final: ${homeScoreHT}-${awayScoreHT}`);
+                console.log(`HT Score Decision - API homeScoreHT: ${apiFixture.homeScoreHT} (type: ${typeof apiFixture.homeScoreHT}), API awayScoreHT: ${apiFixture.awayScoreHT} (type: ${typeof apiFixture.awayScoreHT})`);
+                console.log(`HT Score Decision - Using API values: ${apiFixture.homeScoreHT !== null && apiFixture.homeScoreHT !== undefined ? 'YES' : 'NO'}`);
+                console.log(`HT Score Decision - Final values: homeScoreHT=${homeScoreHT} (type: ${typeof homeScoreHT}), awayScoreHT=${awayScoreHT} (type: ${typeof awayScoreHT})`);
+                
+                // Additional debugging: Check if this looks like real half-time data
+                const hasRealHTData = apiFixture.homeScoreHT !== null && apiFixture.homeScoreHT !== undefined && 
+                                    (apiFixture.homeScoreHT > 0 || apiFixture.awayScoreHT > 0 || 
+                                     (apiFixture.homeScoreHT === 0 && apiFixture.awayScoreHT === 0 && apiFixture.status === 'HT'));
+                console.log(`HT Score Decision - Has real HT data: ${hasRealHTData} (status: ${apiFixture.status})`);
                 return mergedFixture;
             }
             
@@ -5358,6 +5383,24 @@ async function importScoresFromFootballWebPages(gameweek) {
         
         console.log('Updated fixtures with scores:', mergedFixtures);
         console.log('Sample API fixture with half-time scores:', data.fixtures.find(f => f.homeScoreHT || f.awayScoreHT));
+        
+        // Log a summary of half-time score updates
+        const htUpdates = mergedFixtures.filter(f => f.homeScoreHT !== 0 || f.awayScoreHT !== 0);
+        console.log(`Half-time scores found for ${htUpdates.length} fixtures:`, htUpdates.map(f => `${f.homeTeam} vs ${f.awayTeam}: ${f.homeScoreHT}-${f.awayScoreHT}`));
+        
+        // Debug: Log all fixtures and their HT scores
+        console.log('=== DEBUG: All fixtures and their HT scores ===');
+        mergedFixtures.forEach((fixture, index) => {
+            console.log(`${index + 1}. ${fixture.homeTeam} vs ${fixture.awayTeam}: HT=${fixture.homeScoreHT}-${fixture.awayScoreHT} (types: ${typeof fixture.homeScoreHT}, ${typeof fixture.awayScoreHT})`);
+        });
+        console.log('=== END DEBUG ===');
+        
+        // Log a summary of which fixtures actually received non-zero half-time score updates
+        const nonZeroHTUpdates = mergedFixtures.filter(f => f.homeScoreHT !== 0 || f.awayScoreHT !== 0);
+        console.log(`Fixtures with non-zero HT scores: ${nonZeroHTUpdates.length}/${mergedFixtures.length}`);
+        if (nonZeroHTUpdates.length > 0) {
+            console.log('Non-zero HT scores:', nonZeroHTUpdates.map(f => `${f.homeTeam} vs ${f.awayTeam}: ${f.homeScoreHT}-${f.awayScoreHT}`));
+        }
         
         // Refresh the display with a small delay to ensure database update is complete
         setTimeout(() => {
@@ -5469,16 +5512,32 @@ async function startRealTimeScoreUpdates(gameweek) {
                     );
                     
                     if (apiFixture) {
-                        // Merge API data with existing fixture, preserving original time
-                        return {
+                        // Merge API data with existing fixture, preserving original time and HT scores
+                        let homeScoreHT, awayScoreHT;
+                        
+                        if (apiFixture.homeScoreHT !== null && apiFixture.homeScoreHT !== undefined) {
+                            // API provided a value, use it
+                            homeScoreHT = apiFixture.homeScoreHT;
+                            awayScoreHT = apiFixture.awayScoreHT;
+                        } else {
+                            // API provided null/undefined, preserve existing values
+                            homeScoreHT = existingFixture.homeScoreHT;
+                            awayScoreHT = existingFixture.awayScoreHT;
+                        }
+                        
+                        const updatedFixture = {
                             ...existingFixture, // Keep original data (including time format)
                             homeScore: apiFixture.homeScore,
                             awayScore: apiFixture.awayScore,
-                            homeScoreHT: apiFixture.homeScoreHT,
-                            awayScoreHT: apiFixture.awayScoreHT,
+                            homeScoreHT: homeScoreHT,
+                            awayScoreHT: awayScoreHT,
                             status: apiFixture.status,
                             completed: apiFixture.completed
                         };
+                        
+                        console.log(`Real-time update - ${existingFixture.homeTeam} vs ${existingFixture.awayTeam}: API HT=${apiFixture.homeScoreHT}-${apiFixture.awayScoreHT}, Existing HT=${existingFixture.homeScoreHT}-${existingFixture.awayScoreHT}, Final HT=${homeScoreHT}-${awayScoreHT}`);
+                        
+                        return updatedFixture;
                     }
                     return existingFixture; // Keep unchanged if no API match found
                 });
@@ -6314,11 +6373,23 @@ async function updateHalfTimeScores(gameweek, fixtureIndex, fixture) {
                 
                 const fixtures = fixtureDoc.data().fixtures;
                 
-                // Update half-time scores
+                // Update half-time scores - preserve existing values if API returns null/undefined
+                let homeScoreHT, awayScoreHT;
+                
+                if (apiFixture.homeScoreHT !== null && apiFixture.homeScoreHT !== undefined) {
+                    // API provided a value, use it
+                    homeScoreHT = apiFixture.homeScoreHT;
+                    awayScoreHT = apiFixture.awayScoreHT;
+                } else {
+                    // API provided null/undefined, preserve existing values
+                    homeScoreHT = fixtures[fixtureIndex].homeScoreHT;
+                    awayScoreHT = fixtures[fixtureIndex].awayScoreHT;
+                }
+                
                 fixtures[fixtureIndex] = {
                     ...fixtures[fixtureIndex],
-                    homeScoreHT: apiFixture.homeScoreHT,
-                    awayScoreHT: apiFixture.awayScoreHT,
+                    homeScoreHT: homeScoreHT,
+                    awayScoreHT: awayScoreHT,
                     status: 'HT' // Update status to half-time
                 };
                 
@@ -6328,6 +6399,8 @@ async function updateHalfTimeScores(gameweek, fixtureIndex, fixture) {
                 });
                 
                 console.log(`Updated half-time scores for ${fixture.homeTeam} vs ${fixture.awayTeam}: ${apiFixture.homeScoreHT}-${apiFixture.awayScoreHT}`);
+                console.log(`HT Score Update Logic - API: ${apiFixture.homeScoreHT}-${apiFixture.awayScoreHT}, Existing: ${fixtures[fixtureIndex].homeScoreHT}-${fixtures[fixtureIndex].awayScoreHT}, Final: ${homeScoreHT}-${awayScoreHT}`);
+                console.log(`HT Score Update Logic - API homeScoreHT type: ${typeof apiFixture.homeScoreHT}, API awayScoreHT type: ${typeof apiFixture.awayScoreHT}`);
                 return true;
             }
         }

@@ -91,9 +91,11 @@ exports.handler = async (event, context) => {
         console.log('First match structure:', JSON.stringify(data.fixtures[0].match, null, 2));
         if (data.fixtures[0].match.home) {
           console.log('Home team structure:', JSON.stringify(data.fixtures[0].match.home, null, 2));
+          console.log('Home team keys:', Object.keys(data.fixtures[0].match.home));
         }
         if (data.fixtures[0].match.away) {
           console.log('Away team structure:', JSON.stringify(data.fixtures[0].match.away, null, 2));
+          console.log('Away team keys:', Object.keys(data.fixtures[0].match.away));
         }
       }
     }
@@ -172,11 +174,30 @@ exports.handler = async (event, context) => {
         homeScoreHT = parseInt(homeTeam.ht) || null;
         awayScoreHT = parseInt(awayTeam.ht) || null;
         console.log(`Found half-time scores in ht fields: ${homeScoreHT}-${awayScoreHT}`);
+      } else if (homeTeam.halfTime && awayTeam.halfTime) {
+        // Another possible field name
+        homeScoreHT = parseInt(homeTeam.halfTime) || null;
+        awayScoreHT = parseInt(awayTeam.halfTime) || null;
+        console.log(`Found half-time scores in halfTime fields: ${homeScoreHT}-${awayScoreHT}`);
+      } else if (match.halfTime) {
+        // Single half-time field in match
+        const htScore = match.halfTime.toString();
+        const parts = htScore.split('-');
+        if (parts.length === 2) {
+          homeScoreHT = parseInt(parts[0]) || null;
+          awayScoreHT = parseInt(parts[1]) || null;
+          console.log(`Found half-time scores in match.halfTime: ${homeScoreHT}-${awayScoreHT}`);
+        }
       } else {
         console.log(`No half-time scores found for ${homeTeam.name} vs ${awayTeam.name}`);
         console.log('Available home team fields:', Object.keys(homeTeam));
         console.log('Available away team fields:', Object.keys(awayTeam));
         console.log('Available match fields:', Object.keys(match));
+        
+        // Set to null when no half-time scores are found
+        // This allows the frontend to preserve existing values
+        homeScoreHT = null;
+        awayScoreHT = null;
       }
 
       // Ensure scores are properly parsed
