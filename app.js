@@ -6402,8 +6402,10 @@ function saveScores() {
                         homeScore = currentHomeScore.value;
                         awayScore = currentAwayScore.value;
                     } else {
-                        homeScore = row.querySelector('.home-score').value;
-                        awayScore = row.querySelector('.away-score').value;
+                        const homeScoreElement = row.querySelector('.home-score');
+                        const awayScoreElement = row.querySelector('.away-score');
+                        homeScore = homeScoreElement ? homeScoreElement.value : null;
+                        awayScore = awayScoreElement ? awayScoreElement.value : null;
                     }
                     
                     const homeScoreHTElement = row.querySelector('.home-score-ht');
@@ -6460,8 +6462,10 @@ function saveScores() {
                                 homeScore = currentHomeScore.value;
                                 awayScore = currentAwayScore.value;
                             } else {
-                                homeScore = row.querySelector('.home-score').value;
-                                awayScore = row.querySelector('.away-score').value;
+                                const homeScoreElement = row.querySelector('.home-score');
+                                const awayScoreElement = row.querySelector('.away-score');
+                                homeScore = homeScoreElement ? homeScoreElement.value : null;
+                                awayScore = awayScoreElement ? awayScoreElement.value : null;
                             }
                             
                             const homeScoreHTElement = row.querySelector('.home-score-ht');
@@ -6539,10 +6543,14 @@ async function resetAllPlayerLives() {
         const updatePromises = usersSnapshot.docs.map(async (doc) => {
             const userData = doc.data();
             console.log(`Checking user: ${userData.displayName}, registeredEditions:`, userData.registeredEditions);
+            console.log(`User data keys:`, Object.keys(userData));
             
             // Check if user is registered for test edition or has test picks
             const hasTestRegistration = userData.registeredEditions && userData.registeredEditions.includes('test');
             const hasTestPicks = userData.editiontest_gw1 || userData.editiontest_gw2 || userData.editiontest_gw3;
+            
+            console.log(`${userData.displayName} - hasTestRegistration: ${hasTestRegistration}, hasTestPicks: ${hasTestPicks}`);
+            console.log(`${userData.displayName} - editiontest_gw1:`, userData.editiontest_gw1);
             
             if (hasTestRegistration || hasTestPicks) {
                 await db.collection('users').doc(doc.id).update({
