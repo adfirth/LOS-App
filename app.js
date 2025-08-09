@@ -1668,12 +1668,8 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 // Cache for deadline status to avoid repeated Firebase calls
 const deadlineCache = new Map();
 
-<<<<<<< HEAD
-async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
-=======
 // Optimized function to get team status without Firebase calls for simple cases
 function getTeamStatusSimple(teamName, userData, currentGameWeek, userId) {
->>>>>>> 98452f9 (Update app.js with async/await improvements and code cleanup)
     if (!userData || !currentGameWeek || !userId) {
         return { status: 'normal', clickable: false, reason: 'No user data' };
     }
@@ -1771,7 +1767,7 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     return { status: 'available', clickable: true, reason: 'Available for picking' };
 }
 
-function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
