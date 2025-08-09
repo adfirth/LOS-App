@@ -5328,3 +5328,31 @@ a:hover {
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
+/* Edition selection styling */
+#edition-selection {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: white;
+    transition: border-color 0.3s ease;
+    font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+}
+
+#edition-selection:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+#edition-selection option {
+    padding: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    #edition-selection {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+

@@ -268,8 +268,30 @@ function updateRegistrationPageEdition() {
             if (currentActiveEdition === 'test') {
                 el.textContent = 'Test Weeks';
             } else {
-                el.textContent = currentActiveEdition;
+                el.textContent = `Edition ${currentActiveEdition}`;
             }
+        }
+    });
+}
+
+// Function to update edition display based on selection
+function updateEditionDisplay() {
+    const editionSelection = document.getElementById('edition-selection');
+    if (!editionSelection) return;
+    
+    const selectedEdition = editionSelection.value;
+    let displayText = 'Edition 1'; // Default
+    
+    if (selectedEdition === 'test') {
+        displayText = 'Test Weeks';
+    } else if (selectedEdition === '1') {
+        displayText = 'Edition 1';
+    }
+    
+    // Update all edition displays
+    document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
+        if (el) {
+            el.textContent = displayText;
         }
     });
 }
@@ -289,10 +311,11 @@ async function loadCurrentEditionForRegistration() {
 }
 
 // Check registration window status
-async function checkRegistrationWindow() {
+async function checkRegistrationWindow(edition = null) {
     try {
-        // Get the current active edition from the global variable
-        const settingsDoc = await db.collection('settings').doc(`registration_edition_${currentActiveEdition}`).get();
+        // Use provided edition or fall back to current active edition
+        const editionToCheck = edition || currentActiveEdition;
+        const settingsDoc = await db.collection('settings').doc(`registration_edition_${editionToCheck}`).get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
             
@@ -302,7 +325,8 @@ async function checkRegistrationWindow() {
             });
             
             if (!settings.enabled) {
-                showRegistrationClosed();
+                const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
+                showRegistrationClosed(`${editionText} registration is currently closed`);
                 return false;
             }
             
@@ -311,12 +335,14 @@ async function checkRegistrationWindow() {
             const endDate = settings.endDate ? new Date(settings.endDate.toDate()) : null;
             
             if (startDate && now < startDate) {
-                showRegistrationClosed('Registration opens on ' + startDate.toLocaleDateString());
+                const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
+                showRegistrationClosed(`${editionText} registration opens on ` + startDate.toLocaleDateString());
                 return false;
             }
             
             if (endDate && now > endDate) {
-                showRegistrationClosed('Registration closed on ' + endDate.toLocaleDateString());
+                const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
+                showRegistrationClosed(`${editionText} registration closed on ` + endDate.toLocaleDateString());
                 return false;
             }
             
@@ -4543,11 +4569,18 @@ if (registerForm) {
         const surname = document.querySelector('#register-surname').value;
         const dob = document.querySelector('#register-dob').value;
         const email = document.querySelector('#register-email').value;
+        const selectedEdition = document.querySelector('#edition-selection').value;
         
-                    // Check registration window
-            if (!(await checkRegistrationWindow())) {
-                return;
-            }
+        // Validate edition selection
+        if (!selectedEdition) {
+            errorMessage.textContent = 'Please select an edition to register for';
+            return;
+        }
+        
+        // Check registration window for the selected edition
+        if (!(await checkRegistrationWindow(selectedEdition))) {
+            return;
+        }
         const mobile = document.querySelector('#register-mobile').value;
         const password = document.querySelector('#register-password').value;
         const confirmPassword = document.querySelector('#register-confirm-password').value;
@@ -4603,7 +4636,7 @@ if (registerForm) {
                 lives: 2,
                 picks: {},
                 registrations: {
-                    [`edition${currentEdition}`]: {
+                    [`edition${selectedEdition}`]: {
                         registrationDate: new Date(),
                         paymentMethod: paymentMethod,
                         emailConsent: emailConsent,
@@ -4648,9 +4681,16 @@ if (reRegisterForm) {
         e.preventDefault();
         
         const email = document.querySelector('#re-register-email').value;
+        const selectedEdition = document.querySelector('#edition-selection').value;
         
-        // Check registration window (no user ID for re-registrations)
-        if (!(await checkRegistrationWindow())) {
+        // Validate edition selection
+        if (!selectedEdition) {
+            errorMessage.textContent = 'Please select an edition to register for';
+            return;
+        }
+        
+        // Check registration window for the selected edition
+        if (!(await checkRegistrationWindow(selectedEdition))) {
             return;
         }
         const password = document.querySelector('#re-register-password').value;
@@ -4680,7 +4720,7 @@ if (reRegisterForm) {
                 paymentMethod: paymentMethod,
                 emailConsent: emailConsent,
                 whatsappConsent: whatsappConsent,
-                [`registrations.edition${currentEdition}`]: {
+                [`registrations.edition${selectedEdition}`]: {
                     registrationDate: new Date(),
                     paymentMethod: paymentMethod,
                     emailConsent: emailConsent,
@@ -5174,6 +5214,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeAdminTabs();
     // Load current edition for registration page
     loadCurrentEditionForRegistration();
+    
+    // Add edition selection event listener
+    const editionSelection = document.getElementById('edition-selection');
+    if (editionSelection) {
+        editionSelection.addEventListener('change', updateEditionDisplay);
+    }
 });
 
 // Simple tab functionality for admin panel

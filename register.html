@@ -20,7 +20,20 @@
     <div class="container">
         <main>
             <section class="intro">
-                <h2>Register for Edition <span id="current-edition-display">1</span></h2>
+                <h2>Register for <span id="current-edition-display">Edition 1</span></h2>
+                
+                <!-- Edition Selection -->
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label for="edition-selection">Select Edition to Register For:</label>
+                    <select id="edition-selection" required>
+                        <option value="">-- Select Edition --</option>
+                        <option value="1">Edition 1</option>
+                        <option value="test">Test Weeks</option>
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 0.5rem;">
+                        Choose which edition you want to participate in. Edition 1 is the main competition, Test Weeks is for testing new features.
+                    </small>
+                </div>
                 
                 <!-- Registration Window Check -->
                 <div id="registration-closed" style="display: none; text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 2rem;">
@@ -100,7 +113,7 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="cta-button">Register for Edition <span id="submit-edition-display">1</span></button>
+                    <button type="submit" class="cta-button">Register for <span id="submit-edition-display">Edition 1</span></button>
                     <p id="error-message" class="error-text"></p>
                 </form>
 
@@ -143,7 +156,7 @@
                             I agree to the terms and conditions *
                         </label>
                     </div>
-                    <button type="submit" class="cta-button">Register for Edition <span id="re-submit-edition-display">1</span></button>
+                    <button type="submit" class="cta-button">Register for <span id="re-submit-edition-display">Edition 1</span></button>
                     <p id="re-register-error-message" class="error-text"></p>
                 </form>
 
@@ -156,7 +169,7 @@
         </main>
 
         <aside class="sidebar">
-            <h3>Register for Edition <span id="sidebar-edition-display">1</span>!</h3>
+            <h3>Register for <span id="sidebar-edition-display">Edition 1</span>!</h3>
             <p>Complete your registration to enter the competition and make your first pick.</p>
             <div id="registration-info" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                 <h4>Registration Information</h4>
