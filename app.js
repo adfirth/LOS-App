@@ -296,6 +296,32 @@ function updateEditionDisplay() {
     });
 }
 
+// Function to get user's edition from registration data
+function getUserEdition(userData) {
+    if (!userData || !userData.registrations) {
+        return 1; // Default to Edition 1 if no registration data
+    }
+    
+    // Check for Test Weeks registration first
+    if (userData.registrations.editiontest) {
+        return 'test';
+    }
+    
+    // Check for Edition 1 registration
+    if (userData.registrations.edition1) {
+        return 1;
+    }
+    
+    // Check for other editions (2, 3, 4, etc.)
+    for (let i = 2; i <= 10; i++) {
+        if (userData.registrations[`edition${i}`]) {
+            return i;
+        }
+    }
+    
+    return 1; // Default to Edition 1
+}
+
 // Function to load current edition and update registration page
 async function loadCurrentEditionForRegistration() {
     try {
@@ -929,13 +955,16 @@ async function renderDashboard(user) {
             if (userDoc.exists) {
                 const userData = userDoc.data();
                 
+                // Get user's edition from registration data
+                const userEdition = getUserEdition(userData);
+                
                 // Update edition displays
                 document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
                     if (el) {
-                        if (currentActiveEdition === 'test') {
+                        if (userEdition === 'test') {
                             el.textContent = 'Test Weeks';
                         } else {
-                            el.textContent = currentActiveEdition;
+                            el.textContent = `Edition ${userEdition}`;
                         }
                     }
                 });
@@ -1301,7 +1330,10 @@ function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
 
     // Handle tiebreak gameweek
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+    
+    // Determine user's edition from registration data
+    const userEdition = getUserEdition(userData);
+    const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
 
     // Try new structure first, then fallback to old structure
     db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
@@ -1372,7 +1404,10 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
 
     // Handle tiebreak gameweek
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-    const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+    
+    // Determine user's edition from registration data
+    const userEdition = getUserEdition(userData);
+    const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
 
     // Try new structure first, then fallback to old structure
     db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
