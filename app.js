@@ -6548,7 +6548,8 @@ async function resetAllPlayerLives() {
             // Check if user is registered for test edition or has test picks
             const hasTestRegistration = userData.registeredEditions && userData.registeredEditions.includes('test');
             const hasTestPicks = (userData.picks && (userData.picks.editiontest_gw1 || userData.picks.editiontest_gw2 || userData.picks.editiontest_gw3)) || 
-                                (userData.editiontest_gw1 || userData.editiontest_gw2 || userData.editiontest_gw3);
+                                (userData.editiontest_gw1 || userData.editiontest_gw2 || userData.editiontest_gw3) ||
+                                (userData.picks && (userData.picks.gw1 || userData.picks.gw2 || userData.picks.gw3));
             
             console.log(`${userData.displayName} - hasTestRegistration: ${hasTestRegistration}, hasTestPicks: ${hasTestPicks}`);
             console.log(`${userData.displayName} - picks object:`, userData.picks);
