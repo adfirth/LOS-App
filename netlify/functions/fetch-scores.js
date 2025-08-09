@@ -51,19 +51,20 @@ exports.handler = async (event, context) => {
     
     // Check if we have the required parameters for either approach
     const hasOldParams = league && season && matchday;
-    const hasNewParams = league && startDate && endDate && fixtures;
+    const hasNewParams = league && startDate && endDate && fixtures !== undefined;
     
-    console.log('Parameter validation:', { hasOldParams, hasNewParams, league: !!league, startDate: !!startDate, endDate: !!endDate, fixtures: !!fixtures });
+    console.log('Parameter validation:', { hasOldParams, hasNewParams, league: !!league, startDate: !!startDate, endDate: !!endDate, fixtures: !!fixtures, fixturesType: typeof fixtures, fixturesLength: fixtures ? fixtures.length : 'N/A' });
     
     if (!hasOldParams && !hasNewParams) {
       console.log('Missing required parameters. Returning 400 error.');
+      console.log('Debug info - league:', league, 'startDate:', startDate, 'endDate:', endDate, 'fixtures:', fixtures);
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
           error: 'Missing required parameters. Need either: league, season, matchday OR league, startDate, endDate, fixtures',
-          receivedParams: { league, season, matchday, startDate, endDate, hasFixtures: !!fixtures }
+          receivedParams: { league, season, matchday, startDate, endDate, hasFixtures: !!fixtures, fixturesType: typeof fixtures }
         })
       };
     }

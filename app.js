@@ -5295,6 +5295,7 @@ async function importScoresFromFootballWebPages(gameweek) {
         const endDate = maxDate.toISOString().split('T')[0];
         
         console.log('Date range for API request:', { startDate, endDate, fixtureCount: existingFixtures.length });
+        console.log('POST request body:', { league, startDate, endDate, fixtures: existingFixtures });
         
         // Fetch scores from Football Web Pages API with date range and specific fixtures
         // Use POST to avoid URL length issues with large fixture data
@@ -6139,7 +6140,34 @@ function loadScoresForGameweek() {
     db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
         if (doc.exists) {
             const fixtures = doc.data().fixtures;
-            fixtures.forEach((fixture, index) => {
+            
+            // Initialize missing half-time score fields for fixtures that don't have them
+            const updatedFixtures = fixtures.map(fixture => {
+                // Ensure homeScoreHT and awayScoreHT fields exist
+                if (fixture.homeScoreHT === undefined) {
+                    fixture.homeScoreHT = null;
+                }
+                if (fixture.awayScoreHT === undefined) {
+                    fixture.awayScoreHT = null;
+                }
+                return fixture;
+            });
+            
+            // Update the database with the initialized fields if any were missing
+            const needsUpdate = fixtures.some(fixture => 
+                fixture.homeScoreHT === undefined || fixture.awayScoreHT === undefined
+            );
+            
+            if (needsUpdate) {
+                console.log('Initializing missing half-time score fields in database');
+                db.collection('fixtures').doc(editionGameweekKey).update({
+                    fixtures: updatedFixtures
+                }).catch(error => {
+                    console.error('Error updating fixtures with initialized fields:', error);
+                });
+            }
+            
+            updatedFixtures.forEach((fixture, index) => {
                 addScoreRow(fixture, index);
             });
         } else {
