@@ -5763,3 +5763,140 @@ a:hover {
     }
 }
 
+/* --- PLAYER VIDIPRINTER STYLES --- */
+
+/* Desktop Vidiprinter Display */
+#desktop-vidiprinter-display {
+    background: #000;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 1rem;
+    border-radius: 8px;
+    height: 400px;
+    overflow-y: auto;
+    border: 2px solid #333;
+    box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+.player-vidiprinter-placeholder {
+    text-align: center;
+    color: #00ff00;
+    font-style: italic;
+    padding: 2rem;
+}
+
+.player-vidiprinter-entry {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #333;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.player-vidiprinter-entry:last-child {
+    border-bottom: none;
+}
+
+.player-vidiprinter-timestamp {
+    color: #888;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+}
+
+.player-vidiprinter-text {
+    color: #00ff00;
+}
+
+.player-vidiprinter-entry.goal {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.player-vidiprinter-entry.goal .player-vidiprinter-text {
+    color: #ffff00;
+}
+
+.player-vidiprinter-entry.red-card {
+    color: #ff0000;
+    font-weight: bold;
+}
+
+.player-vidiprinter-entry.red-card .player-vidiprinter-text {
+    color: #ff0000;
+}
+
+.player-vidiprinter-entry.yellow-card {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.player-vidiprinter-entry.yellow-card .player-vidiprinter-text {
+    color: #ffff00;
+}
+
+.player-vidiprinter-entry.half-time {
+    color: #00ffff;
+    font-weight: bold;
+}
+
+.player-vidiprinter-entry.half-time .player-vidiprinter-text {
+    color: #00ffff;
+}
+
+.player-vidiprinter-entry.full-time {
+    color: #00ffff;
+    font-weight: bold;
+}
+
+.player-vidiprinter-entry.full-time .player-vidiprinter-text {
+    color: #00ffff;
+}
+
+.player-vidiprinter-entry.kick-off {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+.player-vidiprinter-entry.kick-off .player-vidiprinter-text {
+    color: #00ff00;
+}
+
+.player-vidiprinter-entry.status {
+    color: #888;
+    font-style: italic;
+}
+
+.player-vidiprinter-entry.status .player-vidiprinter-text {
+    color: #888;
+}
+
+.player-vidiprinter-entry.error {
+    color: #ff0000;
+    font-style: italic;
+}
+
+.player-vidiprinter-entry.error .player-vidiprinter-text {
+    color: #ff0000;
+}
+
+/* Mobile Vidiprinter Display */
+#mobile-vidiprinter-display {
+    background: #000;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    padding: 0.75rem;
+    border-radius: 6px;
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #333;
+    box-shadow: inset 0 0 8px rgba(0, 255, 0, 0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+

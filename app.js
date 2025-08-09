@@ -1009,9 +1009,13 @@ function initializeMobileTabs() {
                 targetPane.classList.add('active');
             }
             
-            // Load scores when scores tab is clicked
+            // Load content based on tab
             if (targetTab === 'scores') {
-                loadPlayerScores();
+                loadPlayerScores().then(fixtures => {
+                    renderPlayerScores(fixtures);
+                });
+            } else if (targetTab === 'vidiprinter') {
+                initializePlayerVidiprinter();
             }
         });
     });
@@ -1037,9 +1041,13 @@ function initializeDesktopTabs() {
                 targetPane.classList.add('active');
             }
             
-            // Load scores when scores tab is clicked
+            // Load content based on tab
             if (targetTab === 'scores') {
-                loadPlayerScores();
+                loadPlayerScores().then(fixtures => {
+                    renderPlayerScores(fixtures);
+                });
+            } else if (targetTab === 'vidiprinter') {
+                initializePlayerVidiprinter();
             }
         });
     });
@@ -7778,5 +7786,195 @@ function showNoScoresMessage() {
     }
     if (mobileScoresDisplay) {
         mobileScoresDisplay.innerHTML = noScoresMessage;
+    }
+}
+
+// --- PLAYER VIDIPRINTER FUNCTIONS ---
+let playerVidiprinterInterval = null;
+let playerVidiprinterData = [];
+let isPlayerVidiprinterRunning = false;
+
+// Initialize player vidiprinter functionality
+function initializePlayerVidiprinter() {
+    console.log('Initializing Player Vidiprinter...');
+    
+    // Start the vidiprinter automatically for players
+    if (!isPlayerVidiprinterRunning) {
+        startPlayerVidiprinter();
+    }
+}
+
+// Start player vidiprinter feed
+async function startPlayerVidiprinter() {
+    if (isPlayerVidiprinterRunning) return;
+    
+    const desktopFeed = document.getElementById('desktop-vidiprinter-display');
+    const mobileFeed = document.getElementById('mobile-vidiprinter-display');
+    
+    if (!desktopFeed && !mobileFeed) {
+        console.error('Player vidiprinter display elements not found');
+        return;
+    }
+    
+    try {
+        isPlayerVidiprinterRunning = true;
+        
+        // Clear any existing content
+        if (desktopFeed) {
+            desktopFeed.innerHTML = `
+                <div class="player-vidiprinter-placeholder">
+                    <p>Connecting to live match updates...</p>
+                </div>
+            `;
+        }
+        if (mobileFeed) {
+            mobileFeed.innerHTML = `
+                <div class="player-vidiprinter-placeholder">
+                    <p>Connecting to live match updates...</p>
+                </div>
+            `;
+        }
+        
+        // Add initial status message
+        addPlayerVidiprinterEntry('Vidiprinter started - connecting to live match updates...', 'status');
+        
+        // Fetch initial data
+        await fetchPlayerVidiprinterData();
+        
+        // Set up interval for regular updates (every 30 seconds)
+        playerVidiprinterInterval = setInterval(async () => {
+            if (isPlayerVidiprinterRunning) {
+                await fetchPlayerVidiprinterData();
+            }
+        }, 30000); // Update every 30 seconds
+        
+        console.log('Player vidiprinter started successfully');
+        
+    } catch (error) {
+        console.error('Error starting player vidiprinter:', error);
+        addPlayerVidiprinterEntry('Failed to connect to live updates', 'error');
+    }
+}
+
+// Stop player vidiprinter feed
+function stopPlayerVidiprinter() {
+    if (!isPlayerVidiprinterRunning) return;
+    
+    isPlayerVidiprinterRunning = false;
+    
+    if (playerVidiprinterInterval) {
+        clearInterval(playerVidiprinterInterval);
+        playerVidiprinterInterval = null;
+    }
+    
+    addPlayerVidiprinterEntry('Live updates stopped', 'status');
+    console.log('Player vidiprinter stopped');
+}
+
+// Fetch vidiprinter data for players
+async function fetchPlayerVidiprinterData(competition = '5') {
+    try {
+        const response = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=${competition}`, {
+            method: 'GET',
+            headers: {
+                'X-RapidAPI-Key': 'YOUR_RAPIDAPI_KEY', // This should be replaced with actual key
+                'X-RapidAPI-Host': 'football-web-pages1.p.rapidapi.com'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Player vidiprinter API response received');
+        
+        if (data && data.vidiprinter && data.vidiprinter.events && Array.isArray(data.vidiprinter.events)) {
+            console.log('Processing', data.vidiprinter.events.length, 'player vidiprinter events');
+            processPlayerVidiprinterData(data.vidiprinter.events);
+        } else {
+            console.log('No player vidiprinter data available');
+        }
+        
+    } catch (error) {
+        console.error('Error fetching player vidiprinter data:', error);
+        addPlayerVidiprinterEntry(`Connection error: ${error.message}`, 'error');
+    }
+}
+
+// Process vidiprinter data for players
+function processPlayerVidiprinterData(vidiprinterEvents) {
+    if (!Array.isArray(vidiprinterEvents)) return;
+    
+    vidiprinterEvents.forEach(event => {
+        if (event && event.text && !playerVidiprinterData.includes(event.text)) {
+            playerVidiprinterData.push(event.text);
+            
+            // Determine entry type based on content
+            let entryType = 'update';
+            if (event.text.includes('GOAL')) {
+                entryType = 'goal';
+            } else if (event.text.includes('RED CARD')) {
+                entryType = 'red-card';
+            } else if (event.text.includes('YELLOW CARD')) {
+                entryType = 'yellow-card';
+            } else if (event.text.includes('HALF TIME')) {
+                entryType = 'half-time';
+            } else if (event.text.includes('FULL TIME')) {
+                entryType = 'full-time';
+            } else if (event.text.includes('KICK OFF')) {
+                entryType = 'kick-off';
+            }
+            
+            addPlayerVidiprinterEntry(event.text, entryType);
+        }
+    });
+}
+
+// Add entry to player vidiprinter feed
+function addPlayerVidiprinterEntry(text, type = 'update') {
+    const desktopFeed = document.getElementById('desktop-vidiprinter-display');
+    const mobileFeed = document.getElementById('mobile-vidiprinter-display');
+    
+    const timestamp = new Date().toLocaleTimeString('en-GB', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    });
+    
+    const entry = document.createElement('div');
+    entry.className = `player-vidiprinter-entry ${type}`;
+    entry.innerHTML = `
+        <span class="player-vidiprinter-timestamp">${timestamp}</span>
+        <span class="player-vidiprinter-text">${text}</span>
+    `;
+    
+    // Add to both desktop and mobile feeds
+    if (desktopFeed) {
+        // Remove placeholder if it exists
+        const placeholder = desktopFeed.querySelector('.player-vidiprinter-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        desktopFeed.appendChild(entry);
+        desktopFeed.scrollTop = desktopFeed.scrollHeight;
+    }
+    
+    if (mobileFeed) {
+        // Remove placeholder if it exists
+        const placeholder = mobileFeed.querySelector('.player-vidiprinter-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        mobileFeed.appendChild(entry);
+        mobileFeed.scrollTop = mobileFeed.scrollHeight;
+    }
+    
+    // Keep only last 50 entries to prevent memory issues
+    const entries = desktopFeed ? desktopFeed.querySelectorAll('.player-vidiprinter-entry') : 
+                   mobileFeed ? mobileFeed.querySelectorAll('.player-vidiprinter-entry') : [];
+    
+    if (entries.length > 50) {
+        entries[0].remove();
     }
 }
