@@ -5139,12 +5139,12 @@ a:hover {
 }
 
 .player-status-card {
-    background: var(--alty-green);
+    background: #5ea598;
     color: white;
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border: 2px solid var(--alty-green);
+    border: 2px solid #4a8a7a;
 }
 
 .player-status-card h3 {
