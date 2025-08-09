@@ -1082,13 +1082,13 @@ async function renderDashboard(user) {
 
             // Render pick history for desktop, mobile, and legacy (only if containers exist)
             if (picksHistoryContainer) {
-                await renderPickHistory(userData.picks || {}, picksHistoryContainer, user.uid);
+                await renderPickHistory(userData.picks || {}, picksHistoryContainer, user.uid, userData);
             }
             if (mobilePicksHistoryContainer) {
-                await renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, user.uid);
+                await renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, user.uid, userData);
             }
             if (desktopPicksHistoryContainer) {
-                await renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, user.uid);
+                await renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, user.uid, userData);
             }
             
             // Initialize gameweek navigation for both desktop and mobile
@@ -1110,7 +1110,7 @@ async function renderDashboard(user) {
 
 
 
-async function renderPickHistory(picks, container, userId) {
+async function renderPickHistory(picks, container, userId, userData = null) {
     // Check if container exists before proceeding
     if (!container) {
         console.warn('renderPickHistory: Container is null, skipping render');
@@ -1146,8 +1146,10 @@ async function renderPickHistory(picks, container, userId) {
         pickAction.className = 'pick-action';
         
         const teamName = picks[gameweek.key];
-        const gameweekNumber = gameweek.key === 'gwtiebreak' ? 'tiebreak' : gameweek.key.replace('gw', '');
-        const isDeadlinePassed = await checkDeadlineForGameweek(gameweekNumber);
+                    const gameweekNumber = gameweek.key === 'gwtiebreak' ? 'tiebreak' : gameweek.key.replace('gw', '');
+            // Get user's edition to check the correct deadline
+            const userEdition = userData ? getUserEdition(userData) : null;
+            const isDeadlinePassed = await checkDeadlineForGameweek(gameweekNumber, userEdition);
         
         if (teamName) {
             // User has made a pick for this gameweek
@@ -1650,7 +1652,9 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
         if (pickedGameweek) {
             // Check if that gameweek has completed (deadline passed)
             const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
-            const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum);
+            // Get user's edition to check the correct deadline
+            const userEdition = getUserEdition(userData);
+            const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum, userEdition);
             
             if (isDeadlinePassed) {
                 return { status: 'completed-pick', clickable: false, reason: `Picked in completed ${pickedGameweek}` };
@@ -1963,13 +1967,13 @@ async function refreshDisplayAfterPickUpdate(gameweek, userId) {
             const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
             
             if (picksHistoryContainer) {
-                renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId);
+                renderPickHistory(updatedUserData.picks || {}, picksHistoryContainer, userId, updatedUserData);
             }
             if (mobilePicksHistoryContainer) {
-                renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId);
+                renderPickHistory(updatedUserData.picks || {}, mobilePicksHistoryContainer, userId, updatedUserData);
             }
             if (desktopPicksHistoryContainer) {
-                renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId);
+                renderPickHistory(updatedUserData.picks || {}, desktopPicksHistoryContainer, userId, updatedUserData);
             }
             
             console.log(`Display refreshed for gameweek ${currentViewedGameweek} with updated user data`);
@@ -2014,7 +2018,7 @@ function saveTempPick(gameweek, userId) {
                     // Refresh the pick history sidebar
                     const picksHistoryContainer = document.querySelector('#picks-history');
                     if (picksHistoryContainer) {
-                        renderPickHistory(userData.picks || {}, picksHistoryContainer, userId);
+                        renderPickHistory(userData.picks || {}, picksHistoryContainer, userId, userData);
                     }
                     
                     // Refresh the fixtures display to update the save button
@@ -2055,7 +2059,7 @@ function releaseFuturePick(teamName, gameweek, userId) {
                 // Refresh the pick history sidebar
                 const picksHistoryContainer = document.querySelector('#picks-history');
                 if (picksHistoryContainer) {
-                    renderPickHistory(userData.picks || {}, picksHistoryContainer, userId);
+                    renderPickHistory(userData.picks || {}, picksHistoryContainer, userId, userData);
                 }
                 
                 // Refresh the fixtures display - we need to get the current gameweek from the page
@@ -2197,11 +2201,13 @@ function getOrdinalSuffix(day) {
     }
 }
 
-function checkDeadlineForGameweek(gameweek) {
+function checkDeadlineForGameweek(gameweek, edition = null) {
     return new Promise((resolve) => {
         // Handle tiebreak gameweek
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-        const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+        // Use provided edition or fall back to current active edition
+        const editionToUse = edition || currentActiveEdition;
+        const editionGameweekKey = `edition${editionToUse}_${gameweekKey}`;
         
         // Try new structure first, then fallback to old structure
         db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
