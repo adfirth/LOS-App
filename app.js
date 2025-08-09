@@ -1530,7 +1530,7 @@ function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
                 updatePickStatusHeader(gameweek, userData, userId);
 
                 // Display fixtures
-                renderFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
+                renderFixturesDisplay(fixtures, userData, gameweek, userId);
                 fixturesDisplayContainer.style.display = 'block';
             }
         } else {
@@ -1610,7 +1610,7 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
                 updateMobilePickStatusHeader(gameweek, userData, userId);
 
                 // Display fixtures
-                renderMobileFixturesDisplay(fixtures, userData, gameweek, userId).catch(console.error);
+                renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
                 if (fixturesDisplayContainer) fixturesDisplayContainer.style.display = 'block';
             }
         } else {
@@ -1781,9 +1781,24 @@ function getTeamStatusSimple(teamName, userData, currentGameWeek, userId) {
         }
         
         if (pickedGameweek) {
-            // For now, assume future pick to avoid Firebase calls
-            // This will be updated by the batch process
-            return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
+            // Use cached deadline data if available, otherwise assume future pick
+            const pickedGameweekNum = pickedGameweek === 'gwtiebreak' ? 'tiebreak' : pickedGameweek.replace('gw', '');
+            const userEdition = getUserEdition(userData);
+            const cacheKey = `batch_${userEdition}`;
+            
+            if (batchDeadlineCache.has(cacheKey)) {
+                const cached = batchDeadlineCache.get(cacheKey);
+                const isDeadlinePassed = cached.results[pickedGameweekNum] || false;
+                
+                if (isDeadlinePassed) {
+                    return { status: 'completed-pick', clickable: false, reason: `Picked in completed ${pickedGameweek}` };
+                } else {
+                    return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
+                }
+            } else {
+                // Fallback to future pick if no cached data
+                return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
+            }
         }
     }
     
@@ -1849,23 +1864,18 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     return { status: 'available', clickable: true, reason: 'Available for picking' };
 }
 
-async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
         fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
         return;
     }
-    
-    // Show loading state while processing team statuses
-    fixturesDisplay.innerHTML = '<p>Loading fixtures...</p>';
 
     // Sort fixtures by date
     const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     let fixturesHTML = '';
-    
-
     
     for (const fixture of sortedFixtures) {
         const fixtureDate = new Date(fixture.date);
@@ -1892,9 +1902,9 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
         let homeTeamClasses = 'team-pick-button';
         let awayTeamClasses = 'team-pick-button';
         
-        // Use the centralized getTeamStatus function for consistent logic
-        const homeTeamStatus = await getTeamStatus(fixture.homeTeam, userData, currentGameWeek, userId);
-        const awayTeamStatus = await getTeamStatus(fixture.awayTeam, userData, currentGameWeek, userId);
+        // Use simple status checking to avoid async calls during rendering
+        const homeTeamStatus = getTeamStatusSimple(fixture.homeTeam, userData, currentGameWeek, userId);
+        const awayTeamStatus = getTeamStatusSimple(fixture.awayTeam, userData, currentGameWeek, userId);
         
         // Apply status classes based on the centralized logic
         if (homeTeamStatus.status === 'current-pick') {
@@ -1916,8 +1926,6 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
         } else {
             awayTeamClasses += ' available';
         }
-        
-
         
         // Determine if teams are clickable based on their status and create tooltips
         let homeTeamClickable = homeTeamStatus.clickable;
@@ -1949,21 +1957,13 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
                 </div>
             </div>
         `;
-        
-
     }
-
-
-
-
-
-
 
     fixturesDisplay.innerHTML = fixturesHTML;
 }
 
 // Mobile fixtures display rendering function
-async function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
@@ -2001,9 +2001,9 @@ async function renderMobileFixturesDisplay(fixtures, userData = null, currentGam
         let homeTeamClasses = 'team-pick-button';
         let awayTeamClasses = 'team-pick-button';
         
-        // Use the centralized getTeamStatus function for consistent logic
-        const homeTeamStatus = await getTeamStatus(fixture.homeTeam, userData, currentGameWeek, userId);
-        const awayTeamStatus = await getTeamStatus(fixture.awayTeam, userData, currentGameWeek, userId);
+        // Use simple status checking to avoid async calls during rendering
+        const homeTeamStatus = getTeamStatusSimple(fixture.homeTeam, userData, currentGameWeek, userId);
+        const awayTeamStatus = getTeamStatusSimple(fixture.awayTeam, userData, currentGameWeek, userId);
         
         // Apply status classes based on the centralized logic
         if (homeTeamStatus.status === 'current-pick') {
