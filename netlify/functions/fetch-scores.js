@@ -21,8 +21,28 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Parse query parameters
-    const { league, season, matchday, fixtures, startDate, endDate } = event.queryStringParameters || {};
+    // Parse parameters from either query string (GET) or body (POST)
+    let league, season, matchday, fixtures, startDate, endDate;
+    
+    if (event.httpMethod === 'POST') {
+      // Parse from POST body
+      const body = JSON.parse(event.body || '{}');
+      league = body.league;
+      season = body.season;
+      matchday = body.matchday;
+      fixtures = body.fixtures;
+      startDate = body.startDate;
+      endDate = body.endDate;
+    } else {
+      // Parse from query string (GET)
+      const params = event.queryStringParameters || {};
+      league = params.league;
+      season = params.season;
+      matchday = params.matchday;
+      fixtures = params.fixtures;
+      startDate = params.startDate;
+      endDate = params.endDate;
+    }
     
     console.log('Parameters:', { league, season, matchday, fixtures: fixtures ? 'provided' : 'not provided', startDate, endDate });
     
@@ -115,7 +135,12 @@ exports.handler = async (event, context) => {
     let existingFixtures = [];
     if (hasNewParams && fixtures) {
       try {
-        existingFixtures = JSON.parse(decodeURIComponent(fixtures));
+        // Handle both string (from GET) and object (from POST) formats
+        if (typeof fixtures === 'string') {
+          existingFixtures = JSON.parse(decodeURIComponent(fixtures));
+        } else {
+          existingFixtures = fixtures; // Already an object from POST
+        }
         console.log('Parsed existing fixtures:', existingFixtures.length);
       } catch (error) {
         console.error('Error parsing existing fixtures:', error);

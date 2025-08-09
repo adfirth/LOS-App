@@ -5297,8 +5297,19 @@ async function importScoresFromFootballWebPages(gameweek) {
         console.log('Date range for API request:', { startDate, endDate, fixtureCount: existingFixtures.length });
         
         // Fetch scores from Football Web Pages API with date range and specific fixtures
-        const fixturesParam = encodeURIComponent(JSON.stringify(existingFixtures));
-        const response = await fetch(`/.netlify/functions/fetch-scores?league=${league}&startDate=${startDate}&endDate=${endDate}&fixtures=${fixturesParam}`);
+        // Use POST to avoid URL length issues with large fixture data
+        const response = await fetch(`/.netlify/functions/fetch-scores`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                league: league,
+                startDate: startDate,
+                endDate: endDate,
+                fixtures: existingFixtures
+            })
+        });
         
         // Check if response is ok
         if (!response.ok) {
@@ -6188,9 +6199,9 @@ function addScoreRow(fixture, index) {
     const halfTimeHtml = (hasHalfTimeScores || !isCompleted) ? `
                 <div class="half-time-scores">
                     <label>Half Time:</label>
-                    <input type="number" class="home-score-ht" placeholder="HT" value="${fixture.homeScoreHT !== null && fixture.homeScoreHT !== undefined ? fixture.homeScoreHT : ''}" min="0">
+                    <input type="number" class="home-score-ht" placeholder="HT" value="${fixture.homeScoreHT !== null && fixture.homeScoreHT !== undefined && fixture.homeScoreHT !== '' ? fixture.homeScoreHT : ''}" min="0">
                     <span>-</span>
-                    <input type="number" class="away-score-ht" placeholder="HT" value="${fixture.awayScoreHT !== null && fixture.awayScoreHT !== undefined ? fixture.awayScoreHT : ''}" min="0">
+                    <input type="number" class="away-score-ht" placeholder="HT" value="${fixture.awayScoreHT !== null && fixture.awayScoreHT !== undefined && fixture.awayScoreHT !== '' ? fixture.awayScoreHT : ''}" min="0">
                 </div>
                 ` : '';
     
