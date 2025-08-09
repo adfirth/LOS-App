@@ -1877,8 +1877,29 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         
         // Check if teams are already picked by user in other gameweeks
         const existingPicks = userData ? Object.values(userData.picks || {}) : [];
+        
+        // Debug logging for troubleshooting
+        console.log('Debug - existingPicks:', existingPicks);
+        console.log('Debug - fixture.homeTeam:', fixture.homeTeam);
+        console.log('Debug - fixture.awayTeam:', fixture.awayTeam);
+        console.log('Debug - currentPick:', currentPick);
+        console.log('Debug - existingPicks.includes(fixture.homeTeam):', existingPicks.includes(fixture.homeTeam));
+        console.log('Debug - existingPicks.includes(fixture.awayTeam):', existingPicks.includes(fixture.awayTeam));
+        
+        // Check for team name normalization issues
+        console.log('Debug - normalized fixture.homeTeam:', normalizeTeamName(fixture.homeTeam));
+        console.log('Debug - normalized fixture.awayTeam:', normalizeTeamName(fixture.awayTeam));
+        console.log('Debug - normalized existingPicks:', existingPicks.map(pick => normalizeTeamName(pick)));
+        console.log('Debug - normalized currentPick:', currentPick ? normalizeTeamName(currentPick) : null);
+        
         const homeTeamPicked = existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam;
         const awayTeamPicked = existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam;
+        
+        console.log('Debug - homeTeamPicked:', homeTeamPicked);
+        console.log('Debug - awayTeamPicked:', awayTeamPicked);
+        
+        // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
+        // The actual logic uses existingPicks.includes() directly in the status determination
         
         // Create team pick buttons with improved status classes
         let homeTeamClasses = 'team-pick-button';
@@ -1973,8 +1994,29 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         
         // Check if teams are already picked by user in other gameweeks
         const existingPicks = userData ? Object.values(userData.picks || {}) : [];
+        
+        // Debug logging for mobile version
+        console.log('Mobile Debug - existingPicks:', existingPicks);
+        console.log('Mobile Debug - fixture.homeTeam:', fixture.homeTeam);
+        console.log('Mobile Debug - fixture.awayTeam:', fixture.awayTeam);
+        console.log('Mobile Debug - currentPick:', currentPick);
+        console.log('Mobile Debug - existingPicks.includes(fixture.homeTeam):', existingPicks.includes(fixture.homeTeam));
+        console.log('Mobile Debug - existingPicks.includes(fixture.awayTeam):', existingPicks.includes(fixture.awayTeam));
+        
+        // Check for team name normalization issues in mobile
+        console.log('Mobile Debug - normalized fixture.homeTeam:', normalizeTeamName(fixture.homeTeam));
+        console.log('Mobile Debug - normalized fixture.awayTeam:', normalizeTeamName(fixture.awayTeam));
+        console.log('Mobile Debug - normalized existingPicks:', existingPicks.map(pick => normalizeTeamName(pick)));
+        console.log('Mobile Debug - normalized currentPick:', currentPick ? normalizeTeamName(currentPick) : null);
+        
         const homeTeamPicked = existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam;
         const awayTeamPicked = existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam;
+        
+        console.log('Mobile Debug - homeTeamPicked:', homeTeamPicked);
+        console.log('Mobile Debug - awayTeamPicked:', awayTeamPicked);
+        
+        // Note: homeTeamPicked and awayTeamPicked variables are calculated but not used
+        // The actual logic uses existingPicks.includes() directly in the status determination
         
         // Create team pick buttons with improved status classes
         let homeTeamClasses = 'team-pick-button';
