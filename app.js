@@ -6580,6 +6580,7 @@ function processResults(gameweek, fixtures) {
             // Update the user's lives if they lost any
             if (livesLost > 0) {
                 const newLives = Math.max(0, userData.lives - livesLost);
+                console.log(`${userData.displayName} - Current lives: ${userData.lives}, Lives lost this gameweek: ${livesLost}, New total: ${newLives}`);
                 db.collection('users').doc(userDoc.id).update({
                     lives: newLives
                 }).then(() => {
@@ -6588,7 +6589,7 @@ function processResults(gameweek, fixtures) {
                     console.error(`Error updating lives for ${userData.displayName}:`, error);
                 });
             } else {
-                console.log(`${userData.displayName} didn't lose any lives this gameweek`);
+                console.log(`${userData.displayName} didn't lose any lives this gameweek (current lives: ${userData.lives})`);
             }
         });
     }).catch(error => {
