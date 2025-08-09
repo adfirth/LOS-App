@@ -6549,14 +6549,18 @@ function processResults(gameweek, fixtures) {
                 }
                 // If it's a draw, winner remains null
                 
-                // Check if the user picked the losing team
+                // Check if the user picked the losing team OR if there was a draw
                 if (winner !== null && userPick === (winner === homeTeam ? awayTeam : homeTeam)) {
+                    // Player picked the losing team
                     livesLost++;
                     console.log(`${userData.displayName} lost a life: picked ${userPick} but ${winner} won (${homeScore}-${awayScore})`);
-                } else if (winner !== null) {
-                    console.log(`${userData.displayName} didn't lose a life: picked ${userPick}, ${winner} won (${homeScore}-${awayScore})`);
+                } else if (winner === null) {
+                    // It's a draw - player loses a life regardless of which team they picked
+                    livesLost++;
+                    console.log(`${userData.displayName} lost a life: picked ${userPick} but the match was a draw (${homeScore}-${awayScore})`);
                 } else {
-                    console.log(`${userData.displayName}: ${homeTeam} vs ${awayTeam} was a draw (${homeScore}-${awayScore})`);
+                    // Player picked the winning team
+                    console.log(`${userData.displayName} didn't lose a life: picked ${userPick}, ${winner} won (${homeScore}-${awayScore})`);
                 }
             });
             
