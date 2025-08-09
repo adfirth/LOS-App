@@ -6382,10 +6382,15 @@ function saveScores() {
                         awayScore = row.querySelector('.away-score').value;
                     }
                     
-                    const homeScoreHT = row.querySelector('.home-score-ht').value;
-                    const awayScoreHT = row.querySelector('.away-score-ht').value;
-                    const completed = row.querySelector('.fixture-completed').checked;
-                    const status = row.querySelector('.match-status-select').value;
+                    const homeScoreHTElement = row.querySelector('.home-score-ht');
+                    const awayScoreHTElement = row.querySelector('.away-score-ht');
+                    const completedElement = row.querySelector('.fixture-completed');
+                    const statusElement = row.querySelector('.match-status-select');
+                    
+                    const homeScoreHT = homeScoreHTElement ? homeScoreHTElement.value : null;
+                    const awayScoreHT = awayScoreHTElement ? awayScoreHTElement.value : null;
+                    const completed = completedElement ? completedElement.checked : false;
+                    const status = statusElement ? statusElement.value : 'FT';
                     
                     updatedFixtures.push({
                         ...fixtures[index],
@@ -6435,10 +6440,15 @@ function saveScores() {
                                 awayScore = row.querySelector('.away-score').value;
                             }
                             
-                            const homeScoreHT = row.querySelector('.home-score-ht').value;
-                            const awayScoreHT = row.querySelector('.away-score-ht').value;
-                            const completed = row.querySelector('.fixture-completed').checked;
-                            const status = row.querySelector('.match-status-select').value;
+                            const homeScoreHTElement = row.querySelector('.home-score-ht');
+                            const awayScoreHTElement = row.querySelector('.away-score-ht');
+                            const completedElement = row.querySelector('.fixture-completed');
+                            const statusElement = row.querySelector('.match-status-select');
+                            
+                            const homeScoreHT = homeScoreHTElement ? homeScoreHTElement.value : null;
+                            const awayScoreHT = awayScoreHTElement ? awayScoreHTElement.value : null;
+                            const completed = completedElement ? completedElement.checked : false;
+                            const status = statusElement ? statusElement.value : 'FT';
                             
                             fixtures[index] = {
                                 ...fixtures[index],
