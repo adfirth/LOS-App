@@ -7573,24 +7573,34 @@ async function loadPlayerScores(gameweek = null) {
         if (fixtureDoc.exists) {
             const fixtures = fixtureDoc.data().fixtures;
             if (fixtures && fixtures.length > 0) {
-                renderPlayerScores(fixtures, gameweek);
-                renderMobilePlayerScores(fixtures, gameweek);
+                return fixtures; // Return fixtures instead of rendering
             } else {
-                showNoScoresMessage();
+                return []; // Return empty array
             }
         } else {
-            showNoScoresMessage();
+            return []; // Return empty array
         }
         
     } catch (error) {
         console.error('Error loading player scores:', error);
-        showNoScoresMessage();
+        return []; // Return empty array on error
     }
 }
 
 function renderPlayerScores(fixtures, gameweek) {
+    console.log('renderPlayerScores called with:', { fixtures, gameweek });
+    
     const desktopScoresDisplay = document.querySelector('#desktop-scores-display');
-    if (!desktopScoresDisplay) return;
+    if (!desktopScoresDisplay) {
+        console.error('Desktop scores display element not found');
+        return;
+    }
+    
+    if (!fixtures || fixtures.length === 0) {
+        console.log('No fixtures to render');
+        showNoScoresMessage();
+        return;
+    }
     
     // Sort fixtures by date
     const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -7695,8 +7705,18 @@ function renderPlayerScores(fixtures, gameweek) {
 }
 
 function renderMobilePlayerScores(fixtures, gameweek) {
+    console.log('renderMobilePlayerScores called with:', { fixtures, gameweek });
+    
     const mobileScoresDisplay = document.querySelector('#mobile-scores-display');
-    if (!mobileScoresDisplay) return;
+    if (!mobileScoresDisplay) {
+        console.error('Mobile scores display element not found');
+        return;
+    }
+    
+    if (!fixtures || fixtures.length === 0) {
+        console.log('No fixtures to render for mobile');
+        return;
+    }
     
     // Sort fixtures by date
     const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
