@@ -1670,9 +1670,7 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 const deadlineCache = new Map();
 
 async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
-    console.log('getTeamStatus called for:', teamName, 'userData:', !!userData, 'currentGameWeek:', currentGameWeek, 'userId:', userId);
     if (!userData || !currentGameWeek || !userId) {
-        console.log('getTeamStatus returning early - missing data');
         return { status: 'normal', clickable: false, reason: 'No user data' };
     }
     
@@ -1705,13 +1703,10 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
             const cacheKey = `${pickedGameweekNum}_${userEdition}`;
             
             // Check cache first
-            console.log('Checking cache for key:', cacheKey);
             if (!deadlineCache.has(cacheKey)) {
-                console.log('Cache miss, calling checkDeadlineForGameweek for:', pickedGameweekNum, userEdition);
                 try {
                     const isDeadlinePassed = await checkDeadlineForGameweek(pickedGameweekNum, userEdition);
                     deadlineCache.set(cacheKey, isDeadlinePassed);
-                    console.log('Cached result:', isDeadlinePassed);
                     
                     // Clear cache after 5 minutes to ensure fresh data
                     setTimeout(() => deadlineCache.delete(cacheKey), 5 * 60 * 1000);
@@ -1720,8 +1715,6 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
                     // Default to false (deadline not passed) on error
                     deadlineCache.set(cacheKey, false);
                 }
-            } else {
-                console.log('Cache hit for key:', cacheKey);
             }
             
             const isDeadlinePassed = deadlineCache.get(cacheKey);
@@ -2285,20 +2278,15 @@ function checkDeadlineForGameweek(gameweek, edition = null) {
         const editionToUse = edition || currentActiveEdition;
         const editionGameweekKey = `edition${editionToUse}_${gameweekKey}`;
         
-        console.log('checkDeadlineForGameweek called for:', gameweek, 'edition:', editionToUse, 'key:', editionGameweekKey);
-        
         // Try new structure first, then fallback to old structure
         db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
-            console.log('checkDeadlineForGameweek doc exists:', doc.exists, 'for key:', editionGameweekKey);
             if (!doc.exists) {
                 // Fallback to old structure for backward compatibility
-                console.log('checkDeadlineForGameweek falling back to old structure for:', gameweekKey);
                 return db.collection('fixtures').doc(gameweekKey).get();
             }
             return doc;
         }).then(doc => {
             clearTimeout(timeout);
-            console.log('checkDeadlineForGameweek final doc exists:', doc.exists);
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
                 if (fixtures && fixtures.length > 0) {
@@ -2311,14 +2299,11 @@ function checkDeadlineForGameweek(gameweek, edition = null) {
                     const deadlineDate = new Date(earliestFixture.date);
                     const now = new Date();
                     const isDeadlinePassed = deadlineDate <= now;
-                    console.log('checkDeadlineForGameweek result:', isDeadlinePassed, 'deadline:', deadlineDate, 'now:', now);
                     resolve(isDeadlinePassed);
                 } else {
-                    console.log('checkDeadlineForGameweek no fixtures found');
                     resolve(false);
                 }
             } else {
-                console.log('checkDeadlineForGameweek document does not exist');
                 resolve(false);
             }
         }).catch((error) => {
