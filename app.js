@@ -152,7 +152,7 @@ function initializeAdminLoginHandlers() {
     }
 }
 
-function handleAdminLogin(e) {
+async function handleAdminLogin(e) {
     e.preventDefault();
     console.log('Admin login form submitted');
     
@@ -174,74 +174,73 @@ function handleAdminLogin(e) {
         return;
     }
     
-    // Sign in with Firebase
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            console.log('Admin login successful');
-            console.log('User credential:', userCredential);
-            // The auth state change handler will take care of the rest
-            // But let's also manually check if we're on admin page and trigger the logic
-            if (window.location.pathname.endsWith('admin.html')) {
-                console.log('Manually triggering admin page logic after login');
-                // Force a small delay to ensure auth state is updated
-                setTimeout(() => {
-                    const currentUser = auth.currentUser;
-                    if (currentUser) {
-                        console.log('Current user after login:', currentUser.email);
-                        // Manually trigger the admin check
-                        db.collection('users').doc(currentUser.uid).get().then(doc => {
-                            console.log('Manual admin check - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
-                            if (doc.exists && doc.data().isAdmin === true) {
-                                console.log('Manual admin access granted');
-                                // Hide login form and loading message, show admin panel
-                                const loginForm = document.querySelector('#admin-login-form');
-                                const loadingElement = document.querySelector('#admin-loading');
-                                
-                                if (loginForm) {
-                                    loginForm.style.display = 'none';
-                                }
-                                if (loadingElement) {
-                                    loadingElement.style.display = 'none';
-                                }
-                                document.querySelector('#admin-panel').style.display = 'flex';
-                                
-
-                                
-                                // Initialize admin login handlers (for logout button)
-                                if (typeof initializeAdminLoginHandlers === 'function') {
-                                    initializeAdminLoginHandlers();
-                                }
-                                
-                                // Initialize registration management
-                                if (typeof initializeRegistrationManagement === 'function') {
-                                    initializeRegistrationManagement();
-                                }
-                                
-                                // Fetch settings and pass them to the render function
-                                db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
-                                    if (settingsDoc.exists) {
-                                        renderAdminPanel(settingsDoc.data());
-                                    } else {
-                                        console.error("Settings document not found!");
-                                    }
-                                }).catch(error => {
-                                    console.error("Error fetching settings:", error);
-                                });
-                            } else {
-                        
-                                console.log('Manual admin access denied');
+    try {
+        // Sign in with Firebase
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        console.log('Admin login successful');
+        console.log('User credential:', userCredential);
+        
+        // The auth state change handler will take care of the rest
+        // But let's also manually check if we're on admin page and trigger the logic
+        if (window.location.pathname.endsWith('admin.html')) {
+            console.log('Manually triggering admin page logic after login');
+            // Force a small delay to ensure auth state is updated
+            setTimeout(async () => {
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    console.log('Current user after login:', currentUser.email);
+                    // Manually trigger the admin check
+                    try {
+                        const doc = await db.collection('users').doc(currentUser.uid).get();
+                        console.log('Manual admin check - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
+                        if (doc.exists && doc.data().isAdmin === true) {
+                            console.log('Manual admin access granted');
+                            // Hide login form and loading message, show admin panel
+                            const loginForm = document.querySelector('#admin-login-form');
+                            const loadingElement = document.querySelector('#admin-loading');
+                            
+                            if (loginForm) {
+                                loginForm.style.display = 'none';
                             }
-                        }).catch(error => {
-                            console.error('Manual admin check error:', error);
-                        });
+                            if (loadingElement) {
+                                loadingElement.style.display = 'none';
+                            }
+                            document.querySelector('#admin-panel').style.display = 'flex';
+                            
+                            // Initialize admin login handlers (for logout button)
+                            if (typeof initializeAdminLoginHandlers === 'function') {
+                                initializeAdminLoginHandlers();
+                            }
+                            
+                            // Initialize registration management
+                            if (typeof initializeRegistrationManagement === 'function') {
+                                initializeRegistrationManagement();
+                            }
+                            
+                            // Fetch settings and pass them to the render function
+                            try {
+                                const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+                                if (settingsDoc.exists) {
+                                    renderAdminPanel(settingsDoc.data());
+                                } else {
+                                    console.error("Settings document not found!");
+                                }
+                            } catch (error) {
+                                console.error("Error fetching settings:", error);
+                            }
+                        } else {
+                            console.log('Manual admin access denied');
+                        }
+                    } catch (error) {
+                        console.error('Manual admin check error:', error);
                     }
-                }, 500);
-            }
-        })
-        .catch((error) => {
-            console.error('Admin login error:', error);
-            errorMessage.textContent = 'Login failed: ' + error.message;
-        });
+                }
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Admin login error:', error);
+        errorMessage.textContent = 'Login failed: ' + error.message;
+    }
 }
 
 function handleAdminLogout() {
@@ -1669,12 +1668,16 @@ function updatePickStatusHeader(gameweek, userData, userId) {
 // Cache for deadline status to avoid repeated Firebase calls
 const deadlineCache = new Map();
 
+<<<<<<< HEAD
 async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
+=======
+// Optimized function to get team status without Firebase calls for simple cases
+function getTeamStatusSimple(teamName, userData, currentGameWeek, userId) {
+>>>>>>> 98452f9 (Update app.js with async/await improvements and code cleanup)
     if (!userData || !currentGameWeek || !userId) {
         return { status: 'normal', clickable: false, reason: 'No user data' };
     }
     
-    const existingPicks = Object.values(userData.picks || {});
     const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
     const currentPick = userData.picks && userData.picks[gameweekKey];
     
@@ -1684,6 +1687,43 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     }
     
     // Check if team is picked in another gameweek
+    const existingPicks = Object.values(userData.picks || {});
+    if (existingPicks.includes(teamName)) {
+        // Find which gameweek this team was picked in
+        let pickedGameweek = null;
+        for (const [key, pick] of Object.entries(userData.picks || {})) {
+            if (pick === teamName) {
+                pickedGameweek = key;
+                break;
+            }
+        }
+        
+        if (pickedGameweek) {
+            // For now, assume future pick to avoid Firebase calls
+            // This will be updated by the batch process
+            return { status: 'future-pick', clickable: true, reason: `Picked in future ${pickedGameweek}` };
+        }
+    }
+    
+    // Team is available for picking
+    return { status: 'available', clickable: true, reason: 'Available for picking' };
+}
+
+async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
+    if (!userData || !currentGameWeek || !userId) {
+        return { status: 'normal', clickable: false, reason: 'No user data' };
+    }
+    
+    const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
+    const currentPick = userData.picks && userData.picks[gameweekKey];
+    
+    // Check if this is the current pick for this gameweek
+    if (currentPick === teamName) {
+        return { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+    }
+    
+    // Check if team is picked in another gameweek
+    const existingPicks = Object.values(userData.picks || {});
     if (existingPicks.includes(teamName)) {
         // Find which gameweek this team was picked in
         let pickedGameweek = null;
@@ -1731,7 +1771,7 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     return { status: 'available', clickable: true, reason: 'Available for picking' };
 }
 
-async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
