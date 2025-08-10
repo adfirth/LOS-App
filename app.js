@@ -21,11 +21,24 @@ function initializeDatabase() {
     }
 }
 
+// Also try to initialize database when Firebase becomes available
+function checkAndInitializeDatabase() {
+    if (window.db && !db) {
+        db = window.db;
+        console.log('Database reference initialized in checkAndInitializeDatabase');
+    }
+}
+
 // Initialize database when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeDatabase);
 
 // Initialize auth listener when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeAuthListener);
+
+// Set up periodic database check for admin page
+if (window.location.pathname.endsWith('admin.html')) {
+    setInterval(checkAndInitializeDatabase, 100);
+}
 
 // Helper function to get the active gameweek from settings
 function getActiveGameweek() {
@@ -40,10 +53,7 @@ function initializeAuthListener() {
     console.log('Auth state changed - User:', user ? user.email : 'null');
     
     // Ensure database is initialized
-    if (!db && window.db) {
-        db = window.db;
-        console.log('Database reference initialized in auth state change');
-    }
+    checkAndInitializeDatabase();
     
     try {
     const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
@@ -257,6 +267,18 @@ function checkAdminStatusFromStorage() {
 function initializeAdminPage() {
     console.log('Initializing admin page...');
     
+    // Ensure database is initialized before proceeding
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in initializeAdminPage');
+    }
+    
+    if (!db) {
+        console.error('Database not available, retrying in 100ms');
+        setTimeout(initializeAdminPage, 100);
+        return;
+    }
+    
     // Show loading state initially
     const loadingElement = document.querySelector('#admin-loading');
     const loginForm = document.querySelector('#admin-login-form');
@@ -351,6 +373,17 @@ function showAdminLoginForm() {
 
 // Load admin panel settings
 async function loadAdminPanelSettings() {
+    // Ensure database is initialized before proceeding
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in loadAdminPanelSettings');
+    }
+    
+    if (!db) {
+        console.error('Database not available in loadAdminPanelSettings');
+        return;
+    }
+    
     try {
         const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
         if (settingsDoc.exists) {
