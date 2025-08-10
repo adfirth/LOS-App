@@ -1,0 +1,5 @@
+[33mfbd03b4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add edition picker to Player Picks tab - filter picks by specific edition and gameweek
+[33m80e0a3f[m Fix player name not updating in Player Picks tab - add displayName update to savePlayerEdit function
+[33me10886d[m Fix player editing issue: correct Firebase FieldValue.delete() usage and add debugging
+[33m60446be[m Update app.js with recent changes
+[33m40a611f[m Fix player name editing authentication issues: Add token refresh, improve error handling, and prevent unnecessary redirects
