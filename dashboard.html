@@ -28,6 +28,10 @@
                 <span class="tab-icon">📋</span>
                 <span class="tab-label">My Picks</span>
             </button>
+            <button class="tab-btn" data-tab="as-it-stands">
+                <span class="tab-icon">🏆</span>
+                <span class="tab-label">As It Stands</span>
+            </button>
             <button class="tab-btn" data-tab="scores">
                 <span class="tab-icon">📊</span>
                 <span class="tab-label">Scores</span>
@@ -49,6 +53,10 @@
                 <button class="desktop-tab-btn" data-tab="picks">
                     <span class="desktop-tab-icon">📋</span>
                     <span class="desktop-tab-label">My Picks</span>
+                </button>
+                <button class="desktop-tab-btn" data-tab="as-it-stands">
+                    <span class="desktop-tab-icon">🏆</span>
+                    <span class="desktop-tab-label">As It Stands</span>
                 </button>
                 <button class="desktop-tab-btn" data-tab="scores">
                     <span class="desktop-tab-icon">📊</span>
@@ -133,6 +141,24 @@
                                 <div id="desktop-picks-history">
                                     <p>No picks made yet.</p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- As It Stands Tab -->
+                <div id="desktop-as-it-stands-tab" class="desktop-tab-pane">
+                    <div class="desktop-as-it-stands-section">
+                        <h2>As It Stands</h2>
+                        <div class="as-it-stands-content">
+                            <div class="gameweek-selector">
+                                <label for="desktop-as-it-stands-gameweek">Select Game Week:</label>
+                                <select id="desktop-as-it-stands-gameweek">
+                                    <option value="">Loading game weeks...</option>
+                                </select>
+                            </div>
+                            <div id="desktop-as-it-stands-display">
+                                <p>Select a game week to view the current standings.</p>
                             </div>
                         </div>
                     </div>
@@ -231,6 +257,24 @@
                     <h3>Your Picks</h3>
                     <div id="mobile-picks-history">
                         <p>No picks made yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- As It Stands Tab -->
+            <div id="as-it-stands-tab" class="tab-pane">
+                <div class="mobile-as-it-stands-section">
+                    <h3>As It Stands</h3>
+                    <div class="mobile-as-it-stands-content">
+                        <div class="mobile-gameweek-selector">
+                            <label for="mobile-as-it-stands-gameweek">Select Game Week:</label>
+                            <select id="mobile-as-it-stands-gameweek">
+                                <option value="">Loading game weeks...</option>
+                            </select>
+                        </div>
+                        <div id="mobile-as-it-stands-display">
+                            <p>Select a game week to view the current standings.</p>
+                        </div>
                     </div>
                 </div>
             </div>

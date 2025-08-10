@@ -1614,7 +1614,9 @@ function initializeMobileTabs() {
             }
             
             // Load content based on tab
-            if (targetTab === 'scores') {
+            if (targetTab === 'as-it-stands') {
+                initializeAsItStandsTab('mobile');
+            } else if (targetTab === 'scores') {
                 loadPlayerScores().then(async fixtures => {
                     console.log('loadPlayerScores returned:', fixtures);
                     // Get current gameweek for display
@@ -1653,7 +1655,9 @@ function initializeDesktopTabs() {
             }
             
             // Load content based on tab
-            if (targetTab === 'scores') {
+            if (targetTab === 'as-it-stands') {
+                initializeAsItStandsTab('desktop');
+            } else if (targetTab === 'scores') {
                 loadPlayerScores().then(async fixtures => {
                     console.log('loadPlayerScores returned:', fixtures);
                     // Get current gameweek for display
@@ -3144,167 +3148,304 @@ function startDeadlineChecker() {
     }, 60000); // Check every minute
 }
 
-// --- NEW: ADMIN PANEL RENDER FUNCTION ---
-function renderAdminPanel(settings) {
-    console.log('renderAdminPanel called with settings:', settings);
+// As It Stands Tab Functions
+function initializeAsItStandsTab(platform) {
+    console.log(`Initializing As It Stands tab for ${platform}`);
     
-    // Ensure database is available
-    if (!db && window.db) {
-        db = window.db;
-        console.log('Database reference initialized in renderAdminPanel');
-    }
+    // Populate gameweek selector
+    populateAsItStandsGameweekSelector(platform);
     
-    // Prevent duplicate initialization of other components
-    if (window.adminPanelInitialized) {
-        console.log('Admin panel already initialized, skipping other initializations');
-        return;
-    }
-    
-    console.log('Initializing admin panel for the first time');
-    window.adminPanelInitialized = true;
-    
-    // Always initialize competition settings to ensure Save Settings button works
-    initializeCompetitionSettings();
-    
-    // Set up continuous monitoring of the Save Settings button
-    setupSaveSettingsButtonMonitoring();
-    
-    // Force enable Save Settings button immediately and ensure it stays enabled
-    const enableSaveSettingsButton = () => {
-        const saveSettingsBtn = document.querySelector('#save-settings-btn');
-        if (saveSettingsBtn) {
-            console.log('Enabling Save Settings button');
-            saveSettingsBtn.disabled = false;
-            saveSettingsBtn.style.pointerEvents = 'auto';
-            saveSettingsBtn.style.opacity = '1';
-            saveSettingsBtn.style.cursor = 'pointer';
-            saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
-            saveSettingsBtn.style.color = 'var(--dark-text)';
-            
-            // Remove any disabled classes or attributes
-            saveSettingsBtn.classList.remove('disabled');
-            saveSettingsBtn.removeAttribute('disabled');
-            
-            // Ensure the button is clickable
-            saveSettingsBtn.onclick = null; // Remove any existing onclick
-            saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
-            
-            console.log('Save Settings button enabled and event listener attached');
-        }
-    };
-    
-    // Enable button immediately
-    enableSaveSettingsButton();
-    
-    // Enable button after a short delay to catch any late DOM changes
-    setTimeout(enableSaveSettingsButton, 100);
-    
-    // Enable button after a longer delay to ensure all initialization is complete
-    setTimeout(enableSaveSettingsButton, 500);
-    
-    // Set up periodic token refresh to prevent authentication issues
-    if (auth.currentUser) {
-        // Refresh token every 45 minutes (tokens typically expire after 1 hour)
-        const tokenRefreshInterval = setInterval(async () => {
-            try {
-                await auth.currentUser.getIdToken(true);
-                console.log('Admin panel: Authentication token refreshed');
-            } catch (error) {
-                console.warn('Admin panel: Could not refresh token:', error);
-                // If token refresh fails, clear the interval
-                clearInterval(tokenRefreshInterval);
+    // Add event listener for gameweek selection
+    const gameweekSelector = document.getElementById(`${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-gameweek`);
+    if (gameweekSelector) {
+        gameweekSelector.addEventListener('change', (e) => {
+            const selectedGameweek = e.target.value;
+            if (selectedGameweek) {
+                loadAsItStandsData(selectedGameweek, platform);
             }
-        }, 45 * 60 * 1000); // 45 minutes
-        
-        // Store the interval ID so it can be cleared later if needed
-        window.adminTokenRefreshInterval = tokenRefreshInterval;
+        });
     }
+}
+
+async function populateAsItStandsGameweekSelector(platform) {
+    const selectorId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-gameweek`;
+    const selector = document.getElementById(selectorId);
     
-    // Set up periodic button state check to prevent Save Settings button from becoming inactive
-    const buttonStateCheckInterval = setInterval(() => {
-        const saveSettingsBtn = document.querySelector('#save-settings-btn');
-        if (saveSettingsBtn && (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none')) {
-            console.log('Periodic check: Save Settings button was disabled, re-enabling');
-            enableSaveSettingsButton();
-        }
-    }, 10000); // Check every 10 seconds
+    if (!selector) return;
     
-    // Store the interval ID so it can be cleared later if needed
-    window.adminButtonStateCheckInterval = buttonStateCheckInterval;
-    
-    // Also refresh token when page becomes visible (user returns to tab)
-    document.addEventListener('visibilitychange', async () => {
-        if (!document.hidden && auth.currentUser) {
-            try {
-                await auth.currentUser.getIdToken(true);
-                console.log('Admin panel: Token refreshed on page visibility change');
-            } catch (error) {
-                console.warn('Admin panel: Could not refresh token on visibility change:', error);
+    try {
+        // Get current user's edition
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) return;
+        
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (!userDoc.exists) return;
+        
+        const userData = userDoc.data();
+        const userEdition = getUserEdition(userData);
+        
+        // Get all gameweeks for this edition
+        const allGameweeks = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'tiebreak'];
+        
+        // Clear existing options
+        selector.innerHTML = '<option value="">Select Game Week</option>';
+        
+        // Add gameweek options
+        allGameweeks.forEach(gameweek => {
+            const option = document.createElement('option');
+            option.value = gameweek;
+            option.textContent = gameweek === 'tiebreak' ? 'Tiebreak' : `Game Week ${gameweek}`;
+            selector.appendChild(option);
+        });
+        
+        // Set default to current active gameweek if available
+        const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+        if (settingsDoc.exists) {
+            const settings = settingsDoc.data();
+            const currentGameWeek = settings.active_gameweek;
+            if (currentGameWeek && allGameweeks.includes(currentGameWeek.toString())) {
+                selector.value = currentGameWeek.toString();
+                // Load data for current gameweek
+                loadAsItStandsData(currentGameWeek.toString(), platform);
             }
         }
         
-        // Check and fix Save Settings button state when page becomes visible
-        if (!document.hidden) {
-            setTimeout(enableSaveSettingsButton, 200);
-        }
-    });
-    
-    // Add focus event listener to check button state
-    document.addEventListener('focusin', (event) => {
-        if (event.target.closest('#admin-panel')) {
-            setTimeout(enableSaveSettingsButton, 100);
-        }
-    });
-    
-    // Add click event listener to the admin panel to ensure button stays enabled
-    const adminPanel = document.querySelector('#admin-panel');
-    if (adminPanel) {
-        adminPanel.addEventListener('click', (event) => {
-            // If clicking anywhere in the admin panel, ensure the save button is enabled
-            setTimeout(enableSaveSettingsButton, 50);
-        });
+    } catch (error) {
+        console.error('Error populating gameweek selector:', error);
+        selector.innerHTML = '<option value="">Error loading game weeks</option>';
     }
+}
+
+async function loadAsItStandsData(gameweek, platform) {
+    console.log(`Loading As It Stands data for gameweek ${gameweek} on ${platform}`);
     
-    // Add tab switching event listener to ensure Save Settings button is enabled when settings tab is active
-    const settingsTab = document.querySelector('[data-tab="settings"]');
-    if (settingsTab) {
-        settingsTab.addEventListener('click', () => {
-            // When settings tab is clicked, ensure the Save Settings button is enabled
-            setTimeout(() => {
-                const saveSettingsBtn = document.querySelector('#save-settings-btn');
-                if (saveSettingsBtn) {
-                    console.log('Settings tab clicked, ensuring Save Settings button is enabled');
-                    enableSaveSettingsButton();
-                }
-            }, 100);
-        });
-    }
+    const displayId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-display`;
+    const display = document.getElementById(displayId);
     
-    // Add mutation observer to watch for changes to the save button
-    const saveButtonObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && 
-                (mutation.attributeName === 'disabled' || 
-                 mutation.attributeName === 'style' || 
-                 mutation.attributeName === 'class')) {
-                const saveSettingsBtn = document.querySelector('#save-settings-btn');
-                if (saveSettingsBtn && (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none')) {
-                    console.log('Mutation observer detected disabled Save Settings button, re-enabling');
-                    enableSaveSettingsButton();
-                }
+    if (!display) return;
+    
+    display.innerHTML = '<p>Loading standings...</p>';
+    
+    try {
+        // Get current user's edition
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            display.innerHTML = '<p>Please log in to view standings.</p>';
+            return;
+        }
+        
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (!userDoc.exists) {
+            display.innerHTML = '<p>User data not found.</p>';
+            return;
+        }
+        
+        const userData = userDoc.data();
+        const userEdition = getUserEdition(userData);
+        
+        // Get all players in this edition
+        const usersSnapshot = await db.collection('users').get();
+        const players = [];
+        
+        usersSnapshot.forEach(doc => {
+            const playerData = doc.data();
+            const playerEdition = getUserEdition(playerData);
+            
+            // Only include players in the same edition
+            if (playerEdition === userEdition) {
+                players.push({
+                    id: doc.id,
+                    ...playerData
+                });
             }
         });
-    });
+        
+        // Get fixtures for this gameweek
+        const fixturesDoc = await db.collection('fixtures').doc(`edition${userEdition}_gw${gameweek}`).get();
+        let fixtures = [];
+        
+        if (fixturesDoc.exists) {
+            fixtures = fixturesDoc.data().fixtures || [];
+        }
+        
+        // Render the standings
+        renderAsItStandsStandings(players, fixtures, gameweek, userEdition, platform);
+        
+    } catch (error) {
+        console.error('Error loading As It Stands data:', error);
+        display.innerHTML = '<p>Error loading standings. Please try again.</p>';
+    }
+}
+
+function renderAsItStandsStandings(players, fixtures, gameweek, edition, platform) {
+    const displayId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-display`;
+    const display = document.getElementById(displayId);
     
-    // Start observing the save button for changes
-    const saveSettingsBtn = document.querySelector('#save-settings-btn');
-    if (saveSettingsBtn) {
-        saveButtonObserver.observe(saveSettingsBtn, {
-            attributes: true,
-            attributeFilter: ['disabled', 'style', 'class']
-        });
+    if (!display) return;
+    
+    const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+    const editionGameweekKey = `edition${edition}_${gameweekKey}`;
+    
+    // Determine gameweek status
+    let gameweekStatus = 'upcoming';
+    let statusDescription = 'Game week has not started yet';
+    
+    if (fixtures.length > 0) {
+        const hasStarted = fixtures.some(f => f.status === 'live' || f.status === 'completed');
+        const hasCompleted = fixtures.some(f => f.status === 'completed');
+        
+        if (hasCompleted) {
+            gameweekStatus = 'completed';
+            statusDescription = 'Game week completed - final results shown';
+        } else if (hasStarted) {
+            gameweekStatus = 'live';
+            statusDescription = 'Game week in progress - live standings shown';
+        }
     }
     
+    // Create standings table
+    let html = `
+        <div class="as-it-stands-header">
+            <h3>${gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`}</h3>
+            <p class="gameweek-status ${gameweekStatus}">${statusDescription}</p>
+        </div>
+        <div class="standings-table-container">
+            <table class="standings-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Player</th>
+                        <th>Pick</th>
+                        <th>Card Status</th>
+                        <th>As It Stands</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Sort players by lives remaining (descending) and then by display name
+    players.sort((a, b) => {
+        if (b.lives !== a.lives) {
+            return b.lives - a.lives;
+        }
+        return a.displayName.localeCompare(b.displayName);
+    });
+    
+    players.forEach((player, index) => {
+        const position = index + 1;
+        const playerPick = player.picks && (player.picks[editionGameweekKey] || player.picks[gameweekKey]);
+        const pickDisplay = playerPick || 'No pick made';
+        
+        // Get card status display
+        let cardStatus = '';
+        if (player.lives === 2) {
+            cardStatus = '<span class="card-status safe">🟢 Safe</span>';
+        } else if (player.lives === 1) {
+            cardStatus = '<span class="card-status warning">🟡 Yellow Card</span>';
+        } else if (player.lives === 0) {
+            cardStatus = '<span class="card-status eliminated">🔴 Eliminated</span>';
+        }
+        
+        // Calculate "As It Stands" status
+        let asItStandsStatus = '';
+        if (gameweekStatus === 'upcoming') {
+            asItStandsStatus = '<span class="status pending">⏳ Pending</span>';
+        } else if (gameweekStatus === 'live') {
+            if (playerPick && fixtures.length > 0) {
+                // Check if the picked team is still in contention
+                const pickStillValid = checkPickStillValid(playerPick, fixtures);
+                if (pickStillValid) {
+                    asItStandsStatus = '<span class="status safe">✅ Still Safe</span>';
+                } else {
+                    asItStandsStatus = '<span class="status danger">❌ Pick Lost</span>';
+                }
+            } else {
+                asItStandsStatus = '<span class="status pending">⏳ No Pick</span>';
+            }
+        } else if (gameweekStatus === 'completed') {
+            if (playerPick && fixtures.length > 0) {
+                const pickResult = calculatePickResult(playerPick, fixtures);
+                if (pickResult === 'win') {
+                    asItStandsStatus = '<span class="status success">✅ Survived</span>';
+                } else {
+                    asItStandsStatus = '<span class="status eliminated">❌ Eliminated</span>';
+                }
+            } else {
+                asItStandsStatus = '<span class="status eliminated">❌ No Pick</span>';
+            }
+        }
+        
+        html += `
+            <tr class="player-row ${player.lives === 0 ? 'eliminated' : ''}">
+                <td class="position">${position}</td>
+                <td class="player-name">${player.displayName}</td>
+                <td class="player-pick">${pickDisplay}</td>
+                <td class="card-status-cell">${cardStatus}</td>
+                <td class="as-it-stands-status">${asItStandsStatus}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    display.innerHTML = html;
+}
+
+function checkPickStillValid(pick, fixtures) {
+    // Check if the picked team has lost any completed matches
+    const completedFixtures = fixtures.filter(f => f.status === 'completed' && f.homeScore !== null && f.awayScore !== null);
+    
+    for (const fixture of completedFixtures) {
+        if (fixture.homeTeam === pick || fixture.awayTeam === pick) {
+            const homeScore = fixture.homeScore;
+            const awayScore = fixture.awayScore;
+            
+            if (homeScore > awayScore && fixture.awayTeam === pick) {
+                // Away team (picked team) lost
+                return false;
+            } else if (awayScore > homeScore && fixture.homeTeam === pick) {
+                // Home team (picked team) lost
+                return false;
+            } else if (homeScore === awayScore) {
+                // It's a draw - picked team is still safe
+                return true;
+            }
+        }
+    }
+    
+    return true;
+}
+
+function calculatePickResult(pick, fixtures) {
+    const completedFixtures = fixtures.filter(f => f.status === 'completed' && f.homeScore !== null && f.awayScore !== null);
+    
+    for (const fixture of completedFixtures) {
+        if (fixture.homeTeam === pick || fixture.awayTeam === pick) {
+            const homeScore = fixture.homeScore;
+            const awayScore = fixture.awayScore;
+            
+            if (homeScore > awayScore && fixture.homeTeam === pick) {
+                // Home team (picked team) won
+                return 'win';
+            } else if (awayScore > homeScore && fixture.awayTeam === pick) {
+                // Away team (picked team) won
+                return 'win';
+            } else if (homeScore === awayScore) {
+                // It's a draw - picked team is eliminated
+                return 'lose';
+            }
+        }
+    }
+    
+    return 'lose'; // If no completed fixtures found, assume loss
+}
+
+// --- FUNCTION to build the admin dashboard ---
+function buildAdminDashboard() {
     // Store the observer so it can be disconnected later if needed
     window.saveButtonObserver = saveButtonObserver;
     

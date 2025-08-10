@@ -6025,3 +6025,347 @@ a:hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* As It Stands Tab Styles */
+.as-it-stands-content {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-as-it-stands-content {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.gameweek-selector {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.mobile-gameweek-selector {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.gameweek-selector label,
+.mobile-gameweek-selector label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--dark-text);
+}
+
+.gameweek-selector select,
+.mobile-gameweek-selector select {
+    padding: 10px 15px;
+    border: 2px solid var(--alty-red);
+    border-radius: 6px;
+    font-size: 1rem;
+    background: white;
+    color: var(--dark-text);
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.mobile-gameweek-selector select {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 15px;
+    font-size: 1rem;
+}
+
+.gameweek-selector select:focus,
+.mobile-gameweek-selector select:focus {
+    outline: none;
+    border-color: var(--alty-yellow);
+    box-shadow: 0 0 0 3px rgba(253, 185, 19, 0.2);
+}
+
+.as-it-stands-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--alty-red);
+}
+
+.as-it-stands-header h3 {
+    margin: 0 0 10px 0;
+    color: var(--alty-red);
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.gameweek-status {
+    margin: 0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.gameweek-status.upcoming {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.gameweek-status.live {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ffcc02;
+}
+
+.gameweek-status.completed {
+    background: #e8f5e8;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
+}
+
+.standings-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.9rem;
+}
+
+.standings-table th {
+    background: var(--alty-red);
+    color: white;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #c00510;
+}
+
+.standings-table th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.standings-table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.standings-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: middle;
+}
+
+.standings-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.standings-table tbody tr.eliminated {
+    background: #fff5f5;
+    opacity: 0.7;
+}
+
+.standings-table tbody tr.eliminated:hover {
+    background: #ffe8e8;
+}
+
+.position {
+    font-weight: bold;
+    text-align: center;
+    width: 60px;
+}
+
+.player-name {
+    font-weight: bold;
+    color: var(--dark-text);
+    min-width: 120px;
+}
+
+.player-pick {
+    font-style: italic;
+    color: #666;
+    min-width: 100px;
+}
+
+.card-status-cell {
+    text-align: center;
+    min-width: 100px;
+}
+
+.as-it-stands-status {
+    text-align: center;
+    min-width: 120px;
+}
+
+.card-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.card-status.safe {
+    background: #e8f5e8;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
+}
+
+.card-status.warning {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ffcc02;
+}
+
+.card-status.eliminated {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.status.pending {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.status.safe {
+    background: #e8f5e8;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
+}
+
+.status.danger {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+.status.success {
+    background: #e8f5e8;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
+}
+
+.status.eliminated {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+/* Mobile-specific styles for As It Stands */
+@media (max-width: 768px) {
+    .standings-table {
+        font-size: 0.8rem;
+    }
+    
+    .standings-table th,
+    .standings-table td {
+        padding: 8px 4px;
+    }
+    
+    .standings-table th:first-child,
+    .standings-table td:first-child {
+        padding-left: 8px;
+    }
+    
+    .standings-table th:last-child,
+    .standings-table td:last-child {
+        padding-right: 8px;
+    }
+    
+    .position {
+        width: 40px;
+    }
+    
+    .player-name {
+        min-width: 80px;
+    }
+    
+    .player-pick {
+        min-width: 70px;
+    }
+    
+    .card-status-cell {
+        min-width: 80px;
+    }
+    
+    .as-it-stands-status {
+        min-width: 90px;
+    }
+    
+    .card-status,
+    .status {
+        font-size: 0.7rem;
+        padding: 3px 6px;
+    }
+    
+    .as-it-stands-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .gameweek-status {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .standings-table {
+        font-size: 0.75rem;
+    }
+    
+    .standings-table th,
+    .standings-table td {
+        padding: 6px 2px;
+    }
+    
+    .position {
+        width: 35px;
+    }
+    
+    .player-name {
+        min-width: 70px;
+    }
+    
+    .player-pick {
+        min-width: 60px;
+    }
+    
+    .card-status-cell {
+        min-width: 70px;
+    }
+    
+    .as-it-stands-status {
+        min-width: 80px;
+    }
+    
+    .card-status,
+    .status {
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
+    
+    .as-it-stands-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .gameweek-status {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+    }
+}
+
