@@ -2535,9 +2535,11 @@ function startDeadlineChecker() {
 function renderAdminPanel(settings) {
     console.log('renderAdminPanel called with settings:', settings);
     
-    // Prevent duplicate initialization
+    // Prevent duplicate initialization of most components, but allow competition settings to be re-initialized
     if (window.adminPanelInitialized) {
-        console.log('Admin panel already initialized, skipping duplicate initialization');
+        console.log('Admin panel already initialized, re-initializing competition settings only');
+        // Re-initialize competition settings to ensure Save Settings button works
+        initializeCompetitionSettings();
         return;
     }
     
@@ -4691,6 +4693,69 @@ async function fetchFixturesFromSelectedRounds() {
         statusDiv.innerHTML = `<p class="error">❌ Error fetching fixtures: ${error.message}</p>`;
     }
 }
+
+// Firebase Connection Test Function
+async function testFirebaseConnection() {
+    console.log('=== Firebase Connection Test ===');
+    
+    try {
+        // Test 1: Check if Firebase is loaded
+        if (typeof firebase === 'undefined') {
+            console.error('❌ Firebase SDK not loaded');
+            return false;
+        }
+        console.log('✅ Firebase SDK loaded');
+        
+        // Test 2: Check if Firebase is initialized
+        if (!firebase.apps.length) {
+            console.error('❌ Firebase not initialized');
+            return false;
+        }
+        console.log('✅ Firebase initialized');
+        
+        // Test 3: Check if auth is available
+        if (!window.auth) {
+            console.error('❌ Firebase Auth not available');
+            return false;
+        }
+        console.log('✅ Firebase Auth available');
+        
+        // Test 4: Check if Firestore is available
+        if (!window.db) {
+            console.error('❌ Firestore not available');
+            return false;
+        }
+        console.log('✅ Firestore available');
+        
+        // Test 5: Test Firestore connection with a simple read
+        console.log('Testing Firestore connection...');
+        const testDoc = await window.db.collection('users').limit(1).get();
+        console.log('✅ Firestore connection successful - read test passed');
+        
+        // Test 6: Check current user state
+        const currentUser = window.auth.currentUser;
+        if (currentUser) {
+            console.log('✅ User authenticated:', currentUser.email);
+        } else {
+            console.log('ℹ️ No user currently authenticated');
+        }
+        
+        console.log('=== All Firebase tests passed! ===');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Firebase connection test failed:', error);
+        console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
+        return false;
+    }
+}
+
+// Make the test function globally available
+window.testFirebaseConnection = testFirebaseConnection;
 
 async function fetchFixturesFromTheSportsDB(league, season, round) {
     // TheSportsDB configuration
