@@ -3276,9 +3276,8 @@ function renderAdminPanel(settings) {
         const selectedEdition = picksEditionSelect.value;
         const selectedGameweek = picksGameweekSelect.value;
         const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
-        const editionGwKey = `${selectedEdition}_${gwKey}`;
         
-        console.log('Selected edition:', selectedEdition, 'gameweek:', selectedGameweek, 'editionGwKey:', editionGwKey);
+        console.log('Selected edition:', selectedEdition, 'gameweek:', selectedGameweek, 'gwKey:', gwKey);
         
         const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
         picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
@@ -3299,7 +3298,8 @@ function renderAdminPanel(settings) {
                 registeredUsersCount++;
                 console.log('Processing user:', userData.displayName, 'for edition:', selectedEdition);
                 
-                const playerPick = userData.picks && userData.picks[editionGwKey] ? userData.picks[editionGwKey] : 'No Pick Made';
+                // Picks are stored using the simple gwKey format (e.g., gw1, gw2), not edition-prefixed
+                const playerPick = userData.picks && userData.picks[gwKey] ? userData.picks[gwKey] : 'No Pick Made';
                 
                 const row = document.createElement('tr');
                 const badge = playerPick !== 'No Pick Made' ? getTeamBadge(playerPick) : null;
