@@ -388,11 +388,22 @@ async function loadAdminPanelSettings() {
             const settingsData = settingsDoc.data();
             console.log('Settings loaded successfully:', settingsData);
             
-                    if (typeof buildAdminDashboard === 'function') {
-            buildAdminDashboard();
-        } else {
-            console.warn('buildAdminDashboard function not available');
-        }
+            // Store settings globally for other functions to access
+            window.settings = settingsData;
+            
+            // Update global variables
+            if (settingsData.active_edition) {
+                currentActiveEdition = settingsData.active_edition;
+            }
+            if (settingsData.active_gameweek) {
+                currentActiveGameweek = settingsData.active_gameweek;
+            }
+            
+            if (typeof buildAdminDashboard === 'function') {
+                buildAdminDashboard(settingsData);
+            } else {
+                console.warn('buildAdminDashboard function not available');
+            }
         } else {
             console.warn('Settings document not found, creating default settings');
             // Create default settings if they don't exist
@@ -406,8 +417,19 @@ async function loadAdminPanelSettings() {
                 await db.collection('settings').doc('currentCompetition').set(defaultSettings);
                 console.log('Default settings created');
                 
+                // Store default settings globally
+                window.settings = defaultSettings;
+                
+                // Update global variables
+                if (defaultSettings.active_edition) {
+                    currentActiveEdition = defaultSettings.active_edition;
+                }
+                if (defaultSettings.active_gameweek) {
+                    currentActiveGameweek = defaultSettings.active_gameweek;
+                }
+                
                 if (typeof buildAdminDashboard === 'function') {
-                    buildAdminDashboard();
+                    buildAdminDashboard(defaultSettings);
                 }
             } catch (createError) {
                 console.error('Error creating default settings:', createError);
@@ -3469,9 +3491,23 @@ function calculatePickResult(pick, fixtures) {
 }
 
 // --- FUNCTION to build the admin dashboard ---
-function buildAdminDashboard() {
+function buildAdminDashboard(settings) {
     // Store the observer so it can be disconnected later if needed
     // window.saveButtonObserver = saveButtonObserver; // Removed undefined variable reference
+    
+    // Ensure settings is available - use parameter, global settings, or defaults
+    if (!settings) {
+        if (window.settings) {
+            settings = window.settings;
+            console.log('Using global settings in buildAdminDashboard');
+        } else {
+            console.warn('No settings provided to buildAdminDashboard, using defaults');
+            settings = {
+                active_gameweek: '1',
+                active_edition: 'edition1'
+            };
+        }
+    }
     
     // Initialize picks controls
     const picksEditionSelect = document.querySelector('#picks-edition-select');
@@ -3481,7 +3517,7 @@ function buildAdminDashboard() {
     const picksTableBody = document.querySelector('#admin-picks-body');
     
     // Set default values
-    picksEditionSelect.value = 'edition1';
+    picksEditionSelect.value = settings.active_edition || 'edition1';
     picksGameweekSelect.value = settings.active_gameweek || '1';
     
     // Function to render picks table
