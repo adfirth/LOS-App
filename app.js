@@ -1,11 +1,28 @@
 // Teams configuration - imported from teams-config.js
 
+// Global database reference
+let db;
+
 // Global variable to track current active edition
 let currentActiveEdition = 1;
 let currentEditionName = "Edition 1";
 // Global variable to track current active gameweek
 let currentActiveGameweek = '1';
 // The allTeams array is now defined in TEAMS_CONFIG.allTeams
+
+// Initialize database reference when DOM is ready
+function initializeDatabase() {
+    if (window.db) {
+        db = window.db;
+        console.log('Database reference initialized');
+    } else {
+        console.warn('Database not available yet, retrying in 100ms');
+        setTimeout(initializeDatabase, 100);
+    }
+}
+
+// Initialize database when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeDatabase);
 
 // Helper function to get the active gameweek from settings
 function getActiveGameweek() {
@@ -15,6 +32,13 @@ function getActiveGameweek() {
 // --- AUTH STATE & LOGOUT LOGIC (GLOBAL) ---
 auth.onAuthStateChanged(user => {
     console.log('Auth state changed - User:', user ? user.email : 'null');
+    
+    // Ensure database is initialized
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in auth state change');
+    }
+    
     try {
     const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
     const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
@@ -1759,6 +1783,17 @@ const batchDeadlineCache = new Map();
 
 // NEW: Batch deadline checking function
 async function batchCheckDeadlines(gameweeks, edition) {
+    // Ensure database is available
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in batchCheckDeadlines');
+    }
+    
+    if (!db) {
+        console.error('Database not available in batchCheckDeadlines');
+        return {};
+    }
+    
     const cacheKey = `batch_${edition}`;
     
     // Check if we have a recent batch cache
@@ -2535,11 +2570,18 @@ function startDeadlineChecker() {
 function renderAdminPanel(settings) {
     console.log('renderAdminPanel called with settings:', settings);
     
-    // Prevent duplicate initialization of most components, but allow competition settings to be re-initialized
+    // Ensure database is available
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in renderAdminPanel');
+    }
+    
+    // Always initialize competition settings to ensure Save Settings button works
+    initializeCompetitionSettings();
+    
+    // Prevent duplicate initialization of other components
     if (window.adminPanelInitialized) {
-        console.log('Admin panel already initialized, re-initializing competition settings only');
-        // Re-initialize competition settings to ensure Save Settings button works
-        initializeCompetitionSettings();
+        console.log('Admin panel already initialized, skipping other initializations');
         return;
     }
     
@@ -2967,12 +3009,37 @@ async function navigateToMobileGameweek(gameweek, userData, userId) {
 
 // --- COMPETITION SETTINGS FUNCTIONS ---
 function initializeCompetitionSettings() {
+    // Ensure database is available
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in initializeCompetitionSettings');
+    }
+    
     const saveSettingsBtn = document.querySelector('#save-settings-btn');
     const resetTestLivesBtn = document.querySelector('#reset-test-lives-btn');
     const activeGameweekSelect = document.querySelector('#active-gameweek-select');
     
+    console.log('initializeCompetitionSettings called');
+    console.log('Save Settings button found:', !!saveSettingsBtn);
+    
     if (saveSettingsBtn) {
+        // Remove any existing event listeners to prevent duplicates
+        saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
         saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+        
+        // Check button state
+        console.log('Save Settings button event listener attached');
+        console.log('Button disabled:', saveSettingsBtn.disabled);
+        console.log('Button classes:', saveSettingsBtn.className);
+        console.log('Button style pointer-events:', saveSettingsBtn.style.pointerEvents);
+        
+        // Ensure button is enabled and clickable
+        saveSettingsBtn.disabled = false;
+        saveSettingsBtn.style.pointerEvents = 'auto';
+        saveSettingsBtn.style.opacity = '1';
+        
+    } else {
+        console.warn('Save Settings button not found!');
     }
     
     if (resetTestLivesBtn) {
@@ -3003,9 +3070,20 @@ function initializeCompetitionSettings() {
 }
 
 function loadCompetitionSettings() {
+    // Ensure database is available
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in loadCompetitionSettings');
+    }
+    
     const activeEditionSelect = document.querySelector('#active-edition-select');
     const activeGameweekSelect = document.querySelector('#active-gameweek-select');
     const statusMessage = document.querySelector('#settings-status');
+    
+    if (!db) {
+        console.error('Database not available in loadCompetitionSettings');
+        return;
+    }
     
     db.collection('settings').doc('currentCompetition').get().then(doc => {
         if (doc.exists) {
@@ -3060,11 +3138,25 @@ function loadCompetitionSettings() {
 }
 
 function saveCompetitionSettings() {
+    console.log('saveCompetitionSettings called');
+    
+    // Ensure database is available
+    if (!db && window.db) {
+        db = window.db;
+        console.log('Database reference initialized in saveCompetitionSettings');
+    }
+    
     const activeEditionSelect = document.querySelector('#active-edition-select');
     const activeGameweekSelect = document.querySelector('#active-gameweek-select');
     const statusMessage = document.querySelector('#settings-status');
     
-    if (!activeEditionSelect || !activeGameweekSelect) return;
+    console.log('Active edition select found:', !!activeEditionSelect);
+    console.log('Active gameweek select found:', !!activeGameweekSelect);
+    
+    if (!activeEditionSelect || !activeGameweekSelect) {
+        console.warn('Required select elements not found, returning early');
+        return;
+    }
     
     const newActiveEdition = activeEditionSelect.value;
     const newActiveGameweek = activeGameweekSelect.value;
