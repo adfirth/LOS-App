@@ -50,147 +50,145 @@ function getActiveGameweek() {
 function initializeAuthListener() {
     if (window.auth) {
         window.auth.onAuthStateChanged(user => {
-    console.log('Auth state changed - User:', user ? user.email : 'null');
-    
-    // Ensure database is initialized
-    checkAndInitializeDatabase();
-    
-    try {
-    const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
-    const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
-    const onAdminPage = window.location.pathname.endsWith('admin.html'); // NEW
-
-    if (user) {
-        // User is signed in
-        if (onIndexPage) { /* ... */ }
-        if (onDashboardPage) { renderDashboard(user).catch(console.error); }
-        
-        // Admin Page Security Check
-        if (onAdminPage) {
-            console.log('On admin page, checking admin status for user:', user.uid);
-            // Hide loading message first
-            const loadingElement = document.querySelector('#admin-loading');
-            if (loadingElement) {
-                loadingElement.style.display = 'none';
-            }
-            // Hide login form initially
-            const loginForm = document.querySelector('#admin-login-form');
-            if (loginForm) {
-                loginForm.style.display = 'none';
-            }
+            console.log('Auth state changed - User:', user ? user.email : 'null');
             
-            // Start token refresh mechanism for admin users
-            startAdminTokenRefresh(user);
+            // Ensure database is initialized
+            checkAndInitializeDatabase();
             
-            // Add error handling for admin check
-            db.collection('users').doc(user.uid).get().then(doc => {
-                console.log('Admin check result - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
-                if (doc.exists && doc.data().isAdmin === true) {
-                    // User is an admin, show the panel
-                    console.log("Admin access granted.");
-                    
-                    // Store admin status in session storage for persistence
-                    sessionStorage.setItem('adminStatus', 'true');
-                    sessionStorage.setItem('adminUserId', user.uid);
-                    
-                    // Hide login form and show admin panel
-                    const loginForm = document.querySelector('#admin-login-form');
-                    if (loginForm) {
-                        loginForm.style.display = 'none';
-                    }
-                    document.querySelector('#admin-panel').style.display = 'flex';
-                    
+            try {
+                const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+                const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
+                const onAdminPage = window.location.pathname.endsWith('admin.html'); // NEW
 
+                if (user) {
+                    // User is signed in
+                    if (onIndexPage) { /* ... */ }
+                    if (onDashboardPage) { renderDashboard(user).catch(console.error); }
                     
-                    // Initialize admin login handlers (for logout button)
-                    if (typeof initializeAdminLoginHandlers === 'function') {
-                        initializeAdminLoginHandlers();
-                    }
-                    
-                    // Fetch settings and pass them to the render function
-                    console.log('Fetching settings from database...');
-                    db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
-                        console.log('Settings document received:', settingsDoc.exists ? 'exists' : 'not found');
-                        if (settingsDoc.exists) {
+                    // Admin Page Security Check
+                    if (onAdminPage) {
+                        console.log('On admin page, checking admin status for user:', user.uid);
+                        // Hide loading message first
+                        const loadingElement = document.querySelector('#admin-loading');
+                        if (loadingElement) {
+                            loadingElement.style.display = 'none';
+                        }
+                        // Hide login form initially
+                        const loginForm = document.querySelector('#admin-login-form');
+                        if (loginForm) {
+                            loginForm.style.display = 'none';
+                        }
+                        
+                        // Start token refresh mechanism for admin users
+                        startAdminTokenRefresh(user);
+                        
+                        // Add error handling for admin check
+                        db.collection('users').doc(user.uid).get().then(doc => {
+                            console.log('Admin check result - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
+                            if (doc.exists && doc.data().isAdmin === true) {
+                                // User is an admin, show the panel
+                                console.log("Admin access granted.");
+                                
+                                // Store admin status in session storage for persistence
+                                sessionStorage.setItem('adminStatus', 'true');
+                                sessionStorage.setItem('adminUserId', user.uid);
+                                
+                                // Hide login form and show admin panel
+                                const loginForm = document.querySelector('#admin-login-form');
+                                if (loginForm) {
+                                    loginForm.style.display = 'none';
+                                }
+                                document.querySelector('#admin-panel').style.display = 'flex';
+                                
+                                // Initialize admin login handlers (for logout button)
+                                if (typeof initializeAdminLoginHandlers === 'function') {
+                                    initializeAdminLoginHandlers();
+                                }
+                                
+                                // Fetch settings and pass them to the render function
+                                console.log('Fetching settings from database...');
+                                db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
+                                    console.log('Settings document received:', settingsDoc.exists ? 'exists' : 'not found');
+                                                            if (settingsDoc.exists) {
                             const settingsData = settingsDoc.data();
                             console.log('Settings data:', settingsData);
-                            renderAdminPanel(settingsData);
+                            buildAdminDashboard();
                         } else {
-                            console.error("Settings document not found!");
-                        }
-                    }).catch(error => {
-                        console.error("Error fetching settings:", error);
-                        // Show error message to user
-                        const errorElement = document.querySelector('#admin-error');
-                        if (errorElement) {
-                            errorElement.style.display = 'block';
-                            errorElement.innerHTML = '<p>Error loading admin panel settings. Please refresh the page.</p>';
-                        }
-                    });
+                                        console.error("Settings document not found!");
+                                    }
+                                }).catch(error => {
+                                    console.error("Error fetching settings:", error);
+                                    // Show error message to user
+                                    const errorElement = document.querySelector('#admin-error');
+                                    if (errorElement) {
+                                        errorElement.style.display = 'block';
+                                        errorElement.innerHTML = '<p>Error loading admin panel settings. Please refresh the page.</p>';
+                                    }
+                                });
+                            } else {
+                                // User is not an admin
+                                console.log("Admin access denied for user:", user.email);
+                                sessionStorage.removeItem('adminStatus');
+                                sessionStorage.removeItem('adminUserId');
+                                
+                                // Show error and redirect
+                                const errorElement = document.querySelector('#admin-error');
+                                if (errorElement) {
+                                    errorElement.style.display = 'block';
+                                    errorElement.innerHTML = '<p>Access denied. You do not have admin privileges.</p>';
+                                }
+                                
+                                // Redirect to home page after a delay
+                                setTimeout(() => {
+                                    window.location.href = '/index.html';
+                                }, 3000);
+                            }
+                        }).catch(error => {
+                            console.error("Error checking admin status:", error);
+                            // Show error message
+                            const errorElement = document.querySelector('#admin-error');
+                            if (errorElement) {
+                                errorElement.style.display = 'block';
+                                errorElement.innerHTML = '<p>Error verifying admin status. Please try again.</p>';
+                            }
+                        });
+                    }
                 } else {
-                    // User is not an admin
-                    console.log("Admin access denied for user:", user.email);
+                    // User is signed out
+                    console.log('User signed out');
+                    
+                    // Clear admin status from session storage
                     sessionStorage.removeItem('adminStatus');
                     sessionStorage.removeItem('adminUserId');
                     
-                    // Show error and redirect
-                    const errorElement = document.querySelector('#admin-error');
-                    if (errorElement) {
-                        errorElement.style.display = 'block';
-                        errorElement.innerHTML = '<p>Access denied. You do not have admin privileges.</p>';
-                    }
+                    // Stop any admin token refresh
+                    stopAdminTokenRefresh();
                     
-                    // Redirect to home page after a delay
-                    setTimeout(() => {
-                        window.location.href = '/index.html';
-                    }, 3000);
+                    if (onAdminPage) {
+                        // Show login form and hide admin panel
+                        const loginForm = document.querySelector('#admin-login-form');
+                        const adminPanel = document.querySelector('#admin-panel');
+                        const loadingElement = document.querySelector('#admin-loading');
+                        const errorElement = document.querySelector('#admin-error');
+                        
+                        if (loginForm) {
+                            loginForm.style.display = 'block';
+                        }
+                        if (adminPanel) {
+                            adminPanel.style.display = 'none';
+                        }
+                        if (loadingElement) {
+                            loadingElement.style.display = 'none';
+                        }
+                        if (errorElement) {
+                            errorElement.style.display = 'none';
+                        }
+                    }
                 }
-            }).catch(error => {
-                console.error("Error checking admin status:", error);
-                // Show error message
-                const errorElement = document.querySelector('#admin-error');
-                if (errorElement) {
-                    errorElement.style.display = 'block';
-                    errorElement.innerHTML = '<p>Error verifying admin status. Please try again.</p>';
-                }
-            });
-        }
-    } else {
-        // User is signed out
-        console.log('User signed out');
-        
-        // Clear admin status from session storage
-        sessionStorage.removeItem('adminStatus');
-        sessionStorage.removeItem('adminUserId');
-        
-        // Stop any admin token refresh
-        stopAdminTokenRefresh();
-        
-        if (onAdminPage) {
-            // Show login form and hide admin panel
-            const loginForm = document.querySelector('#admin-login-form');
-            const adminPanel = document.querySelector('#admin-panel');
-            const loadingElement = document.querySelector('#admin-loading');
-            const errorElement = document.querySelector('#admin-error');
-            
-            if (loginForm) {
-                loginForm.style.display = 'block';
+            } catch (error) {
+                console.error('Error in auth state change handler:', error);
             }
-            if (adminPanel) {
-                adminPanel.style.display = 'none';
-            }
-            if (loadingElement) {
-                loadingElement.style.display = 'none';
-            }
-            if (errorElement) {
-                errorElement.style.display = 'none';
-            }
-        }
-    }
-    } catch (error) {
-        console.error('Error in auth state change handler:', error);
-    }
-    });
+        });
     } else {
         console.warn('Firebase auth not available yet, retrying in 100ms');
         setTimeout(initializeAuthListener, 100);
@@ -390,11 +388,11 @@ async function loadAdminPanelSettings() {
             const settingsData = settingsDoc.data();
             console.log('Settings loaded successfully:', settingsData);
             
-            if (typeof renderAdminPanel === 'function') {
-                renderAdminPanel(settingsData);
-            } else {
-                console.warn('renderAdminPanel function not available');
-            }
+                    if (typeof buildAdminDashboard === 'function') {
+            buildAdminDashboard();
+        } else {
+            console.warn('buildAdminDashboard function not available');
+        }
         } else {
             console.warn('Settings document not found, creating default settings');
             // Create default settings if they don't exist
@@ -408,8 +406,8 @@ async function loadAdminPanelSettings() {
                 await db.collection('settings').doc('currentCompetition').set(defaultSettings);
                 console.log('Default settings created');
                 
-                if (typeof renderAdminPanel === 'function') {
-                    renderAdminPanel(defaultSettings);
+                if (typeof buildAdminDashboard === 'function') {
+                    buildAdminDashboard();
                 }
             } catch (createError) {
                 console.error('Error creating default settings:', createError);
@@ -749,7 +747,7 @@ async function handleAdminLogin(e) {
         try {
             const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
             if (settingsDoc.exists) {
-                renderAdminPanel(settingsDoc.data());
+                buildAdminDashboard();
             } else {
                 console.error("Settings document not found!");
                 // Show warning but don't block access
@@ -4160,7 +4158,7 @@ function saveCompetitionSettings() {
         // Refresh the admin panel to show updated data for the new edition
         db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
             if (settingsDoc.exists) {
-                renderAdminPanel(settingsDoc.data());
+                buildAdminDashboard();
             }
         });
         
@@ -9487,6 +9485,122 @@ function toggleAutoScroll() {
 }
 
 // ... (rest of the code remains unchanged)
+        
+        const homeBadgeHtml = homeBadge ? `<img src="${homeBadge}" alt="${fixture.homeTeam}" class="team-badge">` : '';
+        const awayBadgeHtml = awayBadge ? `<img src="${awayBadge}" alt="${fixture.awayTeam}" class="team-badge">` : '';
+        
+        // Determine score display
+        let scoreDisplay = '';
+        let statusClass = '';
+        
+        if (fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+            // Full-time result with half-time scores if available
+            const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.awayScoreHT !== null;
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score">${fixture.homeScore || 0}</span>
+                    <span class="score-separator">-</span>
+                    <span class="score">${fixture.awayScore || 0}</span>
+                </div>
+                ${hasHalfTimeScores ? `
+                    <div class="half-time-scores">
+                        <small>Half Time: ${fixture.homeScoreHT} - ${fixture.awayScoreHT}</small>
+                    </div>
+                ` : ''}
+            `;
+            statusClass = 'completed';
+        } else if (fixture.status === 'HT' && fixture.homeScoreHT !== null && fixture.awayScoreHT !== null) {
+            // Half-time result
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score">${fixture.homeScoreHT}</span>
+                    <span class="score-separator">-</span>
+                    <span class="score">${fixture.awayScoreHT}</span>
+                    <span class="score-status">HT</span>
+                </div>
+            `;
+            statusClass = 'half-time';
+        } else if (fixture.status === '1H' || fixture.status === '2H' || fixture.status === 'LIVE') {
+            // Live match with current scores and half-time if available
+            const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.awayScoreHT !== null;
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score">${fixture.homeScore || 0}</span>
+                    <span class="score-separator">-</span>
+                    <span class="score">${fixture.awayScore || 0}</span>
+                    <span class="score-status live">LIVE</span>
+                </div>
+                ${hasHalfTimeScores ? `
+                    <div class="half-time-scores">
+                        <small>Half Time: ${fixture.homeScoreHT} - ${fixture.awayScoreHT}</small>
+                    </div>
+                ` : ''}
+            `;
+            statusClass = 'live';
+        } else {
+            // Not started
+            scoreDisplay = `
+                <div class="score-result">
+                    <span class="score-placeholder">vs</span>
+                </div>
+            `;
+            statusClass = 'not-started';
+        }
+        
+        scoresHTML += `
+            <div class="score-fixture ${statusClass}">
+                <div class="fixture-teams">
+                    <div class="team home-team">
+                        ${homeBadgeHtml}
+                        <span class="team-name">${fixture.homeTeam}</span>
+                    </div>
+                    ${scoreDisplay}
+                    <div class="team away-team">
+                        <span class="team-name">${fixture.awayTeam}</span>
+                        ${awayBadgeHtml}
+                    </div>
+                </div>
+                <div class="fixture-info">
+                    <div class="fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                    <div class="fixture-status">${getStatusDisplay(fixture.status)}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    scoresHTML += '</div>';
+    desktopScoresDisplay.innerHTML = scoresHTML;
+}
+
+function renderDesktopPlayerScores(fixtures, gameweek) {
+    console.log('renderDesktopPlayerScores called with:', { fixtures, gameweek });
+    
+    const desktopScoresDisplay = document.querySelector('#desktop-scores-display');
+    if (!desktopScoresDisplay) {
+        console.error('Desktop scores display element not found');
+        return;
+    }
+    
+    if (!fixtures || fixtures.length === 0) {
+        console.log('No fixtures to render for desktop');
+        return;
+    }
+    
+    // Sort fixtures by date
+    const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let scoresHTML = `
+        <div class="scores-header">
+            <h4>Game Week ${gameweek === 'tiebreak' ? 'Tiebreak' : gameweek} Results</h4>
+        </div>
+        <div class="scores-container">
+    `;
+    
+    for (const fixture of sortedFixtures) {
+        const fixtureDate = new Date(fixture.date);
+        const homeBadge = getTeamBadge(fixture.homeTeam);
+        const awayBadge = getTeamBadge(fixture.awayTeam);
         
         const homeBadgeHtml = homeBadge ? `<img src="${homeBadge}" alt="${fixture.homeTeam}" class="team-badge">` : '';
         const awayBadgeHtml = awayBadge ? `<img src="${awayBadge}" alt="${fixture.awayTeam}" class="team-badge">` : '';
