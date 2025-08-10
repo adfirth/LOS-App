@@ -3552,8 +3552,13 @@ function buildAdminDashboard(settings) {
                 registeredUsersCount++;
                 console.log('Processing user:', userData.displayName, 'for edition:', selectedEdition);
                 
-                // Picks are stored using the simple gwKey format (e.g., gw1, gw2), not edition-prefixed
-                const playerPick = userData.picks && userData.picks[gwKey] ? userData.picks[gwKey] : 'No Pick Made';
+                // Picks are stored using both edition-prefixed format (e.g., edition1_gw1) and simple format (e.g., gw1)
+                const editionGameweekKey = `${selectedEdition}_${gwKey}`;
+                const playerPick = userData.picks && (userData.picks[editionGameweekKey] || userData.picks[gwKey]) ? 
+                    (userData.picks[editionGameweekKey] || userData.picks[gwKey]) : 'No Pick Made';
+                
+                // Debug logging to help troubleshoot pick retrieval issues
+                // console.log(`User ${userData.displayName}: checking picks[${editionGameweekKey}] = ${userData.picks && userData.picks[editionGameweekKey]}, picks[${gwKey}] = ${userData.picks && userData.picks[gwKey]}, final pick: ${playerPick}`);
                 
                 const row = document.createElement('tr');
                 const badge = playerPick !== 'No Pick Made' ? getTeamBadge(playerPick) : null;
