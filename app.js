@@ -2226,7 +2226,9 @@ function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
                 }
 
                 // Update pick status header
-                updatePickStatusHeader(gameweek, userData, userId);
+                updatePickStatusHeader(gameweek, userData, userId).catch(error => {
+                    console.error('Error updating pick status header:', error);
+                });
 
                 // Display fixtures
                 renderFixturesDisplay(fixtures, userData, gameweek, userId);
@@ -2311,7 +2313,9 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
                 }
 
                 // Update pick status header
-                updateMobilePickStatusHeader(gameweek, userData, userId);
+                updateMobilePickStatusHeader(gameweek, userData, userId).catch(error => {
+                    console.error('Error updating mobile pick status header:', error);
+                });
 
                 // Display fixtures
                 renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
@@ -2380,13 +2384,27 @@ function initializePlayerVidiprinter() {
 }
 
 // Function to update the mobile pick status header
-function updateMobilePickStatusHeader(gameweek, userData, userId) {
+async function updateMobilePickStatusHeader(gameweek, userData, userId) {
     const pickStatusDisplay = document.querySelector('#mobile-pick-status-display');
     const pickStatusHeader = document.querySelector('.mobile-deadline-section .pick-status-header');
     
     if (!pickStatusDisplay || !pickStatusHeader) {
         return;
     }
+    
+    // Check if deadline has passed for this gameweek
+    const isDeadlinePassed = await checkDeadlineForGameweek(gameweek);
+    
+    if (isDeadlinePassed) {
+        // Deadline has passed - hide pick information
+        pickStatusDisplay.style.display = 'none';
+        pickStatusHeader.style.display = 'none';
+        return;
+    }
+    
+    // Show pick status header
+    pickStatusHeader.style.display = 'block';
+    pickStatusDisplay.style.display = 'block';
     
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     const currentPick = userData && userData.picks && userData.picks[gameweekKey];
@@ -2407,13 +2425,27 @@ function updateMobilePickStatusHeader(gameweek, userData, userId) {
 }
 
 // Function to update the pick status header
-function updatePickStatusHeader(gameweek, userData, userId) {
+async function updatePickStatusHeader(gameweek, userData, userId) {
     const pickStatusDisplay = document.querySelector('#pick-status-display');
     const pickStatusHeader = document.querySelector('.pick-status-header');
     
     if (!pickStatusDisplay || !pickStatusHeader) {
         return;
     }
+    
+    // Check if deadline has passed for this gameweek
+    const isDeadlinePassed = await checkDeadlineForGameweek(gameweek);
+    
+    if (isDeadlinePassed) {
+        // Deadline has passed - hide pick information
+        pickStatusDisplay.style.display = 'none';
+        pickStatusHeader.style.display = 'none';
+        return;
+    }
+    
+    // Show pick status header
+    pickStatusHeader.style.display = 'block';
+    pickStatusDisplay.style.display = 'block';
     
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     const currentPick = userData && userData.picks && userData.picks[gameweekKey];
@@ -2615,7 +2647,7 @@ async function getTeamStatus(teamName, userData, currentGameWeek, userId) {
     return { status: 'available', clickable: true, reason: 'Available for picking' };
 }
 
-function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     console.log('renderFixturesDisplay called with:', { fixtures, userData, currentGameWeek, userId });
     
     const fixturesDisplay = document.querySelector('#fixtures-display');
@@ -2649,6 +2681,18 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         // Check if teams are already picked by user in other gameweeks
         const existingPicks = userData ? Object.values(userData.picks || {}) : [];
         
+        // Check if deadline has passed for this gameweek
+        let deadlinePassed = false;
+        if (currentGameWeek && userData) {
+            const userEdition = getUserEdition(userData);
+            try {
+                deadlinePassed = await checkDeadlineForGameweek(currentGameWeek, userEdition);
+            } catch (error) {
+                console.error('Error checking deadline:', error);
+                deadlinePassed = false; // Default to allowing picks if there's an error
+            }
+        }
+        
         // Calculate team pick status (minimal debugging)
         const homeTeamPicked = existingPicks.includes(fixture.homeTeam) && currentPick !== fixture.homeTeam;
         const awayTeamPicked = existingPicks.includes(fixture.awayTeam) && currentPick !== fixture.awayTeam;
@@ -2667,23 +2711,29 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
         if (currentPick === fixture.homeTeam) {
             homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
         } else if (existingPicks.includes(fixture.homeTeam)) {
-            homeTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
+            homeTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
         } else {
-            homeTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
+            homeTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
         }
         
         // Simple inline logic for away team
         if (currentPick === fixture.awayTeam) {
             awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
         } else if (existingPicks.includes(fixture.awayTeam)) {
-            awayTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
+            awayTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
         } else {
-            awayTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
+            awayTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
         }
         
         // Apply status classes to team buttons
         homeTeamClasses += ` ${homeTeamStatus.status}`;
         awayTeamClasses += ` ${awayTeamStatus.status}`;
+        
+        // Add deadline-passed class if deadline has passed
+        if (deadlinePassed) {
+            homeTeamClasses += ' deadline-passed';
+            awayTeamClasses += ' deadline-passed';
+        }
         
         // Determine if teams are clickable based on their status and create tooltips
         let homeTeamClickable = homeTeamStatus.clickable;
@@ -2721,7 +2771,7 @@ function renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null
 }
 
 // Mobile fixtures display rendering function
-function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+async function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
     const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
     
     if (!fixtures || fixtures.length === 0) {
@@ -2753,7 +2803,17 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         // Check if teams are already picked by user in other gameweeks
         const existingPicks = userData ? Object.values(userData.picks || {}) : [];
         
-
+        // Check if deadline has passed for this gameweek
+        let deadlinePassed = false;
+        if (currentGameWeek && userData) {
+            const userEdition = getUserEdition(userData);
+            try {
+                deadlinePassed = await checkDeadlineForGameweek(currentGameWeek, userEdition);
+            } catch (error) {
+                console.error('Error checking deadline for mobile fixtures:', error);
+                deadlinePassed = false;
+            }
+        }
         
         // Create team pick buttons with improved status classes
         let homeTeamClasses = 'team-pick-button';
@@ -2767,23 +2827,29 @@ function renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek 
         if (currentPick === fixture.homeTeam) {
             homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
         } else if (existingPicks.includes(fixture.homeTeam)) {
-            homeTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
+            homeTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
         } else {
-            homeTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
+            homeTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
         }
         
         // Simple inline logic for away team
         if (currentPick === fixture.awayTeam) {
             awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
         } else if (existingPicks.includes(fixture.awayTeam)) {
-            awayTeamStatus = { status: 'future-pick', clickable: true, reason: 'Picked in another gameweek' };
+            awayTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
         } else {
-            awayTeamStatus = { status: 'available', clickable: true, reason: 'Available for picking' };
+            awayTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
         }
         
         // Apply status classes to team buttons
         homeTeamClasses += ` ${homeTeamStatus.status}`;
         awayTeamClasses += ` ${awayTeamStatus.status}`;
+        
+        // Add deadline-passed class if deadline has passed
+        if (deadlinePassed) {
+            homeTeamClasses += ' deadline-passed';
+            awayTeamClasses += ' deadline-passed';
+        }
         
         // Determine if teams are clickable based on their status and create tooltips
         let homeTeamClickable = homeTeamStatus.clickable;
@@ -2901,8 +2967,12 @@ async function refreshDisplayAfterPickUpdate(gameweek, userId) {
             loadMobileFixturesForDeadline(currentViewedGameweek, updatedUserData, userId);
             
             // Update the pick status headers with updated data for the current viewed gameweek
-            updatePickStatusHeader(currentViewedGameweek, updatedUserData, userId);
-            updateMobilePickStatusHeader(currentViewedGameweek, updatedUserData, userId);
+            updatePickStatusHeader(currentViewedGameweek, updatedUserData, userId).catch(error => {
+                console.error('Error updating pick status header:', error);
+            });
+            updateMobilePickStatusHeader(currentViewedGameweek, updatedUserData, userId).catch(error => {
+                console.error('Error updating mobile pick status header:', error);
+            });
             
             // Refresh the pick history sidebars with updated data
             const picksHistoryContainer = document.querySelector('#picks-history');
@@ -2969,7 +3039,9 @@ function saveTempPick(gameweek, userId) {
                     loadFixturesForDeadline(gameweek, userData, userId);
                     
                     // Update the pick status header
-                    updatePickStatusHeader(gameweek, userData, userId);
+                    updatePickStatusHeader(gameweek, userData, userId).catch(error => {
+                        console.error('Error updating pick status header:', error);
+                    });
                 }
             }).catch(console.error);
         }).catch(error => {
