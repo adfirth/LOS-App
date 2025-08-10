@@ -5987,3 +5987,41 @@ a:hover {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Ensure Save Settings button is always visible and clickable */
+#save-settings-btn {
+    background-color: var(--alty-yellow) !important;
+    color: var(--dark-text) !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: transform 0.2s ease-in-out !important;
+}
+
+#save-settings-btn:hover {
+    transform: scale(1.05) !important;
+}
+
+#save-settings-btn:disabled {
+    background-color: var(--alty-yellow) !important;
+    color: var(--dark-text) !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+#save-settings-btn:focus {
+    outline: 2px solid var(--alty-red) !important;
+    outline-offset: 2px !important;
+}
+
+/* Override any potential disabled styling */
+#save-settings-btn[disabled] {
+    background-color: var(--alty-yellow) !important;
+    color: var(--dark-text) !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    transform: none !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+

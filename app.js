@@ -294,6 +294,12 @@ function handleAdminLogout() {
         window.adminTokenRefreshInterval = null;
     }
     
+    // Clear the button state check interval
+    if (window.adminButtonStateCheckInterval) {
+        clearInterval(window.adminButtonStateCheckInterval);
+        window.adminButtonStateCheckInterval = null;
+    }
+    
     auth.signOut().then(() => {
         console.log('Admin logged out, redirecting to home page');
         // Redirect to home page
@@ -2579,6 +2585,39 @@ function renderAdminPanel(settings) {
     // Always initialize competition settings to ensure Save Settings button works
     initializeCompetitionSettings();
     
+    // Force enable Save Settings button immediately
+    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+    if (saveSettingsBtn) {
+        console.log('Force enabling Save Settings button');
+        saveSettingsBtn.disabled = false;
+        saveSettingsBtn.style.pointerEvents = 'auto';
+        saveSettingsBtn.style.opacity = '1';
+        saveSettingsBtn.style.cursor = 'pointer';
+        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+        saveSettingsBtn.style.color = 'var(--dark-text)';
+    }
+    
+    // Additional button state check after a short delay
+    setTimeout(() => {
+        const saveSettingsBtn = document.querySelector('#save-settings-btn');
+        if (saveSettingsBtn) {
+            console.log('Delayed button state check:');
+            console.log('Button disabled:', saveSettingsBtn.disabled);
+            console.log('Button classes:', saveSettingsBtn.className);
+            console.log('Button style pointer-events:', saveSettingsBtn.style.pointerEvents);
+            console.log('Button cursor:', saveSettingsBtn.style.cursor);
+            
+            // Force enable if still disabled
+            if (saveSettingsBtn.disabled) {
+                console.log('Button was still disabled, forcing enable');
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.style.pointerEvents = 'auto';
+                saveSettingsBtn.style.opacity = '1';
+                saveSettingsBtn.style.cursor = 'pointer';
+            }
+        }
+    }, 500);
+    
     // Prevent duplicate initialization of other components
     if (window.adminPanelInitialized) {
         console.log('Admin panel already initialized, skipping other initializations');
@@ -2602,8 +2641,23 @@ function renderAdminPanel(settings) {
             }
         }, 45 * 60 * 1000); // 45 minutes
         
-        // Store the interval ID so it can be cleared later if needed
-        window.adminTokenRefreshInterval = tokenRefreshInterval;
+            // Store the interval ID so it can be cleared later if needed
+    window.adminTokenRefreshInterval = tokenRefreshInterval;
+    
+    // Set up periodic button state check to prevent Save Settings button from becoming inactive
+    const buttonStateCheckInterval = setInterval(() => {
+        const saveSettingsBtn = document.querySelector('#save-settings-btn');
+        if (saveSettingsBtn && saveSettingsBtn.disabled) {
+            console.log('Periodic check: Save Settings button was disabled, re-enabling');
+            saveSettingsBtn.disabled = false;
+            saveSettingsBtn.style.pointerEvents = 'auto';
+            saveSettingsBtn.style.opacity = '1';
+            saveSettingsBtn.style.cursor = 'pointer';
+        }
+    }, 30000); // Check every 30 seconds
+    
+    // Store the interval ID so it can be cleared later if needed
+    window.adminButtonStateCheckInterval = buttonStateCheckInterval;
     
     // Also refresh token when page becomes visible (user returns to tab)
     document.addEventListener('visibilitychange', async () => {
@@ -2614,6 +2668,36 @@ function renderAdminPanel(settings) {
             } catch (error) {
                 console.warn('Admin panel: Could not refresh token on visibility change:', error);
             }
+        }
+        
+        // Check and fix Save Settings button state when page becomes visible
+        if (!document.hidden) {
+            setTimeout(() => {
+                const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                if (saveSettingsBtn && saveSettingsBtn.disabled) {
+                    console.log('Page became visible, fixing disabled Save Settings button');
+                    saveSettingsBtn.disabled = false;
+                    saveSettingsBtn.style.pointerEvents = 'auto';
+                    saveSettingsBtn.style.opacity = '1';
+                    saveSettingsBtn.style.cursor = 'pointer';
+                }
+            }, 200);
+        }
+    });
+    
+    // Add focus event listener to check button state
+    document.addEventListener('focusin', (event) => {
+        if (event.target.closest('#admin-panel')) {
+            setTimeout(() => {
+                const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                if (saveSettingsBtn && saveSettingsBtn.disabled) {
+                    console.log('Admin panel focused, fixing disabled Save Settings button');
+                    saveSettingsBtn.disabled = false;
+                    saveSettingsBtn.style.pointerEvents = 'auto';
+                    saveSettingsBtn.style.opacity = '1';
+                    saveSettingsBtn.style.cursor = 'pointer';
+                }
+            }, 100);
         }
     });
 }
@@ -3037,6 +3121,21 @@ function initializeCompetitionSettings() {
         saveSettingsBtn.disabled = false;
         saveSettingsBtn.style.pointerEvents = 'auto';
         saveSettingsBtn.style.opacity = '1';
+        saveSettingsBtn.style.cursor = 'pointer';
+        
+        // Remove any disabled styling
+        saveSettingsBtn.classList.remove('disabled');
+        
+        // Force re-enable the button
+        setTimeout(() => {
+            if (saveSettingsBtn) {
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.style.pointerEvents = 'auto';
+                saveSettingsBtn.style.opacity = '1';
+                saveSettingsBtn.style.cursor = 'pointer';
+                console.log('Save Settings button re-enabled after timeout');
+            }
+        }, 100);
         
     } else {
         console.warn('Save Settings button not found!');
@@ -3149,6 +3248,7 @@ function saveCompetitionSettings() {
     const activeEditionSelect = document.querySelector('#active-edition-select');
     const activeGameweekSelect = document.querySelector('#active-gameweek-select');
     const statusMessage = document.querySelector('#settings-status');
+    const saveSettingsBtn = document.querySelector('#save-settings-btn');
     
     console.log('Active edition select found:', !!activeEditionSelect);
     console.log('Active gameweek select found:', !!activeGameweekSelect);
@@ -3156,6 +3256,13 @@ function saveCompetitionSettings() {
     if (!activeEditionSelect || !activeGameweekSelect) {
         console.warn('Required select elements not found, returning early');
         return;
+    }
+    
+    // Temporarily disable the button to prevent double-clicks
+    if (saveSettingsBtn) {
+        saveSettingsBtn.disabled = true;
+        saveSettingsBtn.style.cursor = 'not-allowed';
+        saveSettingsBtn.textContent = 'Saving...';
     }
     
     const newActiveEdition = activeEditionSelect.value;
@@ -3185,6 +3292,13 @@ function saveCompetitionSettings() {
             }
         }
         
+        // Re-enable the button
+        if (saveSettingsBtn) {
+            saveSettingsBtn.disabled = false;
+            saveSettingsBtn.style.cursor = 'pointer';
+            saveSettingsBtn.textContent = 'Save Settings';
+        }
+        
         // Refresh the admin panel to show updated data for the new edition
         db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
             if (settingsDoc.exists) {
@@ -3206,6 +3320,13 @@ function saveCompetitionSettings() {
         if (statusMessage) {
             statusMessage.textContent = 'Error saving settings';
             statusMessage.className = 'status-message error';
+        }
+        
+        // Re-enable the button on error
+        if (saveSettingsBtn) {
+            saveSettingsBtn.disabled = false;
+            saveSettingsBtn.style.cursor = 'pointer';
+            saveSettingsBtn.textContent = 'Save Settings';
         }
     });
 }
@@ -6022,6 +6143,23 @@ function setupAdminTabs() {
             if (targetTab === 'vidiprinter') {
                 console.log('Vidiprinter tab clicked - initializing...');
                 initializeVidiprinter();
+            }
+            
+            // Check and fix Save Settings button if settings tab was clicked
+            if (targetTab === 'settings') {
+                console.log('Settings tab clicked - checking Save Settings button...');
+                setTimeout(() => {
+                    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                    if (saveSettingsBtn) {
+                        console.log('Settings tab: Force enabling Save Settings button');
+                        saveSettingsBtn.disabled = false;
+                        saveSettingsBtn.style.pointerEvents = 'auto';
+                        saveSettingsBtn.style.opacity = '1';
+                        saveSettingsBtn.style.cursor = 'pointer';
+                        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                        saveSettingsBtn.style.color = 'var(--dark-text)';
+                    }
+                }, 100);
             }
         });
     });
