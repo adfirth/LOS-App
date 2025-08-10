@@ -104,9 +104,20 @@ auth.onAuthStateChanged(user => {
         if (onIndexPage) { /* ... */ }
         if (onDashboardPage) { window.location.href = '/login.html'; }
         if (onAdminPage) { 
-            console.log("User not authenticated, redirecting to home page");
-            // Redirect to home page instead of showing login form
-            window.location.href = '/index.html';
+            console.log("User not authenticated on admin page");
+            // Don't redirect immediately - show login form instead
+            const loadingElement = document.querySelector('#admin-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            const loginForm = document.querySelector('#admin-login-form');
+            if (loginForm) {
+                loginForm.style.display = 'block';
+            }
+            const adminPanel = document.querySelector('#admin-panel');
+            if (adminPanel) {
+                adminPanel.style.display = 'none';
+            }
         }
     }
     } catch (error) {
@@ -247,6 +258,12 @@ function handleAdminLogout() {
     // Prevent this from being treated as a tab click
     event.preventDefault();
     event.stopPropagation();
+    
+    // Clear the token refresh interval
+    if (window.adminTokenRefreshInterval) {
+        clearInterval(window.adminTokenRefreshInterval);
+        window.adminTokenRefreshInterval = null;
+    }
     
     auth.signOut().then(() => {
         console.log('Admin logged out, redirecting to home page');
@@ -2511,6 +2528,36 @@ function startDeadlineChecker() {
 
 // --- NEW: ADMIN PANEL RENDER FUNCTION ---
 function renderAdminPanel(settings) {
+    // Set up periodic token refresh to prevent authentication issues
+    if (auth.currentUser) {
+        // Refresh token every 45 minutes (tokens typically expire after 1 hour)
+        const tokenRefreshInterval = setInterval(async () => {
+            try {
+                await auth.currentUser.getIdToken(true);
+                console.log('Admin panel: Authentication token refreshed');
+            } catch (error) {
+                console.warn('Admin panel: Could not refresh token:', error);
+                // If token refresh fails, clear the interval
+                clearInterval(tokenRefreshInterval);
+            }
+        }, 45 * 60 * 1000); // 45 minutes
+        
+            // Store the interval ID so it can be cleared later if needed
+    window.adminTokenRefreshInterval = tokenRefreshInterval;
+    
+    // Also refresh token when page becomes visible (user returns to tab)
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden && auth.currentUser) {
+            try {
+                await auth.currentUser.getIdToken(true);
+                console.log('Admin panel: Token refreshed on page visibility change');
+            } catch (error) {
+                console.warn('Admin panel: Could not refresh token on visibility change:', error);
+            }
+        }
+    });
+}
+    
     const picksTitle = document.querySelector('#picks-title');
     const picksTableBody = document.querySelector('#admin-picks-body');
     const currentGameWeek = settings.active_gameweek;
@@ -7018,10 +7065,34 @@ async function editPlayer(playerId) {
 async function savePlayerEdit(event) {
     event.preventDefault();
     
+    // Check if user is still authenticated before proceeding
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        console.error('User not authenticated during save operation');
+        alert('Authentication error. Please refresh the page and try again.');
+        return;
+    }
+    
     const playerId = event.target.getAttribute('data-player-id');
     if (!playerId) return;
     
     try {
+        // Refresh the authentication token to prevent expiration issues
+        try {
+            await currentUser.getIdToken(true);
+            console.log('Authentication token refreshed successfully');
+        } catch (tokenError) {
+            console.warn('Could not refresh token, proceeding with current token:', tokenError);
+        }
+        
+        // Verify admin status before proceeding
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (!userDoc.exists || userDoc.data().isAdmin !== true) {
+            console.error('User lost admin privileges during save operation');
+            alert('Admin access lost. Please refresh the page and try again.');
+            return;
+        }
+        
         // Get current player data to preserve existing registrations
         const playerDoc = await db.collection('users').doc(playerId).get();
         const currentData = playerDoc.data();
@@ -7064,6 +7135,7 @@ async function savePlayerEdit(event) {
             ...registrationUpdates
         };
         
+        // Perform the update with additional error handling
         await db.collection('users').doc(playerId).update(updates);
         
         // Update local data
@@ -7083,14 +7155,38 @@ async function savePlayerEdit(event) {
         
     } catch (error) {
         console.error('Error updating player:', error);
-        alert('Error updating player: ' + error.message);
+        
+        // Check if it's an authentication error
+        if (error.code === 'permission-denied' || error.code === 'unauthenticated') {
+            alert('Authentication error. Please refresh the page and try again.');
+        } else if (error.code === 'unavailable') {
+            alert('Database temporarily unavailable. Please try again in a moment.');
+        } else {
+            alert('Error updating player: ' + error.message);
+        }
     }
 }
 
 async function archivePlayer(playerId) {
     if (!confirm('Are you sure you want to archive this player?')) return;
     
+    // Check if user is still authenticated before proceeding
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        console.error('User not authenticated during archive operation');
+        alert('Authentication error. Please refresh the page and try again.');
+        return;
+    }
+    
     try {
+        // Refresh the authentication token to prevent expiration issues
+        try {
+            await currentUser.getIdToken(true);
+            console.log('Authentication token refreshed successfully');
+        } catch (tokenError) {
+            console.warn('Could not refresh token, proceeding with current token:', tokenError);
+        }
+        
         await db.collection('users').doc(playerId).update({
             status: 'archived',
             archivedDate: new Date(),
@@ -7117,7 +7213,23 @@ async function archivePlayer(playerId) {
 async function unarchivePlayer(playerId) {
     if (!confirm('Are you sure you want to unarchive this player?')) return;
     
+    // Check if user is still authenticated before proceeding
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        console.error('User not authenticated during unarchive operation');
+        alert('Authentication error. Please refresh the page and try again.');
+        return;
+    }
+    
     try {
+        // Refresh the authentication token to prevent expiration issues
+        try {
+            await currentUser.getIdToken(true);
+            console.log('Authentication token refreshed successfully');
+        } catch (tokenError) {
+            console.warn('Could not refresh token, proceeding with current token:', tokenError);
+        }
+        
         await db.collection('users').doc(playerId).update({
             status: 'active',
             unarchivedDate: new Date(),
@@ -7144,7 +7256,23 @@ async function unarchivePlayer(playerId) {
 async function addToTestWeeks(playerId) {
     if (!confirm('Add this player to Test Weeks edition?')) return;
     
+    // Check if user is still authenticated before proceeding
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        console.error('User not authenticated during add to test weeks operation');
+        alert('Authentication error. Please refresh the page and try again.');
+        return;
+    }
+    
     try {
+        // Refresh the authentication token to prevent expiration issues
+        try {
+            await currentUser.getIdToken(true);
+            console.log('Authentication token refreshed successfully');
+        } catch (tokenError) {
+            console.warn('Could not refresh token, proceeding with current token:', tokenError);
+        }
+        
         await db.collection('users').doc(playerId).update({
             [`registrations.editiontest`]: {
                 registrationDate: new Date(),
@@ -7183,7 +7311,22 @@ async function addToTestWeeks(playerId) {
 async function deletePlayer(playerId) {
     if (!confirm('Are you sure you want to PERMANENTLY DELETE this player? This action cannot be undone and will remove all their data from the database.')) return;
     
+    // Check if user is still authenticated before proceeding
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        console.error('User not authenticated during delete operation');
+        alert('Authentication error. Please refresh the page and try again.');
+        return;
+    }
+    
     try {
+        // Refresh the authentication token to prevent expiration issues
+        try {
+            await currentUser.getIdToken(true);
+            console.log('Authentication token refreshed successfully');
+        } catch (tokenError) {
+            console.warn('Could not refresh token, proceeding with current token:', tokenError);
+        }
         // Get player info for confirmation
         const player = allPlayers.find(p => p.id === playerId);
         if (!player) {
