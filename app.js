@@ -258,16 +258,6 @@ async function handleAdminLogin(e) {
                             }
                             document.querySelector('#admin-panel').style.display = 'flex';
                             
-                            // Initialize admin login handlers (for logout button)
-                            if (typeof initializeAdminLoginHandlers === 'function') {
-                                initializeAdminLoginHandlers();
-                            }
-                            
-                            // Initialize registration management
-                            if (typeof initializeRegistrationManagement === 'function') {
-                                initializeRegistrationManagement();
-                            }
-                            
                             // Fetch settings and pass them to the render function
                             try {
                                 const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
@@ -2593,6 +2583,15 @@ function renderAdminPanel(settings) {
         console.log('Database reference initialized in renderAdminPanel');
     }
     
+    // Prevent duplicate initialization of other components
+    if (window.adminPanelInitialized) {
+        console.log('Admin panel already initialized, skipping other initializations');
+        return;
+    }
+    
+    console.log('Initializing admin panel for the first time');
+    window.adminPanelInitialized = true;
+    
     // Always initialize competition settings to ensure Save Settings button works
     initializeCompetitionSettings();
     
@@ -2628,15 +2627,6 @@ function renderAdminPanel(settings) {
             }
         }
     }, 500);
-    
-    // Prevent duplicate initialization of other components
-    if (window.adminPanelInitialized) {
-        console.log('Admin panel already initialized, skipping other initializations');
-        return;
-    }
-    
-    console.log('Initializing admin panel for the first time');
-    window.adminPanelInitialized = true;
     
     // Set up periodic token refresh to prevent authentication issues
     if (auth.currentUser) {
@@ -2836,14 +2826,6 @@ function renderAdminPanel(settings) {
     
     // Initialize admin tabs
     initializeAdminTabs();
-    
-    // Initialize fixture management
-    initializeFixtureManagement();
-    
-    // Initialize other admin components
-    console.log('About to initialize competition settings...');
-    initializeCompetitionSettings();
-    console.log('Competition settings initialization completed');
 }
 
 // --- FIXTURE MANAGEMENT FUNCTIONS ---
