@@ -30,7 +30,10 @@ function getActiveGameweek() {
 }
 
 // --- AUTH STATE & LOGOUT LOGIC (GLOBAL) ---
-auth.onAuthStateChanged(user => {
+// Wait for Firebase to be initialized before setting up auth listener
+function initializeAuthListener() {
+    if (window.auth) {
+        window.auth.onAuthStateChanged(user => {
     console.log('Auth state changed - User:', user ? user.email : 'null');
     
     // Ensure database is initialized
@@ -148,7 +151,7 @@ auth.onAuthStateChanged(user => {
                 adminPanel.style.display = 'none';
             }
         }
-    }
+            }
     } catch (error) {
         console.error("Error in auth state change handler:", error);
         // If there's an error, show login form
@@ -165,7 +168,15 @@ auth.onAuthStateChanged(user => {
             }
         }
     }
-});
+        });
+    } else {
+        // Firebase not ready yet, retry in 100ms
+        setTimeout(initializeAuthListener, 100);
+    }
+}
+
+// Call the auth listener initialization when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeAuthListener);
 
 // --- ADMIN LOGIN FORM HANDLER ---
 function initializeAdminLoginHandlers() {
@@ -208,7 +219,7 @@ async function handleAdminLogin(e) {
     console.log('Attempting admin login with email:', email);
     
     // Check if auth is available
-    if (!auth) {
+    if (!window.auth) {
         console.error('Firebase auth not available');
         errorMessage.textContent = 'Error: Authentication service not available';
         return;
@@ -216,7 +227,7 @@ async function handleAdminLogin(e) {
     
     try {
         // Sign in with Firebase
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const userCredential = await window.auth.signInWithEmailAndPassword(email, password);
         console.log('Admin login successful');
         console.log('User credential:', userCredential);
         
@@ -226,7 +237,7 @@ async function handleAdminLogin(e) {
             console.log('Manually triggering admin page logic after login');
             // Force a small delay to ensure auth state is updated
             setTimeout(async () => {
-                const currentUser = auth.currentUser;
+                const currentUser = window.auth.currentUser;
                 if (currentUser) {
                     console.log('Current user after login:', currentUser.email);
                     // Manually trigger the admin check
@@ -2822,6 +2833,17 @@ function renderAdminPanel(settings) {
             }
         });
     });
+    
+    // Initialize admin tabs
+    initializeAdminTabs();
+    
+    // Initialize fixture management
+    initializeFixtureManagement();
+    
+    // Initialize other admin components
+    console.log('About to initialize competition settings...');
+    initializeCompetitionSettings();
+    console.log('Competition settings initialization completed');
 }
 
 // --- FIXTURE MANAGEMENT FUNCTIONS ---
@@ -3107,9 +3129,15 @@ function initializeCompetitionSettings() {
     console.log('Save Settings button found:', !!saveSettingsBtn);
     
     if (saveSettingsBtn) {
+        console.log('Save Settings button found, attaching event listener...');
+        console.log('Button element:', saveSettingsBtn);
+        console.log('Button HTML:', saveSettingsBtn.outerHTML);
+        
         // Remove any existing event listeners to prevent duplicates
         saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
         saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+        
+        console.log('Event listener attached successfully');
         
         // Check button state
         console.log('Save Settings button event listener attached');
@@ -3237,7 +3265,10 @@ function loadCompetitionSettings() {
 }
 
 function saveCompetitionSettings() {
-    console.log('saveCompetitionSettings called');
+    console.log('=== saveCompetitionSettings FUNCTION CALLED ===');
+    console.log('Function execution started at:', new Date().toISOString());
+    console.log('Current database reference:', db);
+    console.log('Window database reference:', window.db);
     
     // Ensure database is available
     if (!db && window.db) {
@@ -3359,6 +3390,29 @@ function addFixtureRow() {
     `;
     
     container.appendChild(fixtureRow);
+}
+
+// Add missing importScoresFromFile function
+async function importScoresFromFile(file, gameweek) {
+    console.log('importScoresFromFile called with gameweek:', gameweek);
+    
+    try {
+        const text = await file.text();
+        const scores = JSON.parse(text);
+        
+        if (Array.isArray(scores)) {
+            console.log(`Importing ${scores.length} scores from file`);
+            // Here you would process the scores and update the database
+            // For now, just log them
+            scores.forEach((score, index) => {
+                console.log(`Score ${index + 1}:`, score);
+            });
+        } else {
+            console.error('Invalid scores format - expected array');
+        }
+    } catch (error) {
+        console.error('Error importing scores from file:', error);
+    }
 }
 
 function removeFixtureRow(button) {
