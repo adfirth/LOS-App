@@ -7198,9 +7198,13 @@ async function savePlayerEdit(event) {
             }
         });
         
+        const firstName = document.getElementById('edit-first-name').value;
+        const surname = document.getElementById('edit-surname').value;
+        
         const updates = {
-            firstName: document.getElementById('edit-first-name').value,
-            surname: document.getElementById('edit-surname').value,
+            firstName: firstName,
+            surname: surname,
+            displayName: `${firstName} ${surname}`,
             email: document.getElementById('edit-email').value,
             lives: parseInt(document.getElementById('edit-lives').value),
             status: document.getElementById('edit-status').value,
