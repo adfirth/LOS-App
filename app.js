@@ -61,14 +61,19 @@ auth.onAuthStateChanged(user => {
                     }
                     
                     // Fetch settings and pass them to the render function
+                    console.log('Fetching settings from database...');
                     db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
+                        console.log('Settings document received:', settingsDoc.exists ? 'exists' : 'not found');
                         if (settingsDoc.exists) {
-                            renderAdminPanel(settingsDoc.data());
+                            const settingsData = settingsDoc.data();
+                            console.log('Settings data:', settingsData);
+                            renderAdminPanel(settingsData);
                         } else {
                             console.error("Settings document not found!");
                         }
                     }).catch(error => {
                         console.error("Error fetching settings:", error);
+                        console.error("Error details:", error.message, error.code);
                     });
                 } else {
                     // User is not an admin, show login form
@@ -2528,6 +2533,8 @@ function startDeadlineChecker() {
 
 // --- NEW: ADMIN PANEL RENDER FUNCTION ---
 function renderAdminPanel(settings) {
+    console.log('renderAdminPanel called with settings:', settings);
+    
     // Set up periodic token refresh to prevent authentication issues
     if (auth.currentUser) {
         // Refresh token every 45 minutes (tokens typically expire after 1 hour)
@@ -2542,8 +2549,8 @@ function renderAdminPanel(settings) {
             }
         }, 45 * 60 * 1000); // 45 minutes
         
-            // Store the interval ID so it can be cleared later if needed
-    window.adminTokenRefreshInterval = tokenRefreshInterval;
+        // Store the interval ID so it can be cleared later if needed
+        window.adminTokenRefreshInterval = tokenRefreshInterval;
     
     // Also refresh token when page becomes visible (user returns to tab)
     document.addEventListener('visibilitychange', async () => {
@@ -2567,21 +2574,26 @@ function renderAdminPanel(settings) {
     
     // Set default values
     picksEditionSelect.value = 'edition1';
-    picksGameweekSelect.value = currentGameWeek || '1';
+    picksGameweekSelect.value = settings.active_gameweek || '1';
     
     // Function to render picks table
     async function renderPicksTable() {
+        console.log('renderPicksTable called');
         const selectedEdition = picksEditionSelect.value;
         const selectedGameweek = picksGameweekSelect.value;
         const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
         const editionGwKey = `${selectedEdition}_${gwKey}`;
+        
+        console.log('Selected edition:', selectedEdition, 'gameweek:', selectedGameweek, 'editionGwKey:', editionGwKey);
         
         const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
         picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
         picksTableBody.innerHTML = ''; // Clear existing table rows
         
         try {
+            console.log('Fetching users from database...');
             const usersSnapshot = await db.collection('users').get();
+            console.log('Users snapshot received, count:', usersSnapshot.size);
             usersSnapshot.forEach(doc => {
                 const userData = doc.data();
                 
@@ -2612,7 +2624,8 @@ function renderAdminPanel(settings) {
             });
         } catch (error) {
             console.error('Error loading picks:', error);
-            picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks</td></tr>';
+            console.error('Error details:', error.message, error.code);
+            picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks: ' + error.message + '</td></tr>';
         }
     }
     
