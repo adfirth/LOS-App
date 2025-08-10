@@ -43,7 +43,25 @@
         <!-- Admin Panel -->
         <main id="admin-panel" style="display: none;">
             <div id="admin-loading" style="text-align: center; padding: 2rem; display: none;">
-                <p>Loading admin panel...</p>
+                <div style="margin-bottom: 2rem;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #007bff; margin-bottom: 1rem;"></i>
+                    <h3>Initializing Admin Panel</h3>
+                    <p>Please wait while we set up your admin environment...</p>
+                </div>
+                <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem; margin: 0 auto; max-width: 400px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <i class="fas fa-check-circle" style="color: #28a745; margin-right: 0.5rem;"></i>
+                        <span>Firebase connection</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <i class="fas fa-spinner fa-spin" style="color: #007bff; margin-right: 0.5rem;"></i>
+                        <span>Authentication check</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-clock" style="color: #6c757d; margin-right: 0.5rem;"></i>
+                        <span>Loading admin functions</span>
+                    </div>
+                </div>
             </div>
             <div id="admin-error" style="text-align: center; padding: 2rem; display: none; color: red;">
                 <p>Authentication error. Redirecting to login...</p>
@@ -759,36 +777,58 @@
                 script.src = 'app.js';
                 script.onload = function() {
                     console.log('app.js loaded successfully');
-                    // Initialize admin login handlers after app.js is loaded
-                    if (typeof initializeAdminLoginHandlers === 'function') {
-                        initializeAdminLoginHandlers();
-                    } else {
-                        // If function not available yet, wait a bit and try again
-                        setTimeout(() => {
-                            if (typeof initializeAdminLoginHandlers === 'function') {
-                                initializeAdminLoginHandlers();
-                            }
-                        }, 100);
-                    }
+                    
+                    // Wait a moment for all functions to be available, then initialize admin page
+                    setTimeout(() => {
+                        if (typeof initializeAdminPage === 'function') {
+                            console.log('Initializing admin page...');
+                            initializeAdminPage();
+                        } else {
+                            console.warn('initializeAdminPage function not available yet, retrying...');
+                            setTimeout(() => {
+                                if (typeof initializeAdminPage === 'function') {
+                                    initializeAdminPage();
+                                } else {
+                                    console.error('initializeAdminPage function still not available');
+                                    showFirebaseError('Failed to initialize admin panel functions');
+                                }
+                            }, 500);
+                        }
+                    }, 200);
                 };
                 script.onerror = function() {
                     console.error('Failed to load app.js');
+                    showFirebaseError('Failed to load admin panel application');
                 };
                 document.head.appendChild(script);
             } else {
                 firebaseTimeout += 100;
-                if (firebaseTimeout > 5000) { // 5 second timeout
-                    console.error('Firebase failed to initialize within 5 seconds');
-                    const loadingElement = document.querySelector('#admin-loading');
-                    if (loadingElement) {
-                        loadingElement.innerHTML = '<p>Error: Failed to load admin panel. Please refresh the page.</p>';
-                    }
+                if (firebaseTimeout > 10000) { // 10 second timeout
+                    console.error('Firebase failed to initialize within 10 seconds');
+                    showFirebaseError('Firebase failed to initialize. Please check your connection and refresh the page.');
                     return;
                 }
-                console.log('Waiting for Firebase to be ready...');
+                console.log('Waiting for Firebase to be ready...', firebaseTimeout / 1000, 'seconds');
                 setTimeout(waitForFirebase, 100);
             }
         }
+        
+        function showFirebaseError(message) {
+            const loadingElement = document.querySelector('#admin-loading');
+            if (loadingElement) {
+                loadingElement.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #721c24;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #dc3545;"></i>
+                        <h3>Initialization Error</h3>
+                        <p>${message}</p>
+                        <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-redo"></i> Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
         waitForFirebase();
     </script>
     
@@ -843,6 +883,35 @@
                 } else {
                     console.log('initializeVidiprinter function not available yet');
                 }
+            }
+            
+            // Ensure Save Settings button is enabled when settings tab is clicked
+            if (tabName === 'settings') {
+                console.log('Settings tab clicked - ensuring Save Settings button is enabled');
+                setTimeout(() => {
+                    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                    if (saveSettingsBtn) {
+                        // Force enable the button
+                        saveSettingsBtn.disabled = false;
+                        saveSettingsBtn.style.pointerEvents = 'auto';
+                        saveSettingsBtn.style.opacity = '1';
+                        saveSettingsBtn.style.cursor = 'pointer';
+                        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                        saveSettingsBtn.style.color = 'var(--dark-text)';
+                        
+                        // Remove any disabled classes or attributes
+                        saveSettingsBtn.classList.remove('disabled');
+                        saveSettingsBtn.removeAttribute('disabled');
+                        
+                        // Re-attach event listener
+                        if (typeof saveCompetitionSettings === 'function') {
+                            saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
+                            saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+                        }
+                        
+                        console.log('Save Settings button force-enabled in switchTab');
+                    }
+                }, 150);
             }
         }
         
@@ -903,9 +972,23 @@
                                                 if (loadingElement) {
                                                     loadingElement.style.display = 'none';
                                                 }
-                                                document.querySelector('#admin-panel').style.display = 'flex';
+                                                                                                document.querySelector('#admin-panel').style.display = 'flex';
                                                 
-
+                                                // Ensure Save Settings button is enabled when admin panel becomes visible
+                                                setTimeout(() => {
+                                                    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                                                    if (saveSettingsBtn) {
+                                                        console.log('Admin panel became visible, ensuring Save Settings button is enabled');
+                                                        saveSettingsBtn.disabled = false;
+                                                        saveSettingsBtn.style.pointerEvents = 'auto';
+                                                        saveSettingsBtn.style.opacity = '1';
+                                                        saveSettingsBtn.style.cursor = 'pointer';
+                                                        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                                                        saveSettingsBtn.style.color = 'var(--dark-text)';
+                                                        saveSettingsBtn.classList.remove('disabled');
+                                                        saveSettingsBtn.removeAttribute('disabled');
+                                                    }
+                                                }, 200);
                                                 
                                                 // Initialize admin login handlers (for logout button)
                                                 if (typeof initializeAdminLoginHandlers === 'function') {
@@ -967,6 +1050,52 @@
             };
             
             checkFirebaseReady();
+        });
+        
+        // Periodic check to ensure Save Settings button stays enabled
+        setInterval(() => {
+            const saveSettingsBtn = document.querySelector('#save-settings-btn');
+            if (saveSettingsBtn && (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none')) {
+                console.log('Periodic check in admin.html: Save Settings button is disabled, re-enabling');
+                
+                // Re-enable the button
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.style.pointerEvents = 'auto';
+                saveSettingsBtn.style.opacity = '1';
+                saveSettingsBtn.style.cursor = 'pointer';
+                saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                saveSettingsBtn.style.color = 'var(--dark-text)';
+                
+                // Remove any disabled classes or attributes
+                saveSettingsBtn.classList.remove('disabled');
+                saveSettingsBtn.removeAttribute('disabled');
+                
+                // Re-attach event listener if the function exists
+                if (typeof saveCompetitionSettings === 'function') {
+                    saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
+                    saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+                }
+            }
+        }, 5000); // Check every 5 seconds
+        
+        // Check Save Settings button when page becomes visible (user returns to tab)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                setTimeout(() => {
+                    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                    if (saveSettingsBtn) {
+                        console.log('Page became visible, ensuring Save Settings button is enabled');
+                        saveSettingsBtn.disabled = false;
+                        saveSettingsBtn.style.pointerEvents = 'auto';
+                        saveSettingsBtn.style.opacity = '1';
+                        saveSettingsBtn.style.cursor = 'pointer';
+                        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                        saveSettingsBtn.style.color = 'var(--dark-text)';
+                        saveSettingsBtn.classList.remove('disabled');
+                        saveSettingsBtn.removeAttribute('disabled');
+                    }
+                }, 300);
+            }
         });
     </script>
 </body>

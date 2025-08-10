@@ -24,6 +24,9 @@ function initializeDatabase() {
 // Initialize database when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeDatabase);
 
+// Initialize auth listener when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeAuthListener);
+
 // Helper function to get the active gameweek from settings
 function getActiveGameweek() {
     return currentActiveGameweek;
@@ -66,12 +69,19 @@ function initializeAuthListener() {
                 loginForm.style.display = 'none';
             }
             
+            // Start token refresh mechanism for admin users
+            startAdminTokenRefresh(user);
+            
             // Add error handling for admin check
             db.collection('users').doc(user.uid).get().then(doc => {
                 console.log('Admin check result - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
                 if (doc.exists && doc.data().isAdmin === true) {
                     // User is an admin, show the panel
                     console.log("Admin access granted.");
+                    
+                    // Store admin status in session storage for persistence
+                    sessionStorage.setItem('adminStatus', 'true');
+                    sessionStorage.setItem('adminUserId', user.uid);
                     
                     // Hide login form and show admin panel
                     const loginForm = document.querySelector('#admin-login-form');
@@ -100,83 +110,505 @@ function initializeAuthListener() {
                         }
                     }).catch(error => {
                         console.error("Error fetching settings:", error);
-                        console.error("Error details:", error.message, error.code);
+                        // Show error message to user
+                        const errorElement = document.querySelector('#admin-error');
+                        if (errorElement) {
+                            errorElement.style.display = 'block';
+                            errorElement.innerHTML = '<p>Error loading admin panel settings. Please refresh the page.</p>';
+                        }
                     });
                 } else {
-                    // User is not an admin, show login form
-                    console.log("Admin access denied, showing login form");
-                    // Hide loading message
-                    const loadingElement = document.querySelector('#admin-loading');
-                    if (loadingElement) {
-                        loadingElement.style.display = 'none';
+                    // User is not an admin
+                    console.log("Admin access denied for user:", user.email);
+                    sessionStorage.removeItem('adminStatus');
+                    sessionStorage.removeItem('adminUserId');
+                    
+                    // Show error and redirect
+                    const errorElement = document.querySelector('#admin-error');
+                    if (errorElement) {
+                        errorElement.style.display = 'block';
+                        errorElement.innerHTML = '<p>Access denied. You do not have admin privileges.</p>';
                     }
-                    // Show admin login form
-                    const loginForm = document.querySelector('#admin-login-form');
-                    if (loginForm) {
-                        loginForm.style.display = 'block';
-                    }
+                    
+                    // Redirect to home page after a delay
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 3000);
                 }
             }).catch(error => {
                 console.error("Error checking admin status:", error);
-                // Hide loading message
-                const loadingElement = document.querySelector('#admin-loading');
-                if (loadingElement) {
-                    loadingElement.style.display = 'none';
-                }
-                // Show admin login form
-                const loginForm = document.querySelector('#admin-login-form');
-                if (loginForm) {
-                    loginForm.style.display = 'block';
+                // Show error message
+                const errorElement = document.querySelector('#admin-error');
+                if (errorElement) {
+                    errorElement.style.display = 'block';
+                    errorElement.innerHTML = '<p>Error verifying admin status. Please try again.</p>';
                 }
             });
         }
-
     } else {
         // User is signed out
-        if (onIndexPage) { /* ... */ }
-        if (onDashboardPage) { window.location.href = '/login.html'; }
-        if (onAdminPage) { 
-            console.log("User not authenticated on admin page");
-            // Don't redirect immediately - show login form instead
-            const loadingElement = document.querySelector('#admin-loading');
-            if (loadingElement) {
-                loadingElement.style.display = 'none';
-            }
+        console.log('User signed out');
+        
+        // Clear admin status from session storage
+        sessionStorage.removeItem('adminStatus');
+        sessionStorage.removeItem('adminUserId');
+        
+        // Stop any admin token refresh
+        stopAdminTokenRefresh();
+        
+        if (onAdminPage) {
+            // Show login form and hide admin panel
             const loginForm = document.querySelector('#admin-login-form');
+            const adminPanel = document.querySelector('#admin-panel');
+            const loadingElement = document.querySelector('#admin-loading');
+            const errorElement = document.querySelector('#admin-error');
+            
             if (loginForm) {
                 loginForm.style.display = 'block';
             }
-            const adminPanel = document.querySelector('#admin-panel');
             if (adminPanel) {
                 adminPanel.style.display = 'none';
             }
-        }
-            }
-    } catch (error) {
-        console.error("Error in auth state change handler:", error);
-        // If there's an error, show login form
-        if (window.location.pathname.endsWith('admin.html')) {
-            // Hide loading message
-            const loadingElement = document.querySelector('#admin-loading');
             if (loadingElement) {
                 loadingElement.style.display = 'none';
             }
-            // Show admin login form
-            const loginForm = document.querySelector('#admin-login-form');
-            if (loginForm) {
-                loginForm.style.display = 'block';
+            if (errorElement) {
+                errorElement.style.display = 'none';
             }
         }
     }
-        });
+    } catch (error) {
+        console.error('Error in auth state change handler:', error);
+    }
+    });
     } else {
-        // Firebase not ready yet, retry in 100ms
+        console.warn('Firebase auth not available yet, retrying in 100ms');
         setTimeout(initializeAuthListener, 100);
     }
 }
 
-// Call the auth listener initialization when DOM is ready
-document.addEventListener('DOMContentLoaded', initializeAuthListener);
+// Admin token refresh mechanism
+function startAdminTokenRefresh(user) {
+    // Clear any existing interval
+    stopAdminTokenRefresh();
+    
+    // Set up token refresh every 50 minutes (tokens expire after 1 hour)
+    window.adminTokenRefreshInterval = setInterval(async () => {
+        try {
+            if (user) {
+                const token = await user.getIdToken(true); // Force refresh
+                console.log('Admin token refreshed successfully');
+                
+                // Verify admin status is still valid
+                const adminStatus = sessionStorage.getItem('adminStatus');
+                if (adminStatus === 'true') {
+                    const doc = await db.collection('users').doc(user.uid).get();
+                    if (!doc.exists || doc.data().isAdmin !== true) {
+                        console.log('Admin status revoked, logging out');
+                        sessionStorage.removeItem('adminStatus');
+                        sessionStorage.removeItem('adminUserId');
+                        await window.auth.signOut();
+                        window.location.href = '/index.html';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error refreshing admin token:', error);
+            // If token refresh fails, log out the user
+            try {
+                await window.auth.signOut();
+                window.location.href = '/index.html';
+            } catch (logoutError) {
+                console.error('Error during logout after token refresh failure:', logoutError);
+            }
+        }
+    }, 50 * 60 * 1000); // 50 minutes
+    
+    console.log('Admin token refresh started');
+}
+
+function stopAdminTokenRefresh() {
+    if (window.adminTokenRefreshInterval) {
+        clearInterval(window.adminTokenRefreshInterval);
+        window.adminTokenRefreshInterval = null;
+        console.log('Admin token refresh stopped');
+    }
+}
+
+// Check if user has admin status from session storage
+function checkAdminStatusFromStorage() {
+    const adminStatus = sessionStorage.getItem('adminStatus');
+    const adminUserId = sessionStorage.getItem('adminUserId');
+    
+    if (adminStatus === 'true' && adminUserId) {
+        // Verify the stored admin status is still valid
+        if (window.auth && window.auth.currentUser && window.auth.currentUser.uid === adminUserId) {
+            return true;
+        } else {
+            // Clear invalid stored status
+            sessionStorage.removeItem('adminStatus');
+            sessionStorage.removeItem('adminUserId');
+        }
+    }
+    return false;
+}
+
+// Initialize admin page with proper error handling
+function initializeAdminPage() {
+    console.log('Initializing admin page...');
+    
+    // Show loading state initially
+    const loadingElement = document.querySelector('#admin-loading');
+    const loginForm = document.querySelector('#admin-login-form');
+    const adminPanel = document.querySelector('#admin-panel');
+    const errorElement = document.querySelector('#admin-error');
+    
+    if (loadingElement) {
+        loadingElement.style.display = 'block';
+    }
+    if (loginForm) {
+        loginForm.style.display = 'none';
+    }
+    if (adminPanel) {
+        adminPanel.style.display = 'none';
+    }
+    if (errorElement) {
+        errorElement.style.display = 'none';
+    }
+    
+    // Check if user is already authenticated and has admin status
+    if (window.auth && window.auth.currentUser) {
+        console.log('User already authenticated, checking admin status...');
+        const user = window.auth.currentUser;
+        
+        // Check admin status from database
+        db.collection('users').doc(user.uid).get().then(doc => {
+            if (doc.exists && doc.data().isAdmin === true) {
+                console.log('User is admin, showing admin panel');
+                
+                // Store admin status
+                sessionStorage.setItem('adminStatus', 'true');
+                sessionStorage.setItem('adminUserId', user.uid);
+                
+                // Start token refresh and session monitoring
+                startAdminTokenRefresh(user);
+                startAdminSessionMonitoring();
+                
+                // Hide loading and show admin panel
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
+                if (adminPanel) {
+                    adminPanel.style.display = 'flex';
+                }
+                
+                // Initialize admin panel
+                if (typeof initializeAdminLoginHandlers === 'function') {
+                    initializeAdminLoginHandlers();
+                }
+                
+                // Load settings and render panel
+                loadAdminPanelSettings();
+            } else {
+                console.log('User is not admin, showing login form');
+                showAdminLoginForm();
+            }
+        }).catch(error => {
+            console.error('Error checking admin status:', error);
+            showAdminLoginForm();
+        });
+    } else {
+        console.log('No user authenticated, showing login form');
+        showAdminLoginForm();
+    }
+}
+
+// Show admin login form
+function showAdminLoginForm() {
+    const loadingElement = document.querySelector('#admin-loading');
+    const loginForm = document.querySelector('#admin-login-form');
+    const adminPanel = document.querySelector('#admin-panel');
+    const errorElement = document.querySelector('#admin-error');
+    
+    if (loadingElement) {
+        loadingElement.style.display = 'none';
+    }
+    if (loginForm) {
+        loginForm.style.display = 'block';
+    }
+    if (adminPanel) {
+        adminPanel.style.display = 'none';
+    }
+    if (errorElement) {
+        errorElement.style.display = 'none';
+    }
+    
+    // Initialize login handlers
+    if (typeof initializeAdminLoginHandlers === 'function') {
+        initializeAdminLoginHandlers();
+    }
+}
+
+// Load admin panel settings
+async function loadAdminPanelSettings() {
+    try {
+        const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+        if (settingsDoc.exists) {
+            const settingsData = settingsDoc.data();
+            console.log('Settings loaded successfully:', settingsData);
+            
+            if (typeof renderAdminPanel === 'function') {
+                renderAdminPanel(settingsData);
+            } else {
+                console.warn('renderAdminPanel function not available');
+            }
+        } else {
+            console.warn('Settings document not found, creating default settings');
+            // Create default settings if they don't exist
+            const defaultSettings = {
+                activeEdition: 1,
+                activeGameweek: '1',
+                lastUpdated: new Date().toISOString()
+            };
+            
+            try {
+                await db.collection('settings').doc('currentCompetition').set(defaultSettings);
+                console.log('Default settings created');
+                
+                if (typeof renderAdminPanel === 'function') {
+                    renderAdminPanel(defaultSettings);
+                }
+            } catch (createError) {
+                console.error('Error creating default settings:', createError);
+                showSettingsError('Failed to create default settings');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading admin panel settings:', error);
+        showSettingsError('Failed to load competition settings');
+    }
+}
+
+// Show settings error message
+function showSettingsError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 1rem; margin: 1rem 0; color: #721c24;';
+    errorDiv.innerHTML = '<strong>Settings Error:</strong> ' + message + '<br><button onclick="this.parentElement.remove()" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Dismiss</button>';
+    
+    const adminPanel = document.querySelector('#admin-panel');
+    if (adminPanel) {
+        adminPanel.insertBefore(errorDiv, adminPanel.firstChild);
+    }
+}
+
+// Admin session management
+function startAdminSessionMonitoring() {
+    // Monitor for user activity
+    let lastActivity = Date.now();
+    const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+    
+    const updateActivity = () => {
+        lastActivity = Date.now();
+    };
+    
+    // Track user activity
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+        document.addEventListener(event, updateActivity, true);
+    });
+    
+    // Check session timeout every minute
+    window.adminSessionCheckInterval = setInterval(() => {
+        const timeSinceLastActivity = Date.now() - lastActivity;
+        
+        if (timeSinceLastActivity > sessionTimeout) {
+            console.log('Admin session timed out due to inactivity');
+            handleAdminSessionTimeout();
+        }
+    }, 60 * 1000); // Check every minute
+    
+    // Show session timeout warning at 25 minutes
+    window.adminSessionWarningInterval = setInterval(() => {
+        const timeSinceLastActivity = Date.now() - lastActivity;
+        
+        if (timeSinceLastActivity > (sessionTimeout - 5 * 60 * 1000)) { // 25 minutes
+            showSessionTimeoutWarning();
+        }
+    }, 60 * 1000);
+    
+    console.log('Admin session monitoring started');
+}
+
+function stopAdminSessionMonitoring() {
+    if (window.adminSessionCheckInterval) {
+        clearInterval(window.adminSessionCheckInterval);
+        window.adminSessionCheckInterval = null;
+    }
+    if (window.adminSessionWarningInterval) {
+        clearInterval(window.adminSessionWarningInterval);
+        window.adminSessionWarningInterval = null;
+    }
+    console.log('Admin session monitoring stopped');
+}
+
+function showSessionTimeoutWarning() {
+    // Only show warning once per session
+    if (sessionStorage.getItem('sessionWarningShown')) {
+        return;
+    }
+    
+    sessionStorage.setItem('sessionWarningShown', 'true');
+    
+    const warningDiv = document.createElement('div');
+    warningDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; color: #856404; z-index: 9999; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    warningDiv.innerHTML = `
+        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+            <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem; color: #f39c12;"></i>
+            <strong>Session Timeout Warning</strong>
+        </div>
+        <p style="margin: 0.5rem 0; font-size: 0.9rem;">Your admin session will expire in 5 minutes due to inactivity.</p>
+        <button onclick="extendAdminSession()" style="padding: 0.5rem 1rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;">
+            Extend Session
+        </button>
+        <button onclick="this.parentElement.remove()" style="padding: 0.5rem 1rem; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Dismiss
+        </button>
+    `;
+    
+    document.body.appendChild(warningDiv);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (warningDiv.parentElement) {
+            warningDiv.remove();
+        }
+    }, 10000);
+}
+
+function extendAdminSession() {
+    // Update last activity time
+    if (window.adminSessionCheckInterval) {
+        // This will trigger the activity update in the next check
+        document.dispatchEvent(new Event('mousemove'));
+    }
+    
+    // Remove warning
+    const warnings = document.querySelectorAll('div[style*="position: fixed"]');
+    warnings.forEach(warning => {
+        if (warning.innerHTML.includes('Session Timeout Warning')) {
+            warning.remove();
+        }
+    });
+    
+    // Show confirmation
+    const confirmDiv = document.createElement('div');
+    confirmDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1rem; color: #155724; z-index: 9999; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    confirmDiv.innerHTML = `
+        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+            <i class="fas fa-check-circle" style="margin-right: 0.5rem; color: #28a745;"></i>
+            <strong>Session Extended</strong>
+        </div>
+        <p style="margin: 0.5rem 0; font-size: 0.9rem;">Your admin session has been extended.</p>
+    `;
+    
+    document.body.appendChild(confirmDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (confirmDiv.parentElement) {
+            confirmDiv.remove();
+        }
+    }, 3000);
+}
+
+function handleAdminSessionTimeout() {
+    console.log('Handling admin session timeout');
+    
+    // Stop all monitoring
+    stopAdminSessionMonitoring();
+    stopAdminTokenRefresh();
+    
+    // Clear session storage
+    sessionStorage.removeItem('adminStatus');
+    sessionStorage.removeItem('adminUserId');
+    sessionStorage.removeItem('sessionWarningShown');
+    
+    // Show timeout message
+    const timeoutDiv = document.createElement('div');
+    timeoutDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 2rem; color: #721c24; z-index: 9999; text-align: center; max-width: 400px;';
+    timeoutDiv.innerHTML = `
+        <i class="fas fa-clock" style="font-size: 3rem; margin-bottom: 1rem; color: #dc3545;"></i>
+        <h3>Session Expired</h3>
+        <p>Your admin session has expired due to inactivity. You will be redirected to the login page.</p>
+        <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <i class="fas fa-redo"></i> Return to Login
+        </button>
+    `;
+    
+    document.body.appendChild(timeoutDiv);
+    
+    // Redirect after 5 seconds
+    setTimeout(() => {
+        window.location.reload();
+    }, 5000);
+}
+
+// Handle page visibility changes for admin session
+function initializeAdminPageVisibilityHandling() {
+    let hiddenTime = 0;
+    const maxHiddenTime = 15 * 60 * 1000; // 15 minutes
+    
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // Page became hidden
+            hiddenTime = Date.now();
+            console.log('Admin page hidden, starting hidden time tracking');
+        } else {
+            // Page became visible
+            if (hiddenTime > 0) {
+                const timeHidden = Date.now() - hiddenTime;
+                console.log('Admin page visible again, was hidden for', Math.round(timeHidden / 1000), 'seconds');
+                
+                if (timeHidden > maxHiddenTime) {
+                    console.log('Page was hidden too long, logging out admin');
+                    handleAdminSessionTimeout();
+                } else {
+                    // Reset hidden time
+                    hiddenTime = 0;
+                }
+            }
+        }
+    });
+    
+    // Also handle window focus/blur for additional security
+    window.addEventListener('blur', () => {
+        if (document.hidden) {
+            hiddenTime = Date.now();
+        }
+    });
+    
+    window.addEventListener('focus', () => {
+        if (hiddenTime > 0) {
+            const timeHidden = Date.now() - hiddenTime;
+            if (timeHidden > maxHiddenTime) {
+                handleAdminSessionTimeout();
+            } else {
+                hiddenTime = 0;
+            }
+        }
+    });
+}
+
+// Initialize admin page visibility handling when admin page loads
+if (typeof window !== 'undefined' && window.location && window.location.pathname.endsWith('admin.html')) {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Wait a bit for Firebase to be ready
+        setTimeout(() => {
+            if (typeof initializeAdminPageVisibilityHandling === 'function') {
+                initializeAdminPageVisibilityHandling();
+            }
+        }, 1000);
+    });
+}
 
 // --- ADMIN LOGIN FORM HANDLER ---
 function initializeAdminLoginHandlers() {
@@ -226,61 +658,107 @@ async function handleAdminLogin(e) {
     }
     
     try {
+        // Show loading state
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Logging in...';
+        
         // Sign in with Firebase
         const userCredential = await window.auth.signInWithEmailAndPassword(email, password);
         console.log('Admin login successful');
         console.log('User credential:', userCredential);
         
-        // The auth state change handler will take care of the rest
-        // But let's also manually check if we're on admin page and trigger the logic
-        if (window.location.pathname.endsWith('admin.html')) {
-            console.log('Manually triggering admin page logic after login');
-            // Force a small delay to ensure auth state is updated
-            setTimeout(async () => {
-                const currentUser = window.auth.currentUser;
-                if (currentUser) {
-                    console.log('Current user after login:', currentUser.email);
-                    // Manually trigger the admin check
-                    try {
-                        const doc = await db.collection('users').doc(currentUser.uid).get();
-                        console.log('Manual admin check - doc exists:', doc.exists, 'isAdmin:', doc.exists ? doc.data().isAdmin : 'N/A');
-                        if (doc.exists && doc.data().isAdmin === true) {
-                            console.log('Manual admin access granted');
-                            // Hide login form and loading message, show admin panel
-                            const loginForm = document.querySelector('#admin-login-form');
-                            const loadingElement = document.querySelector('#admin-loading');
-                            
-                            if (loginForm) {
-                                loginForm.style.display = 'none';
-                            }
-                            if (loadingElement) {
-                                loadingElement.style.display = 'none';
-                            }
-                            document.querySelector('#admin-panel').style.display = 'flex';
-                            
-                            // Fetch settings and pass them to the render function
-                            try {
-                                const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
-                                if (settingsDoc.exists) {
-                                    renderAdminPanel(settingsDoc.data());
-                                } else {
-                                    console.error("Settings document not found!");
-                                }
-                            } catch (error) {
-                                console.error("Error fetching settings:", error);
-                            }
-                        } else {
-                            console.log('Manual admin access denied');
-                        }
-                    } catch (error) {
-                        console.error('Manual admin check error:', error);
-                    }
-                }
-            }, 500);
+        // Check admin status immediately
+        const user = userCredential.user;
+        const adminDoc = await db.collection('users').doc(user.uid).get();
+        
+        if (!adminDoc.exists || adminDoc.data().isAdmin !== true) {
+            // User is not an admin, sign them out and show error
+            await window.auth.signOut();
+            errorMessage.textContent = 'Access denied. You do not have admin privileges.';
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+            return;
         }
+        
+        // User is an admin, store status and proceed
+        sessionStorage.setItem('adminStatus', 'true');
+        sessionStorage.setItem('adminUserId', user.uid);
+        
+        // Start token refresh and session monitoring
+        startAdminTokenRefresh(user);
+        startAdminSessionMonitoring();
+        
+        // Hide login form and show admin panel
+        const loginForm = document.querySelector('#admin-login-form');
+        const loadingElement = document.querySelector('#admin-loading');
+        const errorElement = document.querySelector('#admin-error');
+        
+        if (loginForm) {
+            loginForm.style.display = 'none';
+        }
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+        
+        document.querySelector('#admin-panel').style.display = 'flex';
+        
+        // Initialize admin login handlers
+        if (typeof initializeAdminLoginHandlers === 'function') {
+            initializeAdminLoginHandlers();
+        }
+        
+        // Fetch settings and render admin panel
+        try {
+            const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+            if (settingsDoc.exists) {
+                renderAdminPanel(settingsDoc.data());
+            } else {
+                console.error("Settings document not found!");
+                // Show warning but don't block access
+                const warningElement = document.createElement('div');
+                warningElement.style.cssText = 'background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 1rem 0; color: #856404;';
+                warningElement.innerHTML = '<strong>Warning:</strong> Competition settings not found. Some features may not work properly.';
+                document.querySelector('#admin-panel').insertBefore(warningElement, document.querySelector('#admin-panel').firstChild);
+            }
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+            // Show error but don't block access
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 1rem; margin: 1rem 0; color: #721c24;';
+            errorDiv.innerHTML = '<strong>Error:</strong> Failed to load competition settings. Please refresh the page.';
+            document.querySelector('#admin-panel').insertBefore(errorDiv, document.querySelector('#admin-panel').firstChild);
+        }
+        
     } catch (error) {
         console.error('Admin login error:', error);
-        errorMessage.textContent = 'Login failed: ' + error.message;
+        
+        // Provide more specific error messages
+        let errorMessageText = 'Login failed: ';
+        if (error.code === 'auth/user-not-found') {
+            errorMessageText += 'User not found. Please check your email address.';
+        } else if (error.code === 'auth/wrong-password') {
+            errorMessageText += 'Incorrect password. Please try again.';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessageText += 'Invalid email address format.';
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMessageText += 'Too many failed attempts. Please try again later.';
+        } else {
+            errorMessageText += error.message;
+        }
+        
+        errorMessage.textContent = errorMessageText;
+        
+        // Re-enable submit button
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Admin Login';
+        }
     }
 }
 
@@ -289,25 +767,65 @@ function handleAdminLogout() {
     event.preventDefault();
     event.stopPropagation();
     
-    // Clear the token refresh interval
-    if (window.adminTokenRefreshInterval) {
-        clearInterval(window.adminTokenRefreshInterval);
-        window.adminTokenRefreshInterval = null;
-    }
+    console.log('Admin logout initiated');
     
-    // Clear the button state check interval
+    // Clear all admin-related intervals
+    stopAdminTokenRefresh();
+    stopAdminSessionMonitoring();
+    
     if (window.adminButtonStateCheckInterval) {
         clearInterval(window.adminButtonStateCheckInterval);
         window.adminButtonStateCheckInterval = null;
     }
     
-    auth.signOut().then(() => {
-        console.log('Admin logged out, redirecting to home page');
-        // Redirect to home page
+    // Clear admin status from session storage
+    sessionStorage.removeItem('adminStatus');
+    sessionStorage.removeItem('adminUserId');
+    sessionStorage.removeItem('sessionWarningShown');
+    
+    // Show loading state on logout button
+    const logoutBtn = event.target;
+    const originalText = logoutBtn.innerHTML;
+    logoutBtn.disabled = true;
+    logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+    
+    // Sign out from Firebase
+    if (window.auth) {
+        window.auth.signOut().then(() => {
+            console.log('Admin logged out successfully, redirecting to home page');
+            
+            // Show success message briefly before redirect
+            const successMessage = document.createElement('div');
+            successMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 2rem; color: #155724; z-index: 9999; text-align: center;';
+            successMessage.innerHTML = '<i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i><br><strong>Logged out successfully!</strong><br>Redirecting to home page...';
+            document.body.appendChild(successMessage);
+            
+            // Redirect to home page after a brief delay
+            setTimeout(() => {
+                window.location.href = '/index.html';
+            }, 1500);
+        }).catch((error) => {
+            console.error('Logout error:', error);
+            
+            // Re-enable logout button
+            logoutBtn.disabled = false;
+            logoutBtn.innerHTML = originalText;
+            
+            // Show error message
+            const errorMessage = document.createElement('div');
+            errorMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 2rem; color: #721c24; z-index: 9999; text-align: center;';
+            errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><br><strong>Logout failed!</strong><br>' + error.message + '<br><br><button onclick="this.parentElement.remove()" style="padding: 0.5rem 1rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>';
+            document.body.appendChild(errorMessage);
+        });
+    } else {
+        console.error('Firebase auth not available for logout');
+        // Re-enable logout button
+        logoutBtn.disabled = false;
+        logoutBtn.innerHTML = originalText;
+        
+        // Force redirect
         window.location.href = '/index.html';
-    }).catch((error) => {
-        console.error('Logout error:', error);
-    });
+    }
 }
 
 // --- REGISTRATION LOGIC ---
@@ -2595,38 +3113,41 @@ function renderAdminPanel(settings) {
     // Always initialize competition settings to ensure Save Settings button works
     initializeCompetitionSettings();
     
-    // Force enable Save Settings button immediately
-    const saveSettingsBtn = document.querySelector('#save-settings-btn');
-    if (saveSettingsBtn) {
-        console.log('Force enabling Save Settings button');
-        saveSettingsBtn.disabled = false;
-        saveSettingsBtn.style.pointerEvents = 'auto';
-        saveSettingsBtn.style.opacity = '1';
-        saveSettingsBtn.style.cursor = 'pointer';
-        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
-        saveSettingsBtn.style.color = 'var(--dark-text)';
-    }
+    // Set up continuous monitoring of the Save Settings button
+    setupSaveSettingsButtonMonitoring();
     
-    // Additional button state check after a short delay
-    setTimeout(() => {
+    // Force enable Save Settings button immediately and ensure it stays enabled
+    const enableSaveSettingsButton = () => {
         const saveSettingsBtn = document.querySelector('#save-settings-btn');
         if (saveSettingsBtn) {
-            console.log('Delayed button state check:');
-            console.log('Button disabled:', saveSettingsBtn.disabled);
-            console.log('Button classes:', saveSettingsBtn.className);
-            console.log('Button style pointer-events:', saveSettingsBtn.style.pointerEvents);
-            console.log('Button cursor:', saveSettingsBtn.style.cursor);
+            console.log('Enabling Save Settings button');
+            saveSettingsBtn.disabled = false;
+            saveSettingsBtn.style.pointerEvents = 'auto';
+            saveSettingsBtn.style.opacity = '1';
+            saveSettingsBtn.style.cursor = 'pointer';
+            saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+            saveSettingsBtn.style.color = 'var(--dark-text)';
             
-            // Force enable if still disabled
-            if (saveSettingsBtn.disabled) {
-                console.log('Button was still disabled, forcing enable');
-                saveSettingsBtn.disabled = false;
-                saveSettingsBtn.style.pointerEvents = 'auto';
-                saveSettingsBtn.style.opacity = '1';
-                saveSettingsBtn.style.cursor = 'pointer';
-            }
+            // Remove any disabled classes or attributes
+            saveSettingsBtn.classList.remove('disabled');
+            saveSettingsBtn.removeAttribute('disabled');
+            
+            // Ensure the button is clickable
+            saveSettingsBtn.onclick = null; // Remove any existing onclick
+            saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+            
+            console.log('Save Settings button enabled and event listener attached');
         }
-    }, 500);
+    };
+    
+    // Enable button immediately
+    enableSaveSettingsButton();
+    
+    // Enable button after a short delay to catch any late DOM changes
+    setTimeout(enableSaveSettingsButton, 100);
+    
+    // Enable button after a longer delay to ensure all initialization is complete
+    setTimeout(enableSaveSettingsButton, 500);
     
     // Set up periodic token refresh to prevent authentication issues
     if (auth.currentUser) {
@@ -2642,20 +3163,18 @@ function renderAdminPanel(settings) {
             }
         }, 45 * 60 * 1000); // 45 minutes
         
-            // Store the interval ID so it can be cleared later if needed
-    window.adminTokenRefreshInterval = tokenRefreshInterval;
+        // Store the interval ID so it can be cleared later if needed
+        window.adminTokenRefreshInterval = tokenRefreshInterval;
+    }
     
     // Set up periodic button state check to prevent Save Settings button from becoming inactive
     const buttonStateCheckInterval = setInterval(() => {
         const saveSettingsBtn = document.querySelector('#save-settings-btn');
-        if (saveSettingsBtn && saveSettingsBtn.disabled) {
+        if (saveSettingsBtn && (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none')) {
             console.log('Periodic check: Save Settings button was disabled, re-enabling');
-            saveSettingsBtn.disabled = false;
-            saveSettingsBtn.style.pointerEvents = 'auto';
-            saveSettingsBtn.style.opacity = '1';
-            saveSettingsBtn.style.cursor = 'pointer';
+            enableSaveSettingsButton();
         }
-    }, 30000); // Check every 30 seconds
+    }, 10000); // Check every 10 seconds
     
     // Store the interval ID so it can be cleared later if needed
     window.adminButtonStateCheckInterval = buttonStateCheckInterval;
@@ -2673,35 +3192,68 @@ function renderAdminPanel(settings) {
         
         // Check and fix Save Settings button state when page becomes visible
         if (!document.hidden) {
-            setTimeout(() => {
-                const saveSettingsBtn = document.querySelector('#save-settings-btn');
-                if (saveSettingsBtn && saveSettingsBtn.disabled) {
-                    console.log('Page became visible, fixing disabled Save Settings button');
-                    saveSettingsBtn.disabled = false;
-                    saveSettingsBtn.style.pointerEvents = 'auto';
-                    saveSettingsBtn.style.opacity = '1';
-                    saveSettingsBtn.style.cursor = 'pointer';
-                }
-            }, 200);
+            setTimeout(enableSaveSettingsButton, 200);
         }
     });
     
     // Add focus event listener to check button state
     document.addEventListener('focusin', (event) => {
         if (event.target.closest('#admin-panel')) {
-            setTimeout(() => {
-                const saveSettingsBtn = document.querySelector('#save-settings-btn');
-                if (saveSettingsBtn && saveSettingsBtn.disabled) {
-                    console.log('Admin panel focused, fixing disabled Save Settings button');
-                    saveSettingsBtn.disabled = false;
-                    saveSettingsBtn.style.pointerEvents = 'auto';
-                    saveSettingsBtn.style.opacity = '1';
-                    saveSettingsBtn.style.cursor = 'pointer';
-                }
-            }, 100);
+            setTimeout(enableSaveSettingsButton, 100);
         }
     });
-}
+    
+    // Add click event listener to the admin panel to ensure button stays enabled
+    const adminPanel = document.querySelector('#admin-panel');
+    if (adminPanel) {
+        adminPanel.addEventListener('click', (event) => {
+            // If clicking anywhere in the admin panel, ensure the save button is enabled
+            setTimeout(enableSaveSettingsButton, 50);
+        });
+    }
+    
+    // Add tab switching event listener to ensure Save Settings button is enabled when settings tab is active
+    const settingsTab = document.querySelector('[data-tab="settings"]');
+    if (settingsTab) {
+        settingsTab.addEventListener('click', () => {
+            // When settings tab is clicked, ensure the Save Settings button is enabled
+            setTimeout(() => {
+                const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                if (saveSettingsBtn) {
+                    console.log('Settings tab clicked, ensuring Save Settings button is enabled');
+                    enableSaveSettingsButton();
+                }
+            }, 100);
+        });
+    }
+    
+    // Add mutation observer to watch for changes to the save button
+    const saveButtonObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && 
+                (mutation.attributeName === 'disabled' || 
+                 mutation.attributeName === 'style' || 
+                 mutation.attributeName === 'class')) {
+                const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                if (saveSettingsBtn && (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none')) {
+                    console.log('Mutation observer detected disabled Save Settings button, re-enabling');
+                    enableSaveSettingsButton();
+                }
+            }
+        });
+    });
+    
+    // Start observing the save button for changes
+    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+    if (saveSettingsBtn) {
+        saveButtonObserver.observe(saveSettingsBtn, {
+            attributes: true,
+            attributeFilter: ['disabled', 'style', 'class']
+        });
+    }
+    
+    // Store the observer so it can be disconnected later if needed
+    window.saveButtonObserver = saveButtonObserver;
     
     // Initialize picks controls
     const picksEditionSelect = document.querySelector('#picks-edition-select');
@@ -2826,6 +3378,68 @@ function renderAdminPanel(settings) {
     
     // Initialize admin tabs
     initializeAdminTabs();
+}
+
+// Function to continuously monitor and maintain the Save Settings button state
+function setupSaveSettingsButtonMonitoring() {
+    console.log('Setting up Save Settings button monitoring');
+    
+    // Check button state every 2 seconds for the first minute
+    let checkCount = 0;
+    const frequentCheck = setInterval(() => {
+        const saveSettingsBtn = document.querySelector('#save-settings-btn');
+        if (saveSettingsBtn) {
+            if (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none') {
+                console.log(`Frequent check ${checkCount + 1}: Save Settings button was disabled, re-enabling`);
+                
+                // Re-enable the button
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.style.pointerEvents = 'auto';
+                saveSettingsBtn.style.opacity = '1';
+                saveSettingsBtn.style.cursor = 'pointer';
+                saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                saveSettingsBtn.style.color = 'var(--dark-text)';
+                
+                // Remove any disabled classes or attributes
+                saveSettingsBtn.classList.remove('disabled');
+                saveSettingsBtn.removeAttribute('disabled');
+                
+                // Re-attach event listener
+                saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
+                saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+            }
+        }
+        
+        checkCount++;
+        if (checkCount >= 30) { // Check 30 times over 1 minute
+            clearInterval(frequentCheck);
+            console.log('Frequent monitoring completed, switching to periodic checks');
+            
+            // Switch to less frequent checks (every 10 seconds)
+            setInterval(() => {
+                const saveSettingsBtn = document.querySelector('#save-settings-btn');
+                if (saveSettingsBtn && (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none')) {
+                    console.log('Periodic check: Save Settings button was disabled, re-enabling');
+                    
+                    // Re-enable the button
+                    saveSettingsBtn.disabled = false;
+                    saveSettingsBtn.style.pointerEvents = 'auto';
+                    saveSettingsBtn.style.opacity = '1';
+                    saveSettingsBtn.style.cursor = 'pointer';
+                    saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+                    saveSettingsBtn.style.color = 'var(--dark-text)';
+                    
+                    // Remove any disabled classes or attributes
+                    saveSettingsBtn.classList.remove('disabled');
+                    saveSettingsBtn.removeAttribute('disabled');
+                    
+                    // Re-attach event listener
+                    saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
+                    saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+                }
+            }, 10000); // Check every 10 seconds
+        }
+    }, 2000); // Check every 2 seconds
 }
 
 // --- FIXTURE MANAGEMENT FUNCTIONS ---
@@ -3111,41 +3725,49 @@ function initializeCompetitionSettings() {
     console.log('Save Settings button found:', !!saveSettingsBtn);
     
     if (saveSettingsBtn) {
-        console.log('Save Settings button found, attaching event listener...');
-        console.log('Button element:', saveSettingsBtn);
-        console.log('Button HTML:', saveSettingsBtn.outerHTML);
+        console.log('Save Settings button found, setting up...');
         
-        // Remove any existing event listeners to prevent duplicates
-        saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
-        saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+        // Ensure button is completely enabled and clickable
+        const enableButton = () => {
+            saveSettingsBtn.disabled = false;
+            saveSettingsBtn.style.pointerEvents = 'auto';
+            saveSettingsBtn.style.opacity = '1';
+            saveSettingsBtn.style.cursor = 'pointer';
+            saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+            saveSettingsBtn.style.color = 'var(--dark-text)';
+            
+            // Remove any disabled attributes or classes
+            saveSettingsBtn.removeAttribute('disabled');
+            saveSettingsBtn.classList.remove('disabled');
+            
+            // Remove any existing event listeners to prevent duplicates
+            saveSettingsBtn.removeEventListener('click', saveCompetitionSettings);
+            saveSettingsBtn.addEventListener('click', saveCompetitionSettings);
+            
+            console.log('Save Settings button fully enabled and event listener attached');
+        };
         
-        console.log('Event listener attached successfully');
+        // Enable immediately
+        enableButton();
         
-        // Check button state
-        console.log('Save Settings button event listener attached');
-        console.log('Button disabled:', saveSettingsBtn.disabled);
-        console.log('Button classes:', saveSettingsBtn.className);
-        console.log('Button style pointer-events:', saveSettingsBtn.style.pointerEvents);
+        // Enable after a short delay to catch any late changes
+        setTimeout(enableButton, 50);
         
-        // Ensure button is enabled and clickable
-        saveSettingsBtn.disabled = false;
-        saveSettingsBtn.style.pointerEvents = 'auto';
-        saveSettingsBtn.style.opacity = '1';
-        saveSettingsBtn.style.cursor = 'pointer';
+        // Enable after a longer delay to ensure all initialization is complete
+        setTimeout(enableButton, 200);
         
-        // Remove any disabled styling
-        saveSettingsBtn.classList.remove('disabled');
-        
-        // Force re-enable the button
-        setTimeout(() => {
-            if (saveSettingsBtn) {
-                saveSettingsBtn.disabled = false;
-                saveSettingsBtn.style.pointerEvents = 'auto';
-                saveSettingsBtn.style.opacity = '1';
-                saveSettingsBtn.style.cursor = 'pointer';
-                console.log('Save Settings button re-enabled after timeout');
+        // Set up a more frequent check for the first few seconds
+        let checkCount = 0;
+        const frequentCheck = setInterval(() => {
+            if (saveSettingsBtn.disabled || saveSettingsBtn.style.pointerEvents === 'none') {
+                console.log(`Frequent check ${checkCount + 1}: Button was disabled, re-enabling`);
+                enableButton();
             }
-        }, 100);
+            checkCount++;
+            if (checkCount >= 10) { // Check 10 times over 5 seconds
+                clearInterval(frequentCheck);
+            }
+        }, 500);
         
     } else {
         console.warn('Save Settings button not found!');
