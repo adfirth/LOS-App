@@ -3471,7 +3471,7 @@ function calculatePickResult(pick, fixtures) {
 // --- FUNCTION to build the admin dashboard ---
 function buildAdminDashboard() {
     // Store the observer so it can be disconnected later if needed
-    window.saveButtonObserver = saveButtonObserver;
+    // window.saveButtonObserver = saveButtonObserver; // Removed undefined variable reference
     
     // Initialize picks controls
     const picksEditionSelect = document.querySelector('#picks-edition-select');
