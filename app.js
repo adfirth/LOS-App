@@ -2001,11 +2001,11 @@ function updateTabStates(gameweekTabs) {
     gameweekTabs.forEach(tab => {
         const gameweek = tab.dataset.gameweek;
         checkDeadlineForGameweek(gameweek).then(isDeadlinePassed => {
-            if (isDeadlinePassed) {
-                tab.classList.add('locked');
-    } else {
-                tab.classList.remove('locked');
-            }
+                    if (isDeadlinePassed) {
+            tab.classList.add('locked');
+        } else {
+            tab.classList.remove('locked');
+        }
         });
     });
 }
@@ -3269,7 +3269,7 @@ async function loadAsItStandsData(gameweek, platform) {
         }
         
         // Render the standings
-        renderAsItStandsStandings(players, fixtures, gameweek, userEdition, platform);
+        await renderAsItStandsStandings(players, fixtures, gameweek, userEdition, platform);
         
     } catch (error) {
         console.error('Error loading As It Stands data:', error);
@@ -3277,7 +3277,7 @@ async function loadAsItStandsData(gameweek, platform) {
     }
 }
 
-function renderAsItStandsStandings(players, fixtures, gameweek, edition, platform) {
+async function renderAsItStandsStandings(players, fixtures, gameweek, edition, platform) {
     const displayId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-display`;
     const display = document.getElementById(displayId);
     
@@ -3290,17 +3290,43 @@ function renderAsItStandsStandings(players, fixtures, gameweek, edition, platfor
     let gameweekStatus = 'upcoming';
     let statusDescription = 'Game week has not started yet';
     
-    if (fixtures.length > 0) {
-        const hasStarted = fixtures.some(f => f.status === 'live' || f.status === 'completed');
-        const hasCompleted = fixtures.some(f => f.status === 'completed');
-        
-        if (hasCompleted) {
-            gameweekStatus = 'completed';
-            statusDescription = 'Game week completed - final results shown';
-        } else if (hasStarted) {
-            gameweekStatus = 'live';
-            statusDescription = 'Game week in progress - live standings shown';
+    // Get current active gameweek from settings
+    let currentActiveGameweek = '1';
+    try {
+        const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
+        if (settingsDoc.exists) {
+            currentActiveGameweek = settingsDoc.data().active_gameweek || '1';
         }
+    } catch (error) {
+        console.error('Error getting current active gameweek:', error);
+    }
+    
+    // Check if this gameweek has started based on active gameweek setting
+    const gameweekNum = gameweek === 'tiebreak' ? 11 : parseInt(gameweek);
+    const currentGameweekNum = currentActiveGameweek === 'tiebreak' ? 11 : parseInt(currentActiveGameweek);
+    
+    if (gameweekNum <= currentGameweekNum) {
+        if (fixtures.length > 0) {
+            const hasStarted = fixtures.some(f => f.status === 'live' || f.status === 'completed');
+            const hasCompleted = fixtures.some(f => f.status === 'completed');
+            
+            if (hasCompleted) {
+                gameweekStatus = 'completed';
+                statusDescription = 'Game week completed - final results shown';
+            } else if (hasStarted) {
+                gameweekStatus = 'live';
+                statusDescription = 'Game week in progress - live standings shown';
+            } else {
+                gameweekStatus = 'upcoming';
+                statusDescription = 'Game week has started but no matches played yet';
+            }
+        } else {
+            gameweekStatus = 'upcoming';
+            statusDescription = 'Game week has started but no fixtures loaded yet';
+        }
+    } else {
+        gameweekStatus = 'future';
+        statusDescription = 'Game week has not started yet';
     }
     
     // Create standings table
