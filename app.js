@@ -1488,7 +1488,7 @@ function removePick(userId, gameweekKey) {
             
             // Remove the pick from Firestore
             const updateData = {};
-            updateData[`picks.${gameweekKey}`] = firebase.firestore.FieldValue.delete();
+            updateData[`picks.${gameweekKey}`] = db.FieldValue.delete();
             
             db.collection('users').doc(userId).update(updateData).then(() => {
                 // Refresh the dashboard
@@ -2155,7 +2155,7 @@ async function selectTeamAsTempPick(teamName, gameweek, userId) {
                     const oldGameweekKey = pickedGameweek;
                     
                     await db.collection('users').doc(userId).update({
-                        [`picks.${oldGameweekKey}`]: firebase.firestore.FieldValue.delete(),
+                        [`picks.${oldGameweekKey}`]: db.FieldValue.delete(),
                         [`picks.${gameweekKey}`]: teamName
                     });
                     
@@ -2292,7 +2292,7 @@ function releaseFuturePick(teamName, gameweek, userId) {
     
     // Remove the pick from database
     db.collection('users').doc(userId).update({
-        [`picks.${gameweekKey}`]: firebase.firestore.FieldValue.delete()
+                    [`picks.${gameweekKey}`]: db.FieldValue.delete()
     }).then(() => {
         console.log(`Future pick released: ${teamName} from Game Week ${gameweek}`);
         
@@ -7141,6 +7141,7 @@ async function savePlayerEdit(event) {
     }
     
     console.log('User authenticated:', currentUser.email);
+    console.log('Current auth state - User:', currentUser.uid, 'Email:', currentUser.email);
     
     const playerId = event.target.getAttribute('data-player-id');
     console.log('Player ID from form:', playerId);
@@ -7193,7 +7194,7 @@ async function savePlayerEdit(event) {
                 };
             } else if (!isChecked && currentRegistrations[key]) {
                 // Remove registration if unchecked and currently registered
-                registrationUpdates[`registrations.${key}`] = firebase.firestore.FieldValue.delete();
+                registrationUpdates[`registrations.${key}`] = db.FieldValue.delete();
             }
         });
         
@@ -7208,8 +7209,12 @@ async function savePlayerEdit(event) {
             ...registrationUpdates
         };
         
+        console.log('About to perform database update with:', updates);
+        
         // Perform the update with additional error handling
         await db.collection('users').doc(playerId).update(updates);
+        
+        console.log('Database update completed successfully');
         
         // Update local data
         const playerIndex = allPlayers.findIndex(p => p.id === playerId);
