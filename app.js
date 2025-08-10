@@ -2178,10 +2178,19 @@ function loadFixturesForDeadline(gameweek, userData = null, userId = null) {
                     fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
                 );
                 
+                // Check if all fixtures have finished (have a status) but may not be fully completed
+                const allFixturesFinished = fixtures.every(fixture => 
+                    fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
+                );
+                
                 if (allFixturesCompleted) {
                     deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
                     deadlineStatus.className = 'complete';
                     deadlineStatus.style.color = '#0c5460';
+                } else if (allFixturesFinished && timeUntilDeadline <= 0) {
+                    deadlineStatus.textContent = 'Locked (Matches are complete)';
+                    deadlineStatus.className = 'locked';
+                    deadlineStatus.style.color = '#721c24';
                 } else if (timeUntilDeadline <= 0) {
                     deadlineStatus.textContent = 'Locked (Matches are underway)';
                     deadlineStatus.className = 'locked';
@@ -2246,11 +2255,22 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
                     fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
                 );
                 
+                // Check if all fixtures have finished (have a status) but may not be fully completed
+                const allFixturesFinished = fixtures.every(fixture => 
+                    fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
+                );
+                
                 if (allFixturesCompleted) {
                     if (deadlineStatus) {
                         deadlineStatus.textContent = 'Complete (Results confirmed and cards issued)';
                         deadlineStatus.className = 'complete';
                         deadlineStatus.style.color = '#0c5460';
+                    }
+                } else if (allFixturesFinished && timeUntilDeadline <= 0) {
+                    if (deadlineStatus) {
+                        deadlineStatus.textContent = 'Locked (Matches are complete)';
+                        deadlineStatus.className = 'locked';
+                        deadlineStatus.style.color = '#721c24';
                     }
                 } else if (timeUntilDeadline <= 0) {
                     if (deadlineStatus) {
