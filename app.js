@@ -6866,9 +6866,17 @@ let currentPlayerManagementType = 'total';
 let allPlayers = [];
 
 function showPlayerManagement(type) {
+    console.log('showPlayerManagement called with type:', type);
+    console.log('Current player management type before update:', currentPlayerManagementType);
+    
     currentPlayerManagementType = type;
+    console.log('Current player management type after update:', currentPlayerManagementType);
+    
     const modal = document.getElementById('player-management-modal');
     const title = document.getElementById('player-management-title');
+    
+    console.log('Modal element found:', !!modal);
+    console.log('Title element found:', !!title);
     
     // Set title based on type
     switch(type) {
@@ -6881,10 +6889,17 @@ function showPlayerManagement(type) {
         case 'archived':
             title.textContent = 'Archived Players - Player Management';
             break;
+        default:
+            console.warn('Unknown player management type:', type);
+            break;
     }
     
+    console.log('Setting modal display to flex');
     modal.style.display = 'flex';
+    
+    console.log('Calling loadPlayersForManagement...');
     loadPlayersForManagement();
+    console.log('loadPlayersForManagement called');
 }
 
 function closePlayerManagement() {
@@ -6898,8 +6913,15 @@ function closePlayerEdit() {
 }
 
 async function loadPlayersForManagement() {
+    console.log('loadPlayersForManagement called');
+    console.log('Current management type:', currentPlayerManagementType);
+    console.log('Current active edition:', currentActiveEdition);
+    
     try {
+        console.log('Fetching users from database...');
         const usersSnapshot = await db.collection('users').get();
+        console.log('Users snapshot received, size:', usersSnapshot.size);
+        
         allPlayers = [];
         
         usersSnapshot.forEach(doc => {
@@ -6915,6 +6937,8 @@ async function loadPlayersForManagement() {
                 adminNotes: userData.adminNotes || '',
                 registrationDate: userData.registrationDate || null
             };
+            
+            console.log('Processing player:', player.firstName, player.surname, 'Status:', player.status);
             
             // Filter based on current management type
             let shouldInclude = false;
@@ -6932,12 +6956,18 @@ async function loadPlayersForManagement() {
                     break;
             }
             
+            console.log('Player should be included:', shouldInclude, 'Reason:', currentPlayerManagementType);
+            
             if (shouldInclude) {
                 allPlayers.push(player);
+                console.log('Player added to allPlayers array');
             }
         });
         
+        console.log('Total players found:', allPlayers.length);
+        console.log('Calling displayPlayers...');
         displayPlayers(allPlayers);
+        console.log('displayPlayers called');
         
     } catch (error) {
         console.error('Error loading players for management:', error);
@@ -6945,22 +6975,37 @@ async function loadPlayersForManagement() {
 }
 
 function displayPlayers(players) {
-    const tbody = document.getElementById('player-management-list');
-    if (!tbody) return;
+    console.log('displayPlayers called with players:', players);
+    console.log('Number of players to display:', players.length);
     
+    const tbody = document.getElementById('player-management-list');
+    console.log('Table body element found:', !!tbody);
+    console.log('Table body element:', tbody);
+    
+    if (!tbody) {
+        console.error('Table body element not found!');
+        return;
+    }
+    
+    console.log('Clearing table body innerHTML');
     tbody.innerHTML = '';
     
     if (currentPlayerManagementType === 'archived' && players.length === 0) {
+        console.log('No archived players found, showing message');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No archived players found</td></tr>';
         return;
     }
     
     if (players.length === 0) {
+        console.log('No players found, showing message');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No players found</td></tr>';
         return;
     }
     
-    players.forEach(player => {
+    console.log('Starting to render player rows...');
+    players.forEach((player, index) => {
+        console.log(`Rendering player ${index + 1}:`, player.firstName, player.surname);
+        
         const row = document.createElement('tr');
         const name = `${player.firstName} ${player.surname}`.trim();
         const statusClass = player.status === 'active' ? 'player-status-active' : 'player-status-archived';
@@ -7010,8 +7055,11 @@ function displayPlayers(players) {
             </td>
         `;
         
+        console.log(`Appending row for player ${index + 1} to table body`);
         tbody.appendChild(row);
     });
+    
+    console.log('Finished rendering all player rows');
 }
 
 function searchPlayers() {
@@ -7036,8 +7084,15 @@ function filterPlayers() {
 }
 
 async function editPlayer(playerId) {
+    console.log('editPlayer called with ID:', playerId);
+    
     const player = allPlayers.find(p => p.id === playerId);
-    if (!player) return;
+    if (!player) {
+        console.error('Player not found:', playerId);
+        return;
+    }
+    
+    console.log('Found player:', player);
     
     // Populate edit form
     document.getElementById('edit-first-name').value = player.firstName;
@@ -7056,14 +7111,26 @@ async function editPlayer(playerId) {
     document.getElementById('edit-edition-test').checked = !!editions.editiontest;
     
     // Store player ID for save operation
-    document.getElementById('player-edit-form').setAttribute('data-player-id', playerId);
+    const form = document.getElementById('player-edit-form');
+    form.setAttribute('data-player-id', playerId);
+    
+    // Attach form submission event listener if not already attached
+    if (!form.hasAttribute('data-event-listener-attached')) {
+        console.log('Attaching form submission event listener');
+        form.addEventListener('submit', savePlayerEdit);
+        form.setAttribute('data-event-listener-attached', 'true');
+    }
     
     // Show edit modal
     document.getElementById('player-edit-modal').style.display = 'flex';
+    console.log('Edit modal displayed');
 }
 
 async function savePlayerEdit(event) {
+    console.log('savePlayerEdit called!');
     event.preventDefault();
+    
+    console.log('Form submitted, checking authentication...');
     
     // Check if user is still authenticated before proceeding
     const currentUser = auth.currentUser;
@@ -7073,8 +7140,14 @@ async function savePlayerEdit(event) {
         return;
     }
     
+    console.log('User authenticated:', currentUser.email);
+    
     const playerId = event.target.getAttribute('data-player-id');
-    if (!playerId) return;
+    console.log('Player ID from form:', playerId);
+    if (!playerId) {
+        console.error('No player ID found in form');
+        return;
+    }
     
     try {
         // Refresh the authentication token to prevent expiration issues
