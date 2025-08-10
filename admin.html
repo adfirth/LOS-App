@@ -653,53 +653,132 @@
                             <h3>Live Vidiprinter Feed</h3>
                             <p>Real-time match updates from Football Web Pages National League Vidiprinter.</p>
                             
-                            <div class="vidiprinter-controls">
-                                <button id="start-vidiprinter-btn" class="cta-button">
-                                    <i class="fas fa-play"></i> Start Vidiprinter
-                                </button>
-                                <button id="stop-vidiprinter-btn" class="cta-button" style="display: none;">
-                                    <i class="fas fa-stop"></i> Stop Vidiprinter
-                                </button>
-                                <div class="vidiprinter-status">
-                                    <span id="vidiprinter-status-text">Ready to start</span>
-                                    <span id="vidiprinter-connection-status" class="connection-indicator"></span>
+                            <!-- Enhanced Vidiprinter Section -->
+                            <div class="enhanced-vidiprinter-section" style="margin-bottom: 2rem; padding: 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
+                                <h4 style="color: #007bff; margin-bottom: 1rem;">
+                                    <i class="fas fa-rocket"></i> Enhanced Game Week Updates
+                                </h4>
+                                <p style="margin-bottom: 1rem; color: #6c757d;">
+                                    Advanced vidiprinter that automatically updates scores and provides targeted match information for the current game week.
+                                </p>
+                                
+                                <div class="enhanced-vidiprinter-controls">
+                                    <button id="start-enhanced-vidiprinter-btn" class="cta-button">
+                                        <i class="fas fa-play"></i> Start Enhanced Vidiprinter
+                                    </button>
+                                    <button id="stop-enhanced-vidiprinter-btn" class="cta-button" style="display: none;">
+                                        <i class="fas fa-stop"></i> Stop Enhanced Vidiprinter
+                                    </button>
+                                    <button id="clear-enhanced-vidiprinter-btn" class="btn btn-secondary">
+                                        <i class="fas fa-trash"></i> Clear Feed
+                                    </button>
+                                    <div class="enhanced-vidiprinter-status">
+                                        <span id="enhanced-vidiprinter-status-text">Ready to start</span>
+                                        <span id="enhanced-vidiprinter-connection-status" class="connection-indicator"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="enhanced-vidiprinter-settings">
+                                    <div class="settings-row">
+                                        <label for="enhanced-vidiprinter-comp">Competition:</label>
+                                        <select id="enhanced-vidiprinter-comp">
+                                            <option value="5">National League</option>
+                                            <option value="6">National League North</option>
+                                            <option value="7">National League South</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-row">
+                                        <label for="enhanced-vidiprinter-team">Team Filter:</label>
+                                        <select id="enhanced-vidiprinter-team">
+                                            <option value="0">All Teams</option>
+                                            <option value="1">Altrincham</option>
+                                            <option value="2">Chester</option>
+                                            <option value="3">Macclesfield</option>
+                                            <option value="4">Warrington</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-row">
+                                        <label for="enhanced-vidiprinter-refresh-rate">Refresh Rate:</label>
+                                        <select id="enhanced-vidiprinter-refresh-rate">
+                                            <option value="5000">5 seconds</option>
+                                            <option value="10000" selected>10 seconds</option>
+                                            <option value="15000">15 seconds</option>
+                                            <option value="30000">30 seconds</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="enhanced-vidiprinter-display">
+                                    <div class="enhanced-vidiprinter-header">
+                                        <h5>Enhanced Match Updates</h5>
+                                        <small style="color: #6c757d;">Automatically filters and updates relevant match information</small>
+                                    </div>
+                                    <div id="enhanced-vidiprinter-feed" class="enhanced-vidiprinter-feed" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 1rem; background-color: white;">
+                                        <div class="enhanced-vidiprinter-placeholder">
+                                            <i class="fas fa-tv"></i>
+                                            <p>Click "Start Enhanced Vidiprinter" to begin receiving targeted game week updates</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="vidiprinter-display">
-                                <div class="vidiprinter-header">
-                                    <h4>Live Match Updates</h4>
-                                    <div class="vidiprinter-controls-small">
-                                        <button id="clear-vidiprinter-btn" class="small-button">Clear Feed</button>
-                                        <button id="auto-scroll-toggle" class="small-button active">Auto-scroll</button>
+                            <!-- Standard Vidiprinter Section -->
+                            <div class="standard-vidiprinter-section">
+                                <h4 style="color: #6c757d; margin-bottom: 1rem;">
+                                    <i class="fas fa-tv"></i> Standard Vidiprinter
+                                </h4>
+                                <p style="margin-bottom: 1rem; color: #6c757d;">
+                                    Basic vidiprinter for general match updates.
+                                </p>
+                                
+                                <div class="vidiprinter-controls">
+                                    <button id="start-vidiprinter-btn" class="cta-button">
+                                        <i class="fas fa-play"></i> Start Vidiprinter
+                                    </button>
+                                    <button id="stop-vidiprinter-btn" class="cta-button" style="display: none;">
+                                        <i class="fas fa-stop"></i> Stop Vidiprinter
+                                    </button>
+                                    <div class="vidiprinter-status">
+                                        <span id="vidiprinter-status-text">Ready to start</span>
+                                        <span id="vidiprinter-connection-status" class="connection-indicator"></span>
                                     </div>
                                 </div>
-                                <div id="vidiprinter-feed" class="vidiprinter-feed">
-                                    <div class="vidiprinter-placeholder">
-                                        <i class="fas fa-tv"></i>
-                                        <p>Click "Start Vidiprinter" to begin receiving live match updates</p>
+                                
+                                <div class="vidiprinter-display">
+                                    <div class="vidiprinter-header">
+                                        <h5>Live Match Updates</h5>
+                                        <div class="vidiprinter-controls-small">
+                                            <button id="clear-vidiprinter-btn" class="small-button">Clear Feed</button>
+                                            <button id="auto-scroll-toggle" class="small-button active">Auto-scroll</button>
+                                        </div>
+                                    </div>
+                                    <div id="vidiprinter-feed" class="vidiprinter-feed">
+                                        <div class="vidiprinter-placeholder">
+                                            <i class="fas fa-tv"></i>
+                                            <p>Click "Start Vidiprinter" to begin receiving live match updates</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div class="vidiprinter-settings">
-                                <h5>Vidiprinter Settings</h5>
-                                <div class="settings-row">
-                                    <label for="vidiprinter-comp">Competition:</label>
-                                    <select id="vidiprinter-comp">
-                                        <option value="5">National League</option>
-                                        <option value="6">National League North</option>
-                                        <option value="7">National League South</option>
-                                    </select>
-                                </div>
-                                <div class="settings-row">
-                                    <label for="vidiprinter-refresh-rate">Refresh Rate:</label>
-                                    <select id="vidiprinter-refresh-rate">
-                                        <option value="5000">5 seconds</option>
-                                        <option value="10000" selected>10 seconds</option>
-                                        <option value="15000">15 seconds</option>
-                                        <option value="30000">30 seconds</option>
-                                    </select>
+                                
+                                <div class="vidiprinter-settings">
+                                    <h5>Vidiprinter Settings</h5>
+                                    <div class="settings-row">
+                                        <label for="vidiprinter-comp">Competition:</label>
+                                        <select id="vidiprinter-comp">
+                                            <option value="5">National League</option>
+                                            <option value="6">National League North</option>
+                                            <option value="7">National League South</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-row">
+                                        <label for="vidiprinter-refresh-rate">Refresh Rate:</label>
+                                        <select id="vidiprinter-refresh-rate">
+                                            <option value="5000">5 seconds</option>
+                                            <option value="10000" selected>10 seconds</option>
+                                            <option value="15000">15 seconds</option>
+                                            <option value="30000">30 seconds</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
