@@ -2558,30 +2558,71 @@ function renderAdminPanel(settings) {
     });
 }
     
+    // Initialize picks controls
+    const picksEditionSelect = document.querySelector('#picks-edition-select');
+    const picksGameweekSelect = document.querySelector('#picks-gameweek-select');
+    const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
     const picksTitle = document.querySelector('#picks-title');
     const picksTableBody = document.querySelector('#admin-picks-body');
-    const currentGameWeek = settings.active_gameweek;
-    const gwKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
-
-    const displayText = currentGameWeek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${currentGameWeek}`;
-    picksTitle.textContent = `Picks for ${displayText}`;
-    picksTableBody.innerHTML = ''; // Clear existing table rows
-
-    db.collection('users').get().then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-            const userData = doc.data();
-            const playerPick = userData.picks && userData.picks[gwKey] ? userData.picks[gwKey] : 'No Pick Made';
-            
-            const row = document.createElement('tr');
-            const badge = playerPick !== 'No Pick Made' ? getTeamBadge(playerPick) : null;
-            const badgeHtml = badge ? `<img src="${badge}" alt="${playerPick}" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;">` : '';
-        row.innerHTML = `
-                <td>${userData.displayName}</td>
-                <td>${badgeHtml}${playerPick}</td>
-            `;
-            picksTableBody.appendChild(row);
-        });
-    });
+    
+    // Set default values
+    picksEditionSelect.value = 'edition1';
+    picksGameweekSelect.value = currentGameWeek || '1';
+    
+    // Function to render picks table
+    async function renderPicksTable() {
+        const selectedEdition = picksEditionSelect.value;
+        const selectedGameweek = picksGameweekSelect.value;
+        const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
+        const editionGwKey = `${selectedEdition}_${gwKey}`;
+        
+        const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
+        picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
+        picksTableBody.innerHTML = ''; // Clear existing table rows
+        
+        try {
+            const usersSnapshot = await db.collection('users').get();
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                
+                // Check if user is registered for this edition
+                const isRegisteredForEdition = userData.registrations && userData.registrations[selectedEdition];
+                if (!isRegisteredForEdition) return; // Skip users not registered for this edition
+                
+                const playerPick = userData.picks && userData.picks[editionGwKey] ? userData.picks[editionGwKey] : 'No Pick Made';
+                
+                const row = document.createElement('tr');
+                const badge = playerPick !== 'No Pick Made' ? getTeamBadge(playerPick) : null;
+                const badgeHtml = badge ? `<img src="${badge}" alt="${playerPick}" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;">` : '';
+                
+                // Determine pick status
+                let statusText = 'No Pick';
+                let statusClass = 'no-pick';
+                if (playerPick !== 'No Pick Made') {
+                    statusText = 'Pick Made';
+                    statusClass = 'pick-made';
+                }
+                
+                row.innerHTML = `
+                    <td>${userData.displayName}</td>
+                    <td>${badgeHtml}${playerPick}</td>
+                    <td><span class="pick-status ${statusClass}">${statusText}</span></td>
+                `;
+                picksTableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error loading picks:', error);
+            picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks</td></tr>';
+        }
+    }
+    
+    // Set up event listeners for picks controls
+    picksEditionSelect.addEventListener('change', renderPicksTable);
+    picksGameweekSelect.addEventListener('change', renderPicksTable);
+    refreshPicksBtn.addEventListener('click', renderPicksTable);
+    
+    // Initial render
+    renderPicksTable();
 
     // Initialize fixture management
     initializeFixtureManagement();

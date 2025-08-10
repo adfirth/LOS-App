@@ -690,12 +690,42 @@
                     <!-- Picks Tab -->
                     <div id="picks-tab" class="tab-pane">
                         <div class="admin-section">
-                            <h3 id="picks-title">Picks for Game Week 1</h3>
+                            <div class="picks-controls">
+                                <div class="control-group">
+                                    <label for="picks-edition-select">Edition:</label>
+                                    <select id="picks-edition-select">
+                                        <option value="edition1">Edition 1</option>
+                                        <option value="edition2">Edition 2</option>
+                                        <option value="edition3">Edition 3</option>
+                                        <option value="edition4">Edition 4</option>
+                                        <option value="editiontest">Test Weeks</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label for="picks-gameweek-select">Game Week:</label>
+                                    <select id="picks-gameweek-select">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                        <option value="tiebreak">Tiebreak</option>
+                                    </select>
+                                </div>
+                                <button id="refresh-picks-btn" class="btn btn-primary">Refresh Picks</button>
+                            </div>
+                            <h3 id="picks-title">Picks for Edition 1 - Game Week 1</h3>
                             <table class="league-table">
                                 <thead>
                                     <tr>
                                         <th>Player Name</th>
                                         <th>Pick</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="admin-picks-body">
