@@ -2323,6 +2323,62 @@ function loadMobileFixturesForDeadline(gameweek, userData = null, userId = null)
     });
 }
 
+// Load player scores function for scores tab
+async function loadPlayerScores() {
+    try {
+        const currentGameweek = getActiveGameweek();
+        const user = window.auth.currentUser;
+        
+        if (!user) {
+            throw new Error('No authenticated user');
+        }
+        
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (!userDoc.exists) {
+            throw new Error('User data not found');
+        }
+        
+        const userData = userDoc.data();
+        const userEdition = getUserEdition(userData);
+        
+        // Handle tiebreak gameweek
+        const gameweekKey = currentGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameweek}`;
+        const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
+        
+        const fixturesDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
+        if (!fixturesDoc.exists) {
+            throw new Error('No fixtures found for current gameweek');
+        }
+        
+        const fixturesData = fixturesDoc.data();
+        return fixturesData.fixtures || [];
+        
+    } catch (error) {
+        console.error('Error loading player scores:', error);
+        throw error;
+    }
+}
+
+// Render player scores function for scores tab
+async function renderPlayerScores(fixtures, gameweek) {
+    try {
+        // Render both desktop and mobile versions
+        renderDesktopPlayerScores(fixtures, gameweek);
+        renderMobilePlayerScores(fixtures, gameweek);
+    } catch (error) {
+        console.error('Error rendering player scores:', error);
+    }
+}
+
+// Initialize player vidiprinter functionality
+function initializePlayerVidiprinter() {
+    console.log('Initializing Player Vidiprinter...');
+    
+    // For now, just initialize the basic vidiprinter functionality
+    // This can be enhanced later to show player-specific events
+    initializeVidiprinter();
+}
+
 // Function to update the mobile pick status header
 function updateMobilePickStatusHeader(gameweek, userData, userId) {
     const pickStatusDisplay = document.querySelector('#mobile-pick-status-display');
