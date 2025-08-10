@@ -2535,6 +2535,15 @@ function startDeadlineChecker() {
 function renderAdminPanel(settings) {
     console.log('renderAdminPanel called with settings:', settings);
     
+    // Prevent duplicate initialization
+    if (window.adminPanelInitialized) {
+        console.log('Admin panel already initialized, skipping duplicate initialization');
+        return;
+    }
+    
+    console.log('Initializing admin panel for the first time');
+    window.adminPanelInitialized = true;
+    
     // Set up periodic token refresh to prevent authentication issues
     if (auth.currentUser) {
         // Refresh token every 45 minutes (tokens typically expire after 1 hour)
@@ -2578,7 +2587,11 @@ function renderAdminPanel(settings) {
     
     // Function to render picks table
     async function renderPicksTable() {
-        console.log('renderPicksTable called');
+        console.log('renderPicksTable called - clearing table first');
+        
+        // Clear the table completely before adding new rows
+        picksTableBody.innerHTML = '';
+        
         const selectedEdition = picksEditionSelect.value;
         const selectedGameweek = picksGameweekSelect.value;
         const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
@@ -2588,18 +2601,22 @@ function renderAdminPanel(settings) {
         
         const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
         picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
-        picksTableBody.innerHTML = ''; // Clear existing table rows
         
         try {
             console.log('Fetching users from database...');
             const usersSnapshot = await db.collection('users').get();
             console.log('Users snapshot received, count:', usersSnapshot.size);
+            
+            let registeredUsersCount = 0;
             usersSnapshot.forEach(doc => {
                 const userData = doc.data();
                 
                 // Check if user is registered for this edition
                 const isRegisteredForEdition = userData.registrations && userData.registrations[selectedEdition];
                 if (!isRegisteredForEdition) return; // Skip users not registered for this edition
+                
+                registeredUsersCount++;
+                console.log('Processing user:', userData.displayName, 'for edition:', selectedEdition);
                 
                 const playerPick = userData.picks && userData.picks[editionGwKey] ? userData.picks[editionGwKey] : 'No Pick Made';
                 
@@ -2622,6 +2639,10 @@ function renderAdminPanel(settings) {
                 `;
                 picksTableBody.appendChild(row);
             });
+            
+            console.log('Total registered users for edition', selectedEdition, ':', registeredUsersCount);
+            console.log('Total rows added to table:', picksTableBody.children.length);
+            
         } catch (error) {
             console.error('Error loading picks:', error);
             console.error('Error details:', error.message, error.code);

@@ -915,9 +915,8 @@
                                                 // Fetch settings and pass them to the render function
                                                 firebase.firestore().collection('settings').doc('currentCompetition').get().then(settingsDoc => {
                                                     if (settingsDoc.exists) {
-                                                        if (typeof renderAdminPanel === 'function') {
-                                                            renderAdminPanel(settingsDoc.data());
-                                                        }
+                                                        console.log('Backup: Settings loaded, but renderAdminPanel already called from main handler');
+                                                        // Don't call renderAdminPanel here as it's already called from the main auth handler
                                                     } else {
                                                         console.error("Settings document not found!");
                                                     }
