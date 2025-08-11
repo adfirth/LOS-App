@@ -1,0 +1,33 @@
+{
+  "name": "los-app",
+  "version": "1.0.0",
+  "description": "LOS (Last One Standing) Football App - Modular Refactored Version",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "start": "webpack serve --mode development",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write src/**/*.js"
+  },
+  "keywords": [
+    "football",
+    "game",
+    "los",
+    "last-one-standing",
+    "firebase"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0",
+    "eslint": "^8.45.0",
+    "prettier": "^3.0.0"
+  },
+  "dependencies": {
+    "firebase": "^10.0.0"
+  }
+}
