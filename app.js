@@ -1750,7 +1750,7 @@ async function renderDashboard(user) {
         const currentGameWeek = settings.active_gameweek;
 
         const userDoc = await db.collection('users').doc(user.uid).get();
-            if (userDoc.exists) {
+        if (userDoc.exists) {
                 const userData = userDoc.data();
                 
                 // Get user's edition from registration data
@@ -1822,6 +1822,7 @@ async function renderDashboard(user) {
                 // Update welcome messages for both desktop and mobile
                 if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
                 if (mobileWelcomeMessage) mobileWelcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
+            }
             
             // Display card status based on lives remaining
             let cardDisplay = '';
