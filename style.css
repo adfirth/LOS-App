@@ -6818,3 +6818,80 @@ a:hover {
     }
 }
 
+/* Future Game Week Message Styling */
+.future-gameweek-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.future-gameweek-message p {
+    margin: 8px 0;
+}
+
+.future-gameweek-message p:first-child {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.future-gameweek-message p:last-child {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Future Status Styling */
+.status.future {
+    background: #6c757d;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Fixture Status Badges */
+.fixture-status {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+    background-color: #6c757d;
+}
+
+.status-badge.NS {
+    background-color: #6c757d;
+}
+
+.status-badge.half-1, .status-badge.half-2 {
+    background-color: #28a745;
+}
+
+.status-badge.HT {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-badge.FT {
+    background-color: #dc3545;
+}
+
+.status-badge.AET, .status-badge.PEN {
+    background-color: #6f42c1;
+}
+
+.status-badge.POSTP, .status-badge.CANC {
+    background-color: #fd7e14;
+}

@@ -1638,12 +1638,16 @@ function closeUserDetailsModal() {
 
 // Mobile Tabbed Interface Functions
 function initializeMobileTabs() {
+    console.log('Initializing mobile tabs...');
     const tabButtons = document.querySelectorAll('.mobile-tabs .tab-btn');
     const tabPanes = document.querySelectorAll('.mobile-tab-content .tab-pane');
+    
+    console.log(`Found ${tabButtons.length} mobile tab buttons and ${tabPanes.length} mobile tab panes`);
     
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetTab = button.getAttribute('data-tab');
+            console.log(`Mobile tab clicked: ${targetTab}`);
             
             // Remove active class from all tabs and panes
             tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -1658,6 +1662,9 @@ function initializeMobileTabs() {
             
             // Load content based on tab
             if (targetTab === 'as-it-stands') {
+                console.log('Mobile As It Stands tab clicked');
+                // Run diagnostics first
+                diagnoseAsItStandsElements();
                 // Only initialize if not already done
                 if (!window.asItStandsInitialized_mobile) {
                     initializeAsItStandsTab('mobile');
@@ -1682,12 +1689,16 @@ function initializeMobileTabs() {
 
 // Desktop Tabbed Interface Functions
 function initializeDesktopTabs() {
+    console.log('Initializing desktop tabs...');
     const tabButtons = document.querySelectorAll('.desktop-tabs .desktop-tab-btn');
     const tabPanes = document.querySelectorAll('.desktop-tab-content .desktop-tab-pane');
+    
+    console.log(`Found ${tabButtons.length} desktop tab buttons and ${tabPanes.length} desktop tab panes`);
     
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetTab = button.getAttribute('data-tab');
+            console.log(`Desktop tab clicked: ${targetTab}`);
             
             // Remove active class from all tabs and panes
             tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -1702,6 +1713,9 @@ function initializeDesktopTabs() {
             
             // Load content based on tab
             if (targetTab === 'as-it-stands') {
+                console.log('Desktop As It Stands tab clicked');
+                // Run diagnostics first
+                diagnoseAsItStandsElements();
                 // Only initialize if not already done
                 if (!window.asItStandsInitialized_desktop) {
                     initializeAsItStandsTab('desktop');
@@ -1727,8 +1741,18 @@ function initializeDesktopTabs() {
 // --- FUNCTION to build the dashboard ---
 async function renderDashboard(user) {
     // Initialize both mobile and desktop tabs
+    console.log('Starting tab initialization...');
     initializeMobileTabs();
+    console.log('Mobile tabs initialized');
     initializeDesktopTabs();
+    console.log('Desktop tabs initialized');
+    
+    // Run diagnostics to check DOM elements
+    console.log('Dashboard rendered, running As It Stands diagnostics...');
+    setTimeout(() => {
+        console.log('Running delayed diagnostics...');
+        diagnoseAsItStandsElements();
+    }, 1000);
     
     // Pre-load all deadlines for this user's edition to avoid individual calls during rendering
     const userDoc = await db.collection('users').doc(user.uid).get();
@@ -2813,6 +2837,9 @@ async function renderFixturesDisplay(fixtures, userData = null, currentGameWeek 
                     <div class="fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
                     <div class="fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
                 </div>
+                <div class="fixture-status">
+                    <span class="status-badge ${fixture.status || 'NS'}">${getStatusDisplay(fixture.status)}</span>
+                </div>
             </div>
         `;
     }
@@ -2928,6 +2955,9 @@ async function renderMobileFixturesDisplay(fixtures, userData = null, currentGam
                 <div class="fixture-datetime">
                     <div class="fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
                     <div class="fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                </div>
+                <div class="fixture-status">
+                    <span class="status-badge ${fixture.status || 'NS'}">${getStatusDisplay(fixture.status)}</span>
                 </div>
             </div>
         `;
@@ -3359,72 +3389,158 @@ function initializeAsItStandsTab(platform) {
     // Mark as initialized globally
     window[`asItStandsInitialized_${platform}`] = true;
     
+    console.log(`As It Stands tab initialization flags set for ${platform}:`, {
+        mobile: window.asItStandsInitialized_mobile,
+        desktop: window.asItStandsInitialized_desktop
+    });
+    
     const selectorId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-gameweek`;
     const gameweekSelector = document.getElementById(selectorId);
     
-    if (!gameweekSelector) return;
+    console.log(`Looking for gameweek selector for ${platform} with ID: ${selectorId}`);
     
-    // Populate gameweek selector
-    populateAsItStandsGameweekSelector(platform);
+    if (!gameweekSelector) {
+        console.error(`Gameweek selector not found for ${platform} with ID: ${selectorId}`);
+        console.log(`Available elements with similar IDs:`, {
+            'mobile-as-it-stands-gameweek': !!document.getElementById('mobile-as-it-stands-gameweek'),
+            'desktop-as-it-stands-gameweek': !!document.getElementById('desktop-as-it-stands-gameweek'),
+            'mobile-as-it-stands-display': !!document.getElementById('mobile-as-it-stands-display'),
+            'desktop-as-it-stands-display': !!document.getElementById('desktop-as-it-stands-display')
+        });
+        return;
+    }
+    
+    console.log(`Found gameweek selector for ${platform}:`, gameweekSelector);
+    
+    // Populate gameweek selector with timeout protection
+    console.log(`Starting to populate gameweek selector for ${platform}`);
+    const populatePromise = populateAsItStandsGameweekSelector(platform);
+    
+    // Add timeout protection
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`Populate timeout for ${platform}`)), 10000);
+    });
+    
+    // Wait for population to complete before continuing initialization
+    Promise.race([populatePromise, timeoutPromise])
+        .then(() => {
+            console.log(`Gameweek selector population completed successfully for ${platform}`);
+            // Continue with initialization after successful population
+            console.log(`Continuing initialization for ${platform}...`);
+            
+            // Now that population is complete, check if we should load initial data
+            const currentValue = gameweekSelector.value;
+            console.log(`Gameweek selector now has value: "${currentValue}" and ${gameweekSelector.options.length} options`);
+            
+            if (currentValue) {
+                console.log(`Loading initial data for gameweek ${currentValue} on ${platform}`);
+                loadAsItStandsData(currentValue, platform);
+            } else {
+                console.log(`No initial gameweek value set for ${platform}, waiting for user selection`);
+            }
+            
+            console.log(`Tab initialization completed for ${platform}`);
+        })
+        .catch(error => {
+            console.error(`Error populating gameweek selector for ${platform}:`, error);
+            // Reset the initialization flag so it can be retried
+            delete window[`asItStandsInitialized_${platform}`];
+        });
     
     // Add event listener for gameweek selection
     if (gameweekSelector) {
+        console.log(`Adding change event listener to gameweek selector for ${platform}`);
         gameweekSelector.addEventListener('change', (e) => {
             const selectedGameweek = e.target.value;
+            console.log(`Gameweek selector changed to ${selectedGameweek} for ${platform}`);
             if (selectedGameweek) {
                 loadAsItStandsData(selectedGameweek, platform);
             }
         });
+    } else {
+        console.warn(`Gameweek selector not found for ${platform}`);
     }
     
-    // Load initial data for the selected gameweek
-    if (gameweekSelector.value) {
-        loadAsItStandsData(gameweekSelector.value, platform);
-    }
+    // Note: Initial data loading is now handled in the Promise.then() callback
+    console.log(`Tab initialization setup completed for ${platform}, waiting for gameweek selector population...`);
 }
 
 async function populateAsItStandsGameweekSelector(platform) {
     const selectorId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-gameweek`;
     const selector = document.getElementById(selectorId);
     
-    if (!selector) return;
+    console.log(`Populating gameweek selector for ${platform}, selector ID: ${selectorId}`);
+    
+    if (!selector) {
+        console.error(`Gameweek selector not found for ${platform} with ID: ${selectorId}`);
+        return;
+    }
+    
+    console.log(`Found gameweek selector for ${platform}:`, selector);
     
     try {
         // Get current user's edition
         const currentUser = firebase.auth().currentUser;
-        if (!currentUser) return;
+        if (!currentUser) {
+            console.error(`No current user found for ${platform} gameweek selector population`);
+            return;
+        }
+        
+        console.log(`Current user for ${platform}:`, currentUser.uid, currentUser.email);
         
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
-        if (!userDoc.exists) return;
+        if (!userDoc.exists) {
+            console.error(`User document not found for ${currentUser.uid} on ${platform}`);
+            return;
+        }
         
         const userData = userDoc.data();
         const userEdition = getUserEdition(userData);
         
+        console.log(`User edition for ${platform}:`, userEdition);
+        
         // Get all gameweeks for this edition
+        console.log(`Getting gameweeks for edition ${userEdition} on ${platform}`);
         const allGameweeks = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'tiebreak'];
         
+        console.log(`Gameweeks array created: ${allGameweeks.join(', ')}`);
+        
         // Clear existing options
+        console.log(`Clearing existing options for ${platform}`);
         selector.innerHTML = '<option value="">Select Game Week</option>';
         
         // Add gameweek options
-        allGameweeks.forEach(gameweek => {
+        console.log(`Adding gameweek options for ${platform}`);
+        allGameweeks.forEach((gameweek, index) => {
             const option = document.createElement('option');
             option.value = gameweek;
             option.textContent = gameweek === 'tiebreak' ? 'Tiebreak' : `Game Week ${gameweek}`;
             selector.appendChild(option);
+            console.log(`Added option ${index + 1}/${allGameweeks.length}: ${gameweek}`);
         });
         
+        console.log(`Finished adding ${allGameweeks.length} gameweek options for ${platform}`);
+        
         // Set default to current active gameweek if available
+        console.log(`Fetching settings document for ${platform}...`);
         const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
             const currentGameWeek = settings.active_gameweek;
+            console.log(`Settings found for ${platform}, active gameweek: ${currentGameWeek}`);
             if (currentGameWeek && allGameweeks.includes(currentGameWeek.toString())) {
                 selector.value = currentGameWeek.toString();
+                console.log(`Set default gameweek for ${platform}: ${currentGameWeek}`);
                 // Don't auto-load data here to prevent duplicate calls
                 // Data will be loaded when the tab is first clicked
+            } else {
+                console.log(`No valid default gameweek set for ${platform}`);
             }
+        } else {
+            console.log(`Settings document not found for ${platform}`);
         }
+        
+        console.log(`Gameweek selector population completed for ${platform}`);
         
     } catch (error) {
         console.error('Error populating gameweek selector:', error);
@@ -3443,27 +3559,37 @@ async function loadAsItStandsData(gameweek, platform) {
     }
     
     window[`loading_${loadingKey}`] = true;
+    console.log(`Set loading flag for ${loadingKey}`);
     
     const displayId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-display`;
     const display = document.getElementById(displayId);
     
+    console.log(`Looking for display element with ID: ${displayId}`);
+    
     if (!display) {
+        console.error(`Display element not found for ${platform} with ID: ${displayId}`);
         window[`loading_${loadingKey}`] = false;
         return;
     }
     
+    console.log(`Found display element for ${platform}:`, display);
     display.innerHTML = '<p>Loading standings...</p>';
+    console.log(`Set loading message for ${platform}`);
     
     try {
         // Get current user's edition
         const currentUser = firebase.auth().currentUser;
         if (!currentUser) {
+            console.error(`No current user found for ${platform} data loading`);
             display.innerHTML = '<p>Please log in to view standings.</p>';
             return;
         }
         
+        console.log(`Current user for ${platform} data loading:`, currentUser.uid, currentUser.email);
+        
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         if (!userDoc.exists) {
+            console.error(`User document not found for ${currentUser.uid} on ${platform}`);
             display.innerHTML = '<p>User data not found.</p>';
             return;
         }
@@ -3471,10 +3597,15 @@ async function loadAsItStandsData(gameweek, platform) {
         const userData = userDoc.data();
         const userEdition = getUserEdition(userData);
         
+        console.log(`User edition for ${platform} data loading:`, userEdition);
+        
         // Get all players in this edition
+        console.log(`Fetching users collection for ${platform}...`);
         const usersSnapshot = await db.collection('users').get();
         const players = [];
         const seenPlayerIds = new Set(); // Track seen player IDs to prevent duplicates
+        
+        console.log(`Total users in collection: ${usersSnapshot.size}`);
         
         usersSnapshot.forEach(doc => {
             const playerData = doc.data();
@@ -3490,19 +3621,27 @@ async function loadAsItStandsData(gameweek, platform) {
             }
         });
         
-        console.log(`Found ${players.length} unique players for edition ${userEdition}`);
+        console.log(`Found ${players.length} unique players for edition ${userEdition} on ${platform}`);
+        console.log(`Player IDs:`, players.map(p => p.id));
         
         // Get fixtures for this gameweek
-        const fixturesDoc = await db.collection('fixtures').doc(`edition${userEdition}_gw${gameweek}`).get();
+        const fixtureDocId = `edition${userEdition}_gw${gameweek}`;
+        console.log(`Fetching fixtures document for ${platform}: ${fixtureDocId}`);
+        
+        const fixturesDoc = await db.collection('fixtures').doc(fixtureDocId).get();
         let fixtures = [];
         
         if (fixturesDoc.exists) {
             fixtures = fixturesDoc.data().fixtures || [];
+            console.log(`Found ${fixtures.length} fixtures for ${platform} in document ${fixtureDocId}`);
+        } else {
+            console.log(`No fixtures document found for ${platform}: ${fixtureDocId}`);
         }
         
         // Render the standings
-        console.log(`Rendering standings for ${players.length} players, ${fixtures.length} fixtures, gameweek ${gameweek}, edition ${userEdition}, platform ${platform}`);
+        console.log(`Rendering standings for ${platform}: ${players.length} players, ${fixtures.length} fixtures, gameweek ${gameweek}, edition ${userEdition}`);
         await renderAsItStandsStandings(players, fixtures, gameweek, userEdition, platform);
+        console.log(`Standings rendering completed for ${platform}`);
         
     } catch (error) {
         console.error('Error loading As It Stands data:', error);
@@ -3514,10 +3653,19 @@ async function loadAsItStandsData(gameweek, platform) {
 }
 
 async function renderAsItStandsStandings(players, fixtures, gameweek, edition, platform) {
+    console.log(`Starting to render standings for ${platform}...`);
+    
     const displayId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-display`;
     const display = document.getElementById(displayId);
     
-    if (!display) return;
+    console.log(`Looking for display element for ${platform} with ID: ${displayId}`);
+    
+    if (!display) {
+        console.error(`Display element not found for ${platform} rendering with ID: ${displayId}`);
+        return;
+    }
+    
+    console.log(`Found display element for ${platform} rendering:`, display);
     
     // Prevent duplicate rendering for the same data
     const renderKey = `${platform}_${gameweek}_${edition}`;
@@ -3586,6 +3734,9 @@ async function renderAsItStandsStandings(players, fixtures, gameweek, edition, p
             <h3>${gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`}</h3>
             <p class="gameweek-status ${gameweekStatus}">${statusDescription}</p>
         </div>
+    `;
+    
+    html += `
         <div class="standings-table-container">
             <table class="standings-table">
                 <thead>
@@ -3627,7 +3778,11 @@ async function renderAsItStandsStandings(players, fixtures, gameweek, edition, p
         
         // Clean up the pick data to prevent duplication
         let pickDisplay = 'No pick made';
-        if (playerPick) {
+        
+        // For future game weeks, don't show picks
+        if (gameweekStatus === 'upcoming' || gameweekStatus === 'future') {
+            pickDisplay = 'Hidden until game week opens';
+        } else if (playerPick) {
             // If the pick is an object with a team property, use that
             if (typeof playerPick === 'object' && playerPick.team) {
                 pickDisplay = playerPick.team;
@@ -3655,7 +3810,9 @@ async function renderAsItStandsStandings(players, fixtures, gameweek, edition, p
         
         // Calculate "As It Stands" status
         let asItStandsStatus = '';
-        if (gameweekStatus === 'upcoming') {
+        if (gameweekStatus === 'future') {
+            asItStandsStatus = '<span class="status future">🔒 Game Week Not Started</span>';
+        } else if (gameweekStatus === 'upcoming') {
             asItStandsStatus = '<span class="status pending">⏳ Pending</span>';
         } else if (gameweekStatus === 'live') {
             if (playerPick && fixtures.length > 0) {
@@ -7848,7 +8005,7 @@ function addScoreRow(fixture, index) {
     const matchTime = fixture.time ? fixture.time : (fixture.matchTime || 'TBC');
     
     // Determine which scores to show based on match status
-    const isCompleted = fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN';
+    const isCompleted = fixture.completed || fixture.status === 'FT' || fixture.status === 'COMP';
     const hasHalfTimeScores = fixture.homeScoreHT !== null && fixture.homeScoreHT !== undefined && fixture.awayScoreHT !== null && fixture.awayScoreHT !== undefined;
     const hasFullTimeScores = fixture.homeScore !== null && fixture.homeScore !== undefined && fixture.awayScore !== null && fixture.awayScore !== undefined;
     
@@ -7927,14 +8084,11 @@ function addScoreRow(fixture, index) {
                 <label>Completed</label>
                 <select class="match-status-select">
                     <option value="NS" ${fixture.status === 'NS' ? 'selected' : ''}>Not Started</option>
-                    <option value="1H" ${fixture.status === '1H' ? 'selected' : ''}>First Half</option>
-                    <option value="HT" ${fixture.status === 'HT' ? 'selected' : ''}>Half Time</option>
-                    <option value="2H" ${fixture.status === '2H' ? 'selected' : ''}>Second Half</option>
-                    <option value="FT" ${fixture.status === 'FT' ? 'selected' : ''}>Full Time</option>
-                    <option value="AET" ${fixture.status === 'AET' ? 'selected' : ''}>After Extra Time</option>
-                    <option value="PEN" ${fixture.status === 'PEN' ? 'selected' : ''}>Penalties</option>
                     <option value="POSTP" ${fixture.status === 'POSTP' ? 'selected' : ''}>Postponed</option>
-                    <option value="CANC" ${fixture.status === 'CANC' ? 'selected' : ''}>Cancelled</option>
+                    <option value="KO" ${fixture.status === 'KO' ? 'selected' : ''}>Kicked Off</option>
+                    <option value="HT" ${fixture.status === 'HT' ? 'selected' : ''}>Half-time</option>
+                    <option value="FT" ${fixture.status === 'FT' ? 'selected' : ''}>Full-time</option>
+                    <option value="COMP" ${fixture.status === 'COMP' ? 'selected' : ''}>Completed</option>
                 </select>
             </div>
         </div>
@@ -7947,14 +8101,11 @@ function addScoreRow(fixture, index) {
 function getStatusDisplay(status) {
     const statusMap = {
         'NS': 'Not Started',
-        '1H': 'First Half',
-        'HT': 'Half Time',
-        '2H': 'Second Half',
-        'FT': 'Full Time',
-        'AET': 'After Extra Time',
-        'PEN': 'Penalties',
         'POSTP': 'Postponed',
-        'CANC': 'Cancelled'
+        'KO': 'Kicked Off',
+        'HT': 'Half-time',
+        'FT': 'Full-time',
+        'COMP': 'Completed'
     };
     return statusMap[status] || 'Not Started';
 }
@@ -10211,4 +10362,100 @@ function resetAsItStandsInitialization() {
     });
     
     console.log('As It Stands initialization flags reset');
+}
+
+// Function to diagnose DOM elements for As It Stands
+function diagnoseAsItStandsElements() {
+    console.log('=== As It Stands DOM Elements Diagnosis ===');
+    
+    // Check mobile elements
+    const mobileSelector = document.getElementById('mobile-as-it-stands-gameweek');
+    const mobileDisplay = document.getElementById('mobile-as-it-stands-display');
+    const mobileTab = document.getElementById('as-it-stands-tab');
+    
+    console.log('Mobile elements:', {
+        selector: mobileSelector ? 'Found' : 'Missing',
+        display: mobileDisplay ? 'Found' : 'Missing',
+        tab: mobileTab ? 'Found' : 'Missing'
+    });
+    
+    // Check desktop elements
+    const desktopSelector = document.getElementById('desktop-as-it-stands-gameweek');
+    const desktopDisplay = document.getElementById('desktop-as-it-stands-display');
+    const desktopTab = document.getElementById('desktop-as-it-stands-tab');
+    
+    console.log('Desktop elements:', {
+        selector: desktopSelector ? 'Found' : 'Missing',
+        display: desktopDisplay ? 'Found' : 'Missing',
+        tab: desktopTab ? 'Found' : 'Missing'
+    });
+    
+    // Check if we're on the right page
+    const isDashboard = window.location.pathname.includes('dashboard');
+    console.log('Current page:', window.location.pathname, 'Is dashboard:', isDashboard);
+    
+    // Check tab buttons
+    const mobileTabButton = document.querySelector('[data-tab="as-it-stands"]');
+    const desktopTabButton = document.querySelector('.desktop-tab-btn[data-tab="as-it-stands"]');
+    
+    console.log('Tab buttons:', {
+        mobile: mobileTabButton ? 'Found' : 'Missing',
+        desktop: desktopTabButton ? 'Found' : 'Missing'
+    });
+    
+    return {
+        mobile: { selector: !!mobileSelector, display: !!mobileDisplay, tab: !!mobileTab },
+        desktop: { selector: !!desktopSelector, display: !!desktopDisplay, tab: !!desktopTab },
+        isDashboard,
+        tabButtons: { mobile: !!mobileTabButton, desktop: !!desktopTabButton }
+    };
+}
+
+// Manual test function - call this from console to test As It Stands
+function testAsItStandsManually() {
+    console.log('=== Manual As It Stands Test ===');
+    
+    // Check if we're on the right page
+    if (!window.location.pathname.includes('dashboard')) {
+        console.error('Not on dashboard page!');
+        return;
+    }
+    
+    // Check authentication
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        console.error('No user logged in!');
+        return;
+    }
+    
+    console.log('User authenticated:', currentUser.email);
+    
+    // Run diagnostics
+    const diagnosis = diagnoseAsItStandsElements();
+    console.log('Diagnosis result:', diagnosis);
+    
+    // Try to initialize manually
+    if (!diagnosis.mobile.selector || !diagnosis.mobile.display) {
+        console.error('Mobile elements missing!');
+    } else {
+        console.log('Mobile elements found, trying initialization...');
+        try {
+            initializeAsItStandsTab('mobile');
+        } catch (error) {
+            console.error('Mobile initialization failed:', error);
+        }
+    }
+    
+    if (!diagnosis.desktop.selector || !diagnosis.desktop.display) {
+        console.error('Desktop elements missing!');
+    } else {
+        console.log('Desktop elements found, trying initialization...');
+        try {
+            initializeAsItStandsTab('desktop');
+        } catch (error) {
+            console.error('Desktop initialization failed:', error);
+        }
+    }
+    
+    console.log('Manual test completed');
 }
