@@ -1859,7 +1859,24 @@ async function renderDashboard(user) {
             // Load fixtures for current gameweek to get deadline (with user data)
             loadFixturesForDeadline(currentGameWeek, userData, user.uid);
             
-
+            // Load mobile fixtures for current gameweek
+            loadMobileFixturesForDeadline(currentGameWeek, userData, user.uid);
+            
+            // Update pick status headers for both desktop and mobile
+            updatePickStatusHeader(currentGameWeek, userData, user.uid);
+            updateMobilePickStatusHeader(currentGameWeek, userData, user.uid);
+            
+            // Load player scores for current gameweek
+            loadPlayerScores();
+            
+            // Initialize enhanced vidiprinter
+            initializeEnhancedVidiprinter();
+            
+            // Start deadline checker
+            startDeadlineChecker();
+            
+        } else {
+            console.warn('User document not found for:', user.uid);
         }
     } catch (error) {
         console.error("Error rendering dashboard:", error);
