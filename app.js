@@ -1052,6 +1052,12 @@ async function saveUserDefaultEdition(userId) {
 // Function to load current edition and update registration page
 async function loadCurrentEditionForRegistration() {
     try {
+        // Ensure database is available before proceeding
+        if (!db) {
+            console.warn('Database not available yet, skipping current edition load');
+            return;
+        }
+        
         const settingsDoc = await db.collection('settings').doc('currentCompetition').get();
         if (settingsDoc.exists) {
             const settings = settingsDoc.data();
@@ -1066,6 +1072,12 @@ async function loadCurrentEditionForRegistration() {
 // Check registration window status
 async function checkRegistrationWindow(edition = null) {
     try {
+        // Ensure database is available before proceeding
+        if (!db) {
+            console.warn('Database not available yet, skipping registration window check');
+            return true; // Default to open if database not available
+        }
+        
         // Use provided edition or fall back to current active edition
         const editionToCheck = edition || currentActiveEdition;
         const settingsDoc = await db.collection('settings').doc(`registration_edition_${editionToCheck}`).get();
@@ -2021,11 +2033,11 @@ function updateTabStates(gameweekTabs) {
     gameweekTabs.forEach(tab => {
         const gameweek = tab.dataset.gameweek;
         checkDeadlineForGameweek(gameweek).then(isDeadlinePassed => {
-                    if (isDeadlinePassed) {
-            tab.classList.add('locked');
-        } else {
-            tab.classList.remove('locked');
-        }
+            if (isDeadlinePassed) {
+                tab.classList.add('locked');
+            } else {
+                tab.classList.remove('locked');
+            }
         });
     });
 }
@@ -3942,11 +3954,25 @@ function initializeFixtureManagement() {
     // Initialize Football Web Pages API integration
     initializeFootballWebPagesAPI();
     
-    // Initialize competition settings
-    initializeCompetitionSettings();
+    // Initialize competition settings when database is ready
+    const initializeCompetitionSettingsWhenReady = () => {
+        if (db) {
+            initializeCompetitionSettings();
+        } else {
+            setTimeout(initializeCompetitionSettingsWhenReady, 100);
+        }
+    };
+    initializeCompetitionSettingsWhenReady();
     
-    // Start periodic deadline checking
-    startDeadlineChecker();
+    // Start periodic deadline checking when database is ready
+    const startDeadlineCheckerWhenReady = () => {
+        if (db) {
+            startDeadlineChecker();
+        } else {
+            setTimeout(startDeadlineCheckerWhenReady, 100);
+        }
+    };
+    startDeadlineCheckerWhenReady();
 }
 
 // --- MOBILE GAMEWEEK NAVIGATION FUNCTIONS ---
@@ -6399,7 +6425,15 @@ if (window.location.pathname.endsWith('register.html')) {
 
 // Initialize registration window display for index page
 if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-    initializeRegistrationWindowDisplay();
+    // Wait for database to be initialized before calling registration functions
+    const initializeRegistrationWhenReady = () => {
+        if (db) {
+            initializeRegistrationWindowDisplay();
+        } else {
+            setTimeout(initializeRegistrationWhenReady, 100);
+        }
+    };
+    initializeRegistrationWhenReady();
 }
 
 // New registration form handler
@@ -7157,8 +7191,15 @@ function initializeAdminTabs() {
 // Initialize admin tabs when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeAdminTabs();
-    // Load current edition for registration page
-    loadCurrentEditionForRegistration();
+    // Load current edition for registration page when database is ready
+    const loadEditionWhenReady = () => {
+        if (db) {
+            loadCurrentEditionForRegistration();
+        } else {
+            setTimeout(loadEditionWhenReady, 100);
+        }
+    };
+    loadEditionWhenReady();
     
     // Add edition selection event listener
     const editionSelection = document.getElementById('edition-selection');
@@ -9241,6 +9282,12 @@ async function initializeRegistrationWindowDisplay() {
 
 async function updateRegistrationWindowDisplay() {
     try {
+        // Ensure database is available before proceeding
+        if (!db) {
+            console.warn('Database not available yet, skipping registration window display update');
+            return;
+        }
+        
         const settingsDoc = await db.collection('settings').doc(`registration_edition_${currentActiveEdition}`).get();
         if (!settingsDoc.exists) {
             hideRegistrationCountdowns();
