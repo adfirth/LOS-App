@@ -62,8 +62,12 @@ function initializeAuthListener() {
 
                 if (user) {
                     // User is signed in
-                    if (onIndexPage) { /* ... */ }
-                    if (onDashboardPage) { renderDashboard(user).catch(console.error); }
+                                    if (onIndexPage) { /* ... */ }
+                if (onDashboardPage) { 
+                    // Reset initialization flags when user logs in
+                    resetAsItStandsInitialization();
+                    renderDashboard(user).catch(console.error); 
+                }
                     
                     // Admin Page Security Check
                     if (onAdminPage) {
@@ -1137,7 +1141,14 @@ function showRegistrationClosed(message = 'Registration is currently closed') {
 
 // --- REGISTRATION MANAGEMENT FUNCTIONS ---
 function initializeRegistrationManagement() {
+    // Prevent multiple initializations
+    if (registrationManagementInitialized) {
+        console.log('Registration management already initialized, skipping...');
+        return;
+    }
+    
     console.log('Initializing registration management...');
+    registrationManagementInitialized = true;
     
     const saveRegistrationSettingsBtn = document.querySelector('#save-registration-settings');
     const refreshStatsBtn = document.querySelector('#refresh-registration-stats');
@@ -1647,7 +1658,10 @@ function initializeMobileTabs() {
             
             // Load content based on tab
             if (targetTab === 'as-it-stands') {
-                initializeAsItStandsTab('mobile');
+                // Only initialize if not already done
+                if (!window.asItStandsInitialized_mobile) {
+                    initializeAsItStandsTab('mobile');
+                }
             } else if (targetTab === 'scores') {
                 loadPlayerScores().then(async fixtures => {
                     console.log('loadPlayerScores returned:', fixtures);
@@ -1688,7 +1702,10 @@ function initializeDesktopTabs() {
             
             // Load content based on tab
             if (targetTab === 'as-it-stands') {
-                initializeAsItStandsTab('desktop');
+                // Only initialize if not already done
+                if (!window.asItStandsInitialized_desktop) {
+                    initializeAsItStandsTab('desktop');
+                }
             } else if (targetTab === 'scores') {
                 loadPlayerScores().then(async fixtures => {
                     console.log('loadPlayerScores returned:', fixtures);
@@ -1751,78 +1768,77 @@ async function renderDashboard(user) {
 
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
-                const userData = userDoc.data();
+            const userData = userDoc.data();
+            
+            // Get user's edition from registration data
+            const userEdition = getUserEdition(userData);
+            const userRegisteredEditions = getUserRegisteredEditions(userData);
+            
+            // Show edition selection if user is registered for multiple editions
+            if (userRegisteredEditions.length > 1) {
+                const desktopContainer = document.getElementById('edition-selection-container');
+                const mobileContainer = document.getElementById('mobile-edition-selection-container');
+                const desktopSelector = document.getElementById('dashboard-edition-selector');
+                const mobileSelector = document.getElementById('mobile-dashboard-edition-selector');
                 
-                // Get user's edition from registration data
-                const userEdition = getUserEdition(userData);
-                const userRegisteredEditions = getUserRegisteredEditions(userData);
-                
-                // Show edition selection if user is registered for multiple editions
-                if (userRegisteredEditions.length > 1) {
-                    const desktopContainer = document.getElementById('edition-selection-container');
-                    const mobileContainer = document.getElementById('mobile-edition-selection-container');
-                    const desktopSelector = document.getElementById('dashboard-edition-selector');
-                    const mobileSelector = document.getElementById('mobile-dashboard-edition-selector');
+                if (desktopContainer && mobileContainer) {
+                    desktopContainer.style.display = 'block';
+                    mobileContainer.style.display = 'block';
                     
-                    if (desktopContainer && mobileContainer) {
-                        desktopContainer.style.display = 'block';
-                        mobileContainer.style.display = 'block';
+                    // Populate edition selectors
+                    if (desktopSelector && mobileSelector) {
+                        desktopSelector.innerHTML = '';
+                        mobileSelector.innerHTML = '';
                         
-                        // Populate edition selectors
-                        if (desktopSelector && mobileSelector) {
-                            desktopSelector.innerHTML = '';
-                            mobileSelector.innerHTML = '';
+                        userRegisteredEditions.forEach(edition => {
+                            const optionText = edition === 'test' ? 'Test Weeks' : `Edition ${edition}`;
+                            const optionValue = edition;
                             
-                            userRegisteredEditions.forEach(edition => {
-                                const optionText = edition === 'test' ? 'Test Weeks' : `Edition ${edition}`;
-                                const optionValue = edition;
-                                
-                                const desktopOption = document.createElement('option');
-                                desktopOption.value = optionValue;
-                                desktopOption.textContent = optionText;
-                                if (edition === userEdition) {
-                                    desktopOption.selected = true;
-                                }
-                                desktopSelector.appendChild(desktopOption);
-                                
-                                const mobileOption = document.createElement('option');
-                                mobileOption.value = optionValue;
-                                mobileOption.textContent = optionText;
-                                if (edition === userEdition) {
-                                    mobileOption.selected = true;
-                                }
-                                mobileSelector.appendChild(mobileOption);
-                            });
-                        }
-                        
-                        // Add event listeners for save buttons
-                        const desktopSaveBtn = document.getElementById('save-edition-preference');
-                        const mobileSaveBtn = document.getElementById('mobile-save-edition-preference');
-                        
-                        if (desktopSaveBtn) {
-                            desktopSaveBtn.onclick = () => saveEditionPreference(desktopSelector.value, user.uid);
-                        }
-                        if (mobileSaveBtn) {
-                            mobileSaveBtn.onclick = () => saveEditionPreference(mobileSelector.value, user.uid);
-                        }
+                            const desktopOption = document.createElement('option');
+                            desktopOption.value = optionValue;
+                            desktopOption.textContent = optionText;
+                            if (edition === userEdition) {
+                                desktopOption.selected = true;
+                            }
+                            desktopSelector.appendChild(desktopOption);
+                            
+                            const mobileOption = document.createElement('option');
+                            mobileOption.value = optionValue;
+                            mobileOption.textContent = optionText;
+                            if (edition === userEdition) {
+                                mobileOption.selected = true;
+                            }
+                            mobileSelector.appendChild(mobileOption);
+                        });
+                    }
+                    
+                    // Add event listeners for save buttons
+                    const desktopSaveBtn = document.getElementById('save-edition-preference');
+                    const mobileSaveBtn = document.getElementById('mobile-save-edition-preference');
+                    
+                    if (desktopSaveBtn) {
+                        desktopSaveBtn.onclick = () => saveEditionPreference(desktopSelector.value, user.uid);
+                    }
+                    if (mobileSaveBtn) {
+                        mobileSaveBtn.onclick = () => saveEditionPreference(mobileSelector.value, user.uid);
                     }
                 }
-                
-                // Update edition displays
-                document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
-                    if (el) {
-                        if (userEdition === 'test') {
-                            el.textContent = 'Test Weeks';
-                        } else {
-                            el.textContent = `Edition ${userEdition}`;
-                        }
-                    }
-                });
-                
-                // Update welcome messages for both desktop and mobile
-                if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
-                if (mobileWelcomeMessage) mobileWelcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
             }
+            
+            // Update edition displays
+            document.querySelectorAll('#current-edition-display, #submit-edition-display, #re-submit-edition-display, #sidebar-edition-display').forEach(el => {
+                if (el) {
+                    if (userEdition === 'test') {
+                        el.textContent = 'Test Weeks';
+                    } else {
+                        el.textContent = `Edition ${userEdition}`;
+                    }
+                }
+            });
+            
+            // Update welcome messages for both desktop and mobile
+            if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
+            if (mobileWelcomeMessage) mobileWelcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
             
             // Display card status based on lives remaining
             let cardDisplay = '';
@@ -1875,7 +1891,6 @@ async function renderDashboard(user) {
             
             // Start deadline checker
             startDeadlineChecker();
-            
         } else {
             console.warn('User document not found for:', user.uid);
         }
@@ -1912,17 +1927,18 @@ async function renderPickHistory(picks, container, userId, userData = null) {
 
     // Process each gameweek sequentially
     for (const gameweek of allGameWeeks) {
-        const pickItem = document.createElement('div');
-        pickItem.className = 'pick-item';
-        
-        const pickInfo = document.createElement('div');
-        pickInfo.className = 'pick-info';
-        
-        const pickAction = document.createElement('div');
-        pickAction.className = 'pick-action';
-        
-        const teamName = picks[gameweek.key];
-                    const gameweekNumber = gameweek.key === 'gwtiebreak' ? 'tiebreak' : gameweek.key.replace('gw', '');
+        try {
+            const pickItem = document.createElement('div');
+            pickItem.className = 'pick-item';
+            
+            const pickInfo = document.createElement('div');
+            pickInfo.className = 'pick-info';
+            
+            const pickAction = document.createElement('div');
+            pickAction.className = 'pick-action';
+            
+            const teamName = picks[gameweek.key];
+            const gameweekNumber = gameweek.key === 'gwtiebreak' ? 'tiebreak' : gameweek.key.replace('gw', '');
             // Get user's edition to check the correct deadline
             const userEdition = userData ? getUserEdition(userData) : null;
             const isDeadlinePassed = await checkDeadlineForGameweek(gameweekNumber, userEdition);
@@ -1969,6 +1985,10 @@ async function renderPickHistory(picks, container, userId, userData = null) {
         pickItem.appendChild(pickInfo);
         pickItem.appendChild(pickAction);
         container.appendChild(pickItem);
+        } catch (error) {
+            console.error(`Error processing gameweek ${gameweek.key}:`, error);
+            // Continue with next gameweek even if one fails
+        }
     }
 }
 
@@ -3330,11 +3350,24 @@ function startDeadlineChecker() {
 function initializeAsItStandsTab(platform) {
     console.log(`Initializing As It Stands tab for ${platform}`);
     
+    // Use a global flag to prevent multiple initializations
+    if (window[`asItStandsInitialized_${platform}`]) {
+        console.log(`As It Stands tab for ${platform} already initialized, skipping`);
+        return;
+    }
+    
+    // Mark as initialized globally
+    window[`asItStandsInitialized_${platform}`] = true;
+    
+    const selectorId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-gameweek`;
+    const gameweekSelector = document.getElementById(selectorId);
+    
+    if (!gameweekSelector) return;
+    
     // Populate gameweek selector
     populateAsItStandsGameweekSelector(platform);
     
     // Add event listener for gameweek selection
-    const gameweekSelector = document.getElementById(`${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-gameweek`);
     if (gameweekSelector) {
         gameweekSelector.addEventListener('change', (e) => {
             const selectedGameweek = e.target.value;
@@ -3342,6 +3375,11 @@ function initializeAsItStandsTab(platform) {
                 loadAsItStandsData(selectedGameweek, platform);
             }
         });
+    }
+    
+    // Load initial data for the selected gameweek
+    if (gameweekSelector.value) {
+        loadAsItStandsData(gameweekSelector.value, platform);
     }
 }
 
@@ -3383,8 +3421,8 @@ async function populateAsItStandsGameweekSelector(platform) {
             const currentGameWeek = settings.active_gameweek;
             if (currentGameWeek && allGameweeks.includes(currentGameWeek.toString())) {
                 selector.value = currentGameWeek.toString();
-                // Load data for current gameweek
-                loadAsItStandsData(currentGameWeek.toString(), platform);
+                // Don't auto-load data here to prevent duplicate calls
+                // Data will be loaded when the tab is first clicked
             }
         }
         
@@ -3397,10 +3435,22 @@ async function populateAsItStandsGameweekSelector(platform) {
 async function loadAsItStandsData(gameweek, platform) {
     console.log(`Loading As It Stands data for gameweek ${gameweek} on ${platform}`);
     
+    // Prevent duplicate loading for the same gameweek and platform
+    const loadingKey = `${platform}_${gameweek}`;
+    if (window[`loading_${loadingKey}`]) {
+        console.log(`Already loading data for ${loadingKey}, skipping`);
+        return;
+    }
+    
+    window[`loading_${loadingKey}`] = true;
+    
     const displayId = `${platform === 'mobile' ? 'mobile-' : 'desktop-'}as-it-stands-display`;
     const display = document.getElementById(displayId);
     
-    if (!display) return;
+    if (!display) {
+        window[`loading_${loadingKey}`] = false;
+        return;
+    }
     
     display.innerHTML = '<p>Loading standings...</p>';
     
@@ -3424,19 +3474,23 @@ async function loadAsItStandsData(gameweek, platform) {
         // Get all players in this edition
         const usersSnapshot = await db.collection('users').get();
         const players = [];
+        const seenPlayerIds = new Set(); // Track seen player IDs to prevent duplicates
         
         usersSnapshot.forEach(doc => {
             const playerData = doc.data();
             const playerEdition = getUserEdition(playerData);
             
-            // Only include players in the same edition
-            if (playerEdition === userEdition) {
+            // Only include players in the same edition and prevent duplicates
+            if (playerEdition === userEdition && !seenPlayerIds.has(doc.id)) {
+                seenPlayerIds.add(doc.id);
                 players.push({
                     id: doc.id,
                     ...playerData
                 });
             }
         });
+        
+        console.log(`Found ${players.length} unique players for edition ${userEdition}`);
         
         // Get fixtures for this gameweek
         const fixturesDoc = await db.collection('fixtures').doc(`edition${userEdition}_gw${gameweek}`).get();
@@ -3447,11 +3501,15 @@ async function loadAsItStandsData(gameweek, platform) {
         }
         
         // Render the standings
+        console.log(`Rendering standings for ${players.length} players, ${fixtures.length} fixtures, gameweek ${gameweek}, edition ${userEdition}, platform ${platform}`);
         await renderAsItStandsStandings(players, fixtures, gameweek, userEdition, platform);
         
     } catch (error) {
         console.error('Error loading As It Stands data:', error);
         display.innerHTML = '<p>Error loading standings. Please try again.</p>';
+    } finally {
+        // Clear the loading flag
+        window[`loading_${loadingKey}`] = false;
     }
 }
 
@@ -3460,6 +3518,21 @@ async function renderAsItStandsStandings(players, fixtures, gameweek, edition, p
     const display = document.getElementById(displayId);
     
     if (!display) return;
+    
+    // Prevent duplicate rendering for the same data
+    const renderKey = `${platform}_${gameweek}_${edition}`;
+    const dataHash = JSON.stringify({ players: players.length, fixtures: fixtures.length });
+    
+    if (window[`rendered_${renderKey}`] === dataHash) {
+        console.log(`Already rendered data for ${renderKey} with hash ${dataHash}, skipping`);
+        return;
+    }
+    
+    // Mark as rendered
+    window[`rendered_${renderKey}`] = dataHash;
+    
+    // Clear any existing content to prevent duplicates
+    display.innerHTML = '';
     
     const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
     const editionGameweekKey = `edition${edition}_${gameweekKey}`;
@@ -3537,8 +3610,38 @@ async function renderAsItStandsStandings(players, fixtures, gameweek, edition, p
     
     players.forEach((player, index) => {
         const position = index + 1;
-        const playerPick = player.picks && (player.picks[editionGameweekKey] || player.picks[gameweekKey]);
-        const pickDisplay = playerPick || 'No pick made';
+        
+        // Debug: Log the pick data structure
+        console.log(`Player ${player.displayName} picks:`, player.picks);
+        console.log(`Looking for keys: ${editionGameweekKey} or ${gameweekKey}`);
+        
+        let playerPick = null;
+        if (player.picks) {
+            // Try to get the pick from the edition-specific key first
+            if (player.picks[editionGameweekKey]) {
+                playerPick = player.picks[editionGameweekKey];
+            } else if (player.picks[gameweekKey]) {
+                playerPick = player.picks[gameweekKey];
+            }
+        }
+        
+        // Clean up the pick data to prevent duplication
+        let pickDisplay = 'No pick made';
+        if (playerPick) {
+            // If the pick is an object with a team property, use that
+            if (typeof playerPick === 'object' && playerPick.team) {
+                pickDisplay = playerPick.team;
+            } else if (typeof playerPick === 'string') {
+                // If it's a string, use it directly
+                pickDisplay = playerPick;
+            } else {
+                // Fallback: convert to string
+                pickDisplay = String(playerPick);
+            }
+            
+            // Debug: Log the processed pick data
+            console.log(`Player ${player.displayName} pick:`, playerPick, '-> processed as:', pickDisplay);
+        }
         
         // Get card status display
         let cardStatus = '';
@@ -3649,7 +3752,23 @@ function calculatePickResult(pick, fixtures) {
 }
 
 // --- FUNCTION to build the admin dashboard ---
+// Add a flag to prevent multiple initializations
+let adminDashboardInitialized = false;
+let adminTabsInitialized = false;
+let fixtureManagementInitialized = false;
+let registrationManagementInitialized = false;
+let competitionSettingsInitialized = false;
+
 function buildAdminDashboard(settings) {
+    // Prevent multiple initializations
+    if (adminDashboardInitialized) {
+        console.log('Admin dashboard already initialized, skipping...');
+        return;
+    }
+    
+    console.log('Building admin dashboard...');
+    adminDashboardInitialized = true;
+    
     // Store the observer so it can be disconnected later if needed
     // window.saveButtonObserver = saveButtonObserver; // Removed undefined variable reference
     
@@ -3674,25 +3793,36 @@ function buildAdminDashboard(settings) {
     const picksTitle = document.querySelector('#picks-title');
     const picksTableBody = document.querySelector('#admin-picks-body');
     
-    // Set default values
-    picksEditionSelect.value = settings.active_edition || 'edition1';
-    picksGameweekSelect.value = settings.active_gameweek || '1';
+    // Set default values - ensure no empty values
+    const activeEdition = settings.active_edition || 'edition1';
+    const activeGameweek = settings.active_gameweek || '1';
+    
+    if (picksEditionSelect) picksEditionSelect.value = activeEdition;
+    if (picksGameweekSelect) picksGameweekSelect.value = activeGameweek;
     
     // Function to render picks table
     async function renderPicksTable() {
         console.log('renderPicksTable called - clearing table first');
         
         // Clear the table completely before adding new rows
-        picksTableBody.innerHTML = '';
+        if (picksTableBody) picksTableBody.innerHTML = '';
         
-        const selectedEdition = picksEditionSelect.value;
-        const selectedGameweek = picksGameweekSelect.value;
+        const selectedEdition = picksEditionSelect ? picksEditionSelect.value : activeEdition;
+        const selectedGameweek = picksGameweekSelect ? picksGameweekSelect.value : activeGameweek;
         const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
+        
+        // Validate edition value
+        if (!selectedEdition || selectedEdition.trim() === '') {
+            console.warn('Invalid edition value:', selectedEdition);
+            return;
+        }
         
         console.log('Selected edition:', selectedEdition, 'gameweek:', selectedGameweek, 'gwKey:', gwKey);
         
         const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
-        picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
+        if (picksTitle) {
+            picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
+        }
         
         try {
             console.log('Fetching users from database...');
@@ -3735,29 +3865,33 @@ function buildAdminDashboard(settings) {
                     <td>${badgeHtml}${playerPick}</td>
                     <td><span class="pick-status ${statusClass}">${statusText}</span></td>
                 `;
-                picksTableBody.appendChild(row);
+                if (picksTableBody) picksTableBody.appendChild(row);
             });
             
             console.log('Total registered users for edition', selectedEdition, ':', registeredUsersCount);
-            console.log('Total rows added to table:', picksTableBody.children.length);
+            console.log('Total rows added to table:', picksTableBody ? picksTableBody.children.length : 0);
             
         } catch (error) {
             console.error('Error loading picks:', error);
             console.error('Error details:', error.message, error.code);
-            picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks: ' + error.message + '</td></tr>';
+            if (picksTableBody) {
+                picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks: ' + error.message + '</td></tr>';
+            }
         }
     }
     
     // Set up event listeners for picks controls
-    picksEditionSelect.addEventListener('change', renderPicksTable);
-    picksGameweekSelect.addEventListener('change', renderPicksTable);
-    refreshPicksBtn.addEventListener('click', renderPicksTable);
+    if (picksEditionSelect) picksEditionSelect.addEventListener('change', renderPicksTable);
+    if (picksGameweekSelect) picksGameweekSelect.addEventListener('change', renderPicksTable);
+    if (refreshPicksBtn) refreshPicksBtn.addEventListener('click', renderPicksTable);
     
     // Initial render
     renderPicksTable();
 
     // Initialize fixture management
-    initializeFixtureManagement();
+    if (!fixtureManagementInitialized) {
+        initializeFixtureManagement();
+    }
     
     // Load initial fixtures for the current edition
     if (typeof loadFixturesForGameweek === 'function') {
@@ -3770,7 +3904,14 @@ function buildAdminDashboard(settings) {
     }
     
     // Initialize registration management
-    initializeRegistrationManagement();
+    if (!registrationManagementInitialized) {
+        initializeRegistrationManagement();
+    }
+    
+    // Initialize competition settings
+    if (!competitionSettingsInitialized) {
+        initializeCompetitionSettings();
+    }
     
     // Initialize admin tabs
     const tabs = document.querySelectorAll('.admin-tab');
@@ -3794,10 +3935,15 @@ function buildAdminDashboard(settings) {
     });
     
     // Initialize admin tabs
-    initializeAdminTabs();
+    if (!adminTabsInitialized) {
+        setupAdminTabs();
+    }
     
     // Initialize enhanced vidiprinter functionality
     initializeEnhancedVidiprinter();
+    
+    // Set up save settings button monitoring
+    setupSaveSettingsButtonMonitoring();
 }
 
 // Function to continuously monitor and maintain the Save Settings button state
@@ -3864,6 +4010,15 @@ function setupSaveSettingsButtonMonitoring() {
 
 // --- FIXTURE MANAGEMENT FUNCTIONS ---
 function initializeFixtureManagement() {
+    // Prevent multiple initializations
+    if (fixtureManagementInitialized) {
+        console.log('Fixture management already initialized, skipping...');
+        return;
+    }
+    
+    console.log('Initializing fixture management...');
+    fixtureManagementInitialized = true;
+    
     // Set up event listeners for fixture management
     const addFixtureBtn = document.querySelector('#add-fixture-btn');
     const saveFixturesBtn = document.querySelector('#save-fixtures-btn');
@@ -4368,22 +4523,23 @@ function saveCompetitionSettings() {
             saveSettingsBtn.textContent = 'Save Settings';
         }
         
-        // Refresh the admin panel to show updated data for the new edition
-        db.collection('settings').doc('currentCompetition').get().then(settingsDoc => {
-            if (settingsDoc.exists) {
-                buildAdminDashboard();
-            }
-        });
+        // Update global settings
+        if (window.settings) {
+            window.settings.active_edition = newActiveEdition;
+            window.settings.active_gameweek = newActiveGameweek;
+        }
         
-        // Refresh fixtures display for the new edition
+        // Refresh the admin panel to show updated data for the new edition
+        // Note: buildAdminDashboard is already initialized, just refresh the data
         if (typeof loadFixturesForGameweek === 'function') {
             loadFixturesForGameweek();
         }
         
-        // Refresh scores display for the new edition
         if (typeof loadScoresForGameweek === 'function') {
             loadScoresForGameweek();
         }
+        
+        // Note: Fixtures and scores are already refreshed above
     }).catch(error => {
         console.error('Error saving settings:', error);
         if (statusMessage) {
@@ -6403,6 +6559,8 @@ const logoutButton = document.querySelector('#logout-button');
 if (logoutButton) {
     logoutButton.addEventListener('click', (e) => {
         e.preventDefault();
+        // Reset As It Stands initialization flags before logout
+        resetAsItStandsInitialization();
         auth.signOut().then(() => {
             window.location.href = '/index.html';
         });
@@ -8541,9 +8699,9 @@ function toggleTestimonials() {
         const isActive = content.classList.contains('active');
         
         if (isActive) {
-        content.classList.remove('active');
-        button.classList.remove('active');
-    } else {
+            content.classList.remove('active');
+            button.classList.remove('active');
+        } else {
         content.classList.add('active');
         button.classList.add('active');
         }
@@ -10034,4 +10192,23 @@ function addPlayerVidiprinterEntry(text, type = 'update') {
     if (entries.length > 50) {
         entries[0].remove();
     }
+}
+
+// Function to reset As It Stands initialization flags
+function resetAsItStandsInitialization() {
+    // Clear all initialization flags
+    delete window.asItStandsInitialized_mobile;
+    delete window.asItStandsInitialized_desktop;
+    
+    // Clear all loading flags
+    Object.keys(window).forEach(key => {
+        if (key.startsWith('loading_')) {
+            delete window[key];
+        }
+        if (key.startsWith('rendered_')) {
+            delete window[key];
+        }
+    });
+    
+    console.log('As It Stands initialization flags reset');
 }
