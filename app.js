@@ -366,7 +366,12 @@ class App {
         window.startAdminTokenRefresh = (user) => this.authManager.startAdminTokenRefresh(user);
         window.stopAdminTokenRefresh = () => this.authManager.stopAdminTokenRefresh();
         window.checkAdminStatusFromStorage = () => this.authManager.checkAdminStatusFromStorage();
+        
+        // CRITICAL: Expose initializeAdminPage in multiple ways to ensure it's available
         window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        // Also expose it directly in global scope for admin page compatibility
+        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        
         window.showAdminLoginForm = () => this.authManager.showAdminLoginForm();
         window.loadAdminPanelSettings = () => this.authManager.loadAdminPanelSettings();
         window.showSettingsError = (message) => this.authManager.showSettingsError(message);
@@ -410,6 +415,19 @@ class App {
         console.log('🔧 Global functions set up for backward compatibility');
         console.log('🔍 Debug: initializeAdminPage available?', typeof window.initializeAdminPage);
         console.log('🔍 Debug: window.initializeAdminPage =', window.initializeAdminPage);
+        
+        // CRITICAL: Ensure initializeAdminPage is available in global scope
+        if (typeof window.initializeAdminPage === 'function') {
+            // Make it available without window prefix for admin page compatibility
+            window.initializeAdminPage = window.initializeAdminPage;
+            console.log('✅ initializeAdminPage function is now available globally');
+        } else {
+            console.error('❌ initializeAdminPage function is NOT available!');
+        }
+        
+        // Final verification
+        console.log('🔍 Final check - initializeAdminPage type:', typeof initializeAdminPage);
+        console.log('🔍 Final check - window.initializeAdminPage type:', typeof window.initializeAdminPage);
     }
 
     // Load competition settings
