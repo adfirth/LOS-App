@@ -263,6 +263,12 @@ class AdminManagementManager {
             // Update the display
             this.updateActiveEditionDisplay(newEdition);
             
+            // Refresh registration statistics to reflect new edition
+            if (typeof window.refreshRegistrationStats === 'function') {
+                console.log('Refreshing registration statistics after settings change...');
+                await window.refreshRegistrationStats();
+            }
+            
             // Show success message
             const statusElement = document.querySelector('#settings-status');
             if (statusElement) {

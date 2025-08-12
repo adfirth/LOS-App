@@ -125,13 +125,25 @@ class ApiManager {
         
         if (!statusElement || !testBtn) return;
         
+        // Check if we have the API configuration
+        if (!this.footballWebPagesConfig || !this.footballWebPagesConfig.RAPIDAPI_KEY) {
+            statusElement.textContent = 'API key not configured';
+            statusElement.className = 'status-indicator error';
+            return;
+        }
+        
         statusElement.textContent = 'Testing connection...';
         statusElement.className = 'status-indicator checking';
         testBtn.disabled = true;
         
         try {
-            // Test with the fixtures-results endpoint to check if the key is valid
-            const response = await fetch('/.netlify/functions/fetch-scores?comp=5&team=0');
+            // Test with the Football Web Pages API directly
+            const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results?comp=5&season=2025-2026', {
+                headers: {
+                    'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
+                    'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
+                }
+            });
             
             if (response.ok) {
                 const data = await response.json();
@@ -143,7 +155,7 @@ class ApiManager {
             }
         } catch (error) {
             console.error('API connection test failed:', error);
-            statusElement.textContent = 'Connection failed';
+            statusElement.textContent = 'Connection failed: ' + error.message;
             statusElement.className = 'status-indicator error';
         } finally {
             testBtn.disabled = false;
@@ -189,6 +201,13 @@ class ApiManager {
             return;
         }
         
+        // Check if we have the API configuration
+        if (!this.footballWebPagesConfig || !this.footballWebPagesConfig.RAPIDAPI_KEY) {
+            statusElement.textContent = 'API key not configured';
+            statusElement.className = 'status-message error';
+            return;
+        }
+        
         const startDate = startDateInput.value;
         const endDate = endDateInput.value;
         
@@ -202,19 +221,33 @@ class ApiManager {
         statusElement.className = 'status-message info';
         
         try {
-            const response = await fetch(`/.netlify/functions/fetch-scores?comp=5&team=0&date=${startDate}`);
+            // Use Football Web Pages API directly
+            const response = await fetch(`https://football-web-pages1.p.rapidapi.com/fixtures-results?comp=5&season=2025-2026&from=${startDate}&to=${endDate}`, {
+                headers: {
+                    'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
+                    'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
+                }
+            });
             
             if (response.ok) {
                 const data = await response.json();
-                this.displayFixtures(data.fixtures || [], fixturesContainer);
-                statusElement.textContent = `Found ${data.fixtures ? data.fixtures.length : 0} fixtures`;
-                statusElement.className = 'status-message success';
+                console.log('Fixtures data received:', data);
+                
+                // Display the fixtures
+                if (data.fixtures && Array.isArray(data.fixtures)) {
+                    this.displayFixtures(data.fixtures, fixturesContainer);
+                    statusElement.textContent = `Found ${data.fixtures.length} fixtures`;
+                    statusElement.className = 'status-message success';
+                } else {
+                    statusElement.textContent = 'No fixtures found for the selected date range';
+                    statusElement.className = 'status-message info';
+                }
             } else {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
             console.error('Error fetching fixtures:', error);
-            statusElement.textContent = 'Error fetching fixtures';
+            statusElement.textContent = 'Error fetching fixtures: ' + error.message;
             statusElement.className = 'status-message error';
         }
     }
