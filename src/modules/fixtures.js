@@ -214,11 +214,13 @@ class FixturesManager {
                 return;
             }
 
-            const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+            // Use the same format as the main app.js file
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             await this.db.collection('fixtures').doc(editionGameweekKey).set({
                 fixtures: fixtures,
                 gameweek: gameweek,
-                edition: currentActiveEdition,
+                edition: window.currentActiveEdition,
                 lastUpdated: new Date()
             });
 
@@ -235,7 +237,9 @@ class FixturesManager {
     async checkFixtures() {
         try {
             const gameweek = document.querySelector('#gameweek-select').value;
-            const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+            // Use the same format as the main app.js file
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             if (!doc.exists) {
@@ -272,7 +276,9 @@ class FixturesManager {
     // Load fixtures for gameweek
     loadFixturesForGameweek() {
         const gameweek = document.querySelector('#gameweek-select').value;
-        const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+        // Use the same format as the main app.js file
+        const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+        const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
         
         this.db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
             if (doc.exists) {
@@ -326,7 +332,9 @@ class FixturesManager {
     // Load scores for gameweek
     loadScoresForGameweek() {
         const gameweek = document.querySelector('#score-gameweek-select').value;
-        const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+        // Use the same format as the main app.js file
+        const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+        const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
         
         this.db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
             if (doc.exists) {
@@ -390,7 +398,9 @@ class FixturesManager {
     async saveScores() {
         try {
             const gameweek = document.querySelector('#score-gameweek-select').value;
-            const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+            // Use the same format as the main app.js file
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
             const scoreRows = document.querySelectorAll('.score-row');
             const fixtures = [];
@@ -421,7 +431,7 @@ class FixturesManager {
             await this.db.collection('fixtures').doc(editionGameweekKey).set({
                 fixtures: fixtures,
                 gameweek: gameweek,
-                edition: currentActiveEdition,
+                edition: window.currentActiveEdition,
                 lastUpdated: new Date()
             });
 
@@ -468,7 +478,9 @@ class FixturesManager {
         if (!fixturesDisplay) return;
 
         try {
-            const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+            // Use the same format as the main app.js file
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
             // Load edition-specific fixtures only
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
@@ -532,7 +544,9 @@ class FixturesManager {
         if (!fixturesDisplay) return;
 
         try {
-            const editionGameweekKey = `edition_${currentActiveEdition}_gameweek_${gameweek}`;
+            // Use the same format as the main app.js file
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
             // Load edition-specific fixtures only
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
