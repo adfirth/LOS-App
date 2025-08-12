@@ -125,10 +125,17 @@ class ApiManager {
         
         if (!statusElement || !testBtn) return;
         
+        // Try to load configuration if not already loaded
+        if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+            console.log('Football Web Pages API configuration loaded during test connection');
+        }
+        
         // Check if we have the API configuration
         if (!this.footballWebPagesConfig || !this.footballWebPagesConfig.RAPIDAPI_KEY) {
-            statusElement.textContent = 'API key not configured';
+            statusElement.textContent = 'API key not configured - please refresh the page';
             statusElement.className = 'status-indicator error';
+            console.error('API configuration not available for test connection');
             return;
         }
         
@@ -167,6 +174,13 @@ class ApiManager {
         const statusElement = document.querySelector('#api-key-status');
         if (!statusElement) return;
         
+        console.log('checkApiKeyStatus called');
+        console.log('Current footballWebPagesConfig:', this.footballWebPagesConfig);
+        console.log('FOOTBALL_WEBPAGES_CONFIG available:', typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined');
+        if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+            console.log('FOOTBALL_WEBPAGES_CONFIG content:', FOOTBALL_WEBPAGES_CONFIG);
+        }
+        
         // Try to load configuration if not already loaded
         if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
             this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
@@ -201,10 +215,17 @@ class ApiManager {
             return;
         }
         
+        // Try to load configuration if not already loaded
+        if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+            console.log('Football Web Pages API configuration loaded during date range fetch');
+        }
+        
         // Check if we have the API configuration
         if (!this.footballWebPagesConfig || !this.footballWebPagesConfig.RAPIDAPI_KEY) {
-            statusElement.textContent = 'API key not configured';
+            statusElement.textContent = 'API key not configured - please refresh the page';
             statusElement.className = 'status-message error';
+            console.error('API configuration not available for date range fetch');
             return;
         }
         

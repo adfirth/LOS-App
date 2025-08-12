@@ -266,7 +266,16 @@ class AdminManagementManager {
             // Refresh registration statistics to reflect new edition
             if (typeof window.refreshRegistrationStats === 'function') {
                 console.log('Refreshing registration statistics after settings change...');
-                await window.refreshRegistrationStats();
+                console.log('About to call refreshRegistrationStats...');
+                try {
+                    await window.refreshRegistrationStats();
+                    console.log('refreshRegistrationStats completed successfully');
+                } catch (error) {
+                    console.error('Error calling refreshRegistrationStats:', error);
+                }
+            } else {
+                console.warn('window.refreshRegistrationStats is not a function');
+                console.log('Available global functions:', Object.keys(window).filter(key => typeof window[key] === 'function'));
             }
             
             // Show success message
