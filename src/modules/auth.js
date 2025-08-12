@@ -541,12 +541,8 @@ class AuthManager {
                 window.settings = settingsData;
 
                 // Update global variables
-                if (window.currentActiveEdition !== undefined) {
-                    window.currentActiveEdition = settingsData.active_edition || 1;
-                }
-                if (window.currentActiveGameweek !== undefined) {
-                    window.currentActiveGameweek = settingsData.active_gameweek || '1';
-                }
+                window.currentActiveEdition = settingsData.active_edition || 1;
+                window.currentActiveGameweek = settingsData.active_gameweek || '1';
 
                 if (typeof window.buildAdminDashboard === 'function') {
                     window.buildAdminDashboard(settingsData);
@@ -566,8 +562,8 @@ class AuthManager {
     // Create default settings
     async createDefaultSettings() {
         const defaultSettings = {
-            activeEdition: 1,
-            activeGameweek: '1',
+            active_edition: 1,
+            active_gameweek: '1',
             lastUpdated: new Date().toISOString()
         };
 
@@ -577,12 +573,8 @@ class AuthManager {
 
             window.settings = defaultSettings;
 
-            if (window.currentActiveEdition !== undefined) {
-                window.currentActiveEdition = defaultSettings.active_edition;
-            }
-            if (window.currentActiveGameweek !== undefined) {
-                window.currentActiveGameweek = defaultSettings.active_gameweek;
-            }
+            window.currentActiveEdition = defaultSettings.active_edition;
+            window.currentActiveGameweek = defaultSettings.active_gameweek;
 
             if (typeof window.buildAdminDashboard === 'function') {
                 window.buildAdminDashboard(defaultSettings);

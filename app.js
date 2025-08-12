@@ -4570,6 +4570,8 @@ function loadCompetitionSettings() {
             }
             // Update global variable
             currentActiveEdition = settings.active_edition || 1;
+            // Also update window variable for modularized code
+            window.currentActiveEdition = currentActiveEdition;
             
             // Update the active edition display
             const editionDisplay = document.querySelector('#current-edition-display');
@@ -4585,6 +4587,8 @@ function loadCompetitionSettings() {
             }
             // Update global variable
             currentActiveGameweek = settings.active_gameweek || '1';
+            // Also update window variable for modularized code
+            window.currentActiveGameweek = currentActiveGameweek;
             if (statusMessage) {
                 const editionText = `Edition ${settings.active_edition || 1}`;
                 const gameweekText = settings.active_gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${settings.active_gameweek || 1}`;
@@ -4605,6 +4609,9 @@ function loadCompetitionSettings() {
                 }
                 // Update global variable
                 currentActiveGameweek = '1';
+                // Also update window variable for modularized code
+                window.currentActiveEdition = 1;
+                window.currentActiveGameweek = '1';
                 if (statusMessage) {
                     statusMessage.textContent = 'Settings initialized with Edition 1, Game Week 1';
                     statusMessage.className = 'status-message success';
@@ -4651,6 +4658,13 @@ function saveCompetitionSettings() {
     
     // Update global variable
     currentActiveEdition = newActiveEdition;
+    // Also update window variable for modularized code
+    window.currentActiveEdition = newActiveEdition;
+    
+    // Update global variable
+    currentActiveGameweek = newActiveGameweek;
+    // Also update window variable for modularized code
+    window.currentActiveGameweek = newActiveGameweek;
     
     db.collection('settings').doc('currentCompetition').update({
         active_edition: newActiveEdition,
