@@ -232,7 +232,7 @@ class AdminManagementManager {
                 return false;
             }
             
-            const newEdition = parseInt(editionSelect.value);
+            const newEdition = editionSelect.value; // Keep as string to handle "test" value
             const newGameweek = gameweekSelect.value;
             
             console.log('New settings - Edition:', newEdition, 'Gameweek:', newGameweek);
@@ -582,7 +582,9 @@ class AdminManagementManager {
                         shouldInclude = player.status !== 'archived';
                         break;
                     case 'current':
-                        shouldInclude = player.registrations[`edition${this.currentActiveEdition}`] && player.status !== 'archived';
+                        // Check if player has registration for current edition
+                        const editionKey = `edition${this.currentActiveEdition}`;
+                        shouldInclude = player.registrations && player.registrations[editionKey] && player.status !== 'archived';
                         break;
                     case 'archived':
                         // Show only archived players

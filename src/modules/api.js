@@ -55,6 +55,7 @@ class ApiManager {
         const selectAllFixturesBtn = document.querySelector('#select-all-fixtures-btn');
         const deselectAllFixturesBtn = document.querySelector('#deselect-all-fixtures-btn');
         const importSelectedFixturesBtn = document.querySelector('#import-selected-fixtures-btn');
+        const fetchHistoricalDataBtn = document.querySelector('#fetch-historical-data-btn');
         
         // Check API key status on initialization
         this.checkApiKeyStatus();
@@ -76,6 +77,21 @@ class ApiManager {
         }
         if (importSelectedFixturesBtn) {
             importSelectedFixturesBtn.addEventListener('click', () => this.importSelectedFixtures());
+        }
+        if (fetchHistoricalDataBtn) {
+            fetchHistoricalDataBtn.addEventListener('click', () => {
+                // Get current date for historical data fetch
+                const now = new Date();
+                const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); // Last 7 days
+                const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                this.fetchHistoricalVidiprinterData(
+                    startDate.toISOString().split('T')[0], // YYYY-MM-DD format
+                    '00:00',
+                    endDate.toISOString().split('T')[0],
+                    '23:59'
+                );
+            });
         }
     }
 
