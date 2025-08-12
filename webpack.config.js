@@ -1,6 +1,10 @@
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-module.exports = {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
   entry: './src/app.js',
   output: {
     filename: 'app.bundle.js',
@@ -8,18 +12,7 @@ module.exports = {
     clean: true,
   },
   module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env']
-          }
-        }
-      }
-    ]
+    rules: []
   },
   resolve: {
     extensions: ['.js'],
