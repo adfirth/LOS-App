@@ -183,6 +183,9 @@ class AdminManagementManager {
             this.initializeCompetitionSettings();
         }
         
+        // Set up event listeners for settings changes
+        this.setupSettingsEventListeners();
+        
         // Initialize admin tabs
         const tabs = document.querySelectorAll('.admin-tab');
         const tabPanes = document.querySelectorAll('.tab-pane');
@@ -256,6 +259,9 @@ class AdminManagementManager {
             
             console.log('Settings saved successfully');
             console.log('Global variables updated - Edition:', window.currentActiveEdition, 'Gameweek:', window.currentActiveGameweek);
+            
+            // Update the display
+            this.updateActiveEditionDisplay(newEdition);
             
             // Show success message
             const statusElement = document.querySelector('#settings-status');
@@ -439,9 +445,99 @@ class AdminManagementManager {
         console.log('Initializing competition settings...');
         this.competitionSettingsInitialized = true;
         
+        // Load current settings and update display
+        this.loadCurrentCompetitionSettings();
+        
         // Initialize competition settings functionality
         if (typeof window.initializeCompetitionSettings === 'function') {
             window.initializeCompetitionSettings();
+        }
+    }
+
+    // Load current competition settings from database
+    async loadCurrentCompetitionSettings() {
+        try {
+            console.log('Loading current competition settings...');
+            
+            const settingsDoc = await this.db.collection('settings').doc('currentCompetition').get();
+            
+            if (settingsDoc.exists) {
+                const settings = settingsDoc.data();
+                const currentEdition = settings.active_edition || '1';
+                const currentGameweek = settings.active_gameweek || '1';
+                
+                console.log('Loaded settings - Edition:', currentEdition, 'Gameweek:', currentGameweek);
+                
+                // Update the select elements
+                const editionSelect = document.querySelector('#active-edition-select');
+                const gameweekSelect = document.querySelector('#active-gameweek-select');
+                
+                if (editionSelect) editionSelect.value = currentEdition;
+                if (gameweekSelect) gameweekSelect.value = currentGameweek;
+                
+                // Update global variables
+                window.currentActiveEdition = currentEdition;
+                window.currentActiveGameweek = currentGameweek;
+                
+                // Update app variables
+                if (window.app) {
+                    window.app.currentActiveEdition = currentEdition;
+                    window.app.currentActiveGameweek = currentGameweek;
+                }
+                
+                // Update the display
+                this.updateActiveEditionDisplay(currentEdition);
+                
+                console.log('Competition settings loaded and display updated');
+            } else {
+                console.log('No competition settings found, using defaults');
+                this.updateActiveEditionDisplay('1');
+            }
+        } catch (error) {
+            console.error('Error loading competition settings:', error);
+            // Use defaults if loading fails
+            this.updateActiveEditionDisplay('1');
+        }
+    }
+
+    // Update the active edition display
+    updateActiveEditionDisplay(edition) {
+        const displayElement = document.querySelector('#current-edition-display');
+        if (displayElement) {
+            // Format the edition display
+            let displayText = edition;
+            if (edition === 'test') {
+                displayText = 'Test Weeks';
+            } else if (edition.match(/^\d+$/)) {
+                displayText = `Edition ${edition}`;
+            }
+            
+            displayElement.textContent = displayText;
+            console.log('Active edition display updated to:', displayText);
+        } else {
+            console.warn('Active edition display element not found');
+        }
+    }
+
+    // Set up event listeners for settings changes
+    setupSettingsEventListeners() {
+        const editionSelect = document.querySelector('#active-edition-select');
+        const gameweekSelect = document.querySelector('#active-gameweek-select');
+        
+        if (editionSelect) {
+            editionSelect.addEventListener('change', (e) => {
+                const selectedEdition = e.target.value;
+                console.log('Edition selection changed to:', selectedEdition);
+                // Update display immediately when selection changes
+                this.updateActiveEditionDisplay(selectedEdition);
+            });
+        }
+        
+        if (gameweekSelect) {
+            gameweekSelect.addEventListener('change', (e) => {
+                const selectedGameweek = e.target.value;
+                console.log('Gameweek selection changed to:', selectedGameweek);
+            });
         }
     }
 
