@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  command = "npm install"
+  command = "npm install && npm run build"
 
 [[headers]]
   for = "/*"
@@ -16,4 +16,10 @@
   status = 200
 
 [build.environment]
-  NODE_VERSION = "18" 
+  NODE_VERSION = "18"
+
+[context.deploy-preview]
+  command = "npm install && npm run build"
+
+[context.branch-deploy]
+  command = "npm install && npm run build" 
