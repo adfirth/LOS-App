@@ -889,6 +889,24 @@
                     console.log('window.app:', typeof window.app);
                     console.log('Available window properties:', Object.keys(window).filter(key => key.includes('Admin') || key.includes('admin')));
                     
+                    // Additional debugging for bundled app
+                    console.log('Debug: Checking bundled app state...');
+                    console.log('window.app type:', typeof window.app);
+                    if (window.app) {
+                        console.log('window.app properties:', Object.keys(window.app));
+                        console.log('window.app.authManager:', window.app.authManager);
+                        if (window.app.authManager) {
+                            console.log('window.app.authManager.initializeAdminPage:', typeof window.app.authManager.initializeAdminPage);
+                        }
+                    }
+                    
+                    // Check for any global functions that might have been exposed
+                    const globalFunctions = Object.keys(window).filter(key => 
+                        typeof window[key] === 'function' && 
+                        (key.includes('Admin') || key.includes('admin') || key.includes('initialize'))
+                    );
+                    console.log('Debug: Global functions found:', globalFunctions);
+                    
                     // Wait for all functions to be available, then initialize admin page
                     function waitForAdminFunctions() {
                         if (typeof window.initializeAdminPage === 'function') {
@@ -897,6 +915,19 @@
                         } else {
                             console.log('Waiting for admin functions to be available...');
                             console.log('Current window.initializeAdminPage:', typeof window.initializeAdminPage);
+                            
+                            // Fallback: Try to initialize directly if the bundled app has loaded
+                            if (window.app && window.app.authManager) {
+                                console.log('Fallback: Found app.authManager, initializing directly...');
+                                try {
+                                    window.app.authManager.initializeAdminPage();
+                                    return;
+                                } catch (error) {
+                                    console.error('Fallback initialization failed:', error);
+                                }
+                            }
+                            
+                            // If still not available, wait and retry
                             setTimeout(waitForAdminFunctions, 100);
                         }
                     }
