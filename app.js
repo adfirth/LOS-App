@@ -368,12 +368,34 @@ class App {
         window.checkAdminStatusFromStorage = () => this.authManager.checkAdminStatusFromStorage();
         
         // CRITICAL: Expose initializeAdminPage in multiple ways to ensure it's available
-        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        window.initializeAdminPage = () => {
+            if (this.authManager && typeof this.authManager.initializeAdminPage === 'function') {
+                return this.authManager.initializeAdminPage();
+            } else {
+                console.error('AuthManager not ready yet, retrying in 100ms');
+                setTimeout(() => window.initializeAdminPage(), 100);
+            }
+        };
+        
         // Also expose it directly in global scope for admin page compatibility
-        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        window.initializeAdminPage = () => {
+            if (this.authManager && typeof this.authManager.initializeAdminPage === 'function') {
+                return this.authManager.initializeAdminPage();
+            } else {
+                console.error('AuthManager not ready yet, retrying in 100ms');
+                setTimeout(() => window.initializeAdminPage(), 100);
+            }
+        };
         
         // CRITICAL: Make it available without window prefix for admin page compatibility
-        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        window.initializeAdminPage = () => {
+            if (this.authManager && typeof this.authManager.initializeAdminPage === 'function') {
+                return this.authManager.initializeAdminPage();
+            } else {
+                console.error('AuthManager not ready yet, retrying in 100ms');
+                setTimeout(() => window.initializeAdminPage(), 100);
+            }
+        };
         
         window.showAdminLoginForm = () => this.authManager.showAdminLoginForm();
         window.loadAdminPanelSettings = () => this.authManager.loadAdminPanelSettings();
@@ -418,6 +440,8 @@ class App {
         console.log('🔧 Global functions set up for backward compatibility');
         console.log('🔍 Debug: initializeAdminPage available?', typeof window.initializeAdminPage);
         console.log('🔍 Debug: window.initializeAdminPage =', window.initializeAdminPage);
+        console.log('🔍 Debug: this.authManager =', this.authManager);
+        console.log('🔍 Debug: this.authManager.initializeAdminPage =', this.authManager ? typeof this.authManager.initializeAdminPage : 'N/A');
         
         // CRITICAL: Ensure initializeAdminPage is available in global scope
         if (typeof window.initializeAdminPage === 'function') {
