@@ -33,10 +33,34 @@ class ApiManager {
             this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
             console.log('Football Web Pages API configuration loaded');
         } else {
-            console.warn('Football Web Pages API configuration not found');
+            console.warn('Football Web Pages API configuration not found - will retry during initialization');
+            // Try to load configuration again during initialization
+            this.retryLoadConfiguration();
         }
 
         // Note: TheSportsDB configuration removed - using Football Web Pages API instead
+    }
+
+    // Retry loading configuration if not available initially
+    retryLoadConfiguration() {
+        let retryCount = 0;
+        const maxRetries = 10;
+        
+        const retryInterval = setInterval(() => {
+            retryCount++;
+            
+            if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+                this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+                console.log('Football Web Pages API configuration loaded on retry attempt', retryCount);
+                clearInterval(retryInterval);
+                
+                // Re-check API key status now that config is loaded
+                this.checkApiKeyStatus();
+            } else if (retryCount >= maxRetries) {
+                console.error('Failed to load Football Web Pages API configuration after', maxRetries, 'attempts');
+                clearInterval(retryInterval);
+            }
+        }, 500); // Check every 500ms
     }
 
     // Set up event listeners
@@ -140,9 +164,16 @@ class ApiManager {
         if (this.footballWebPagesConfig && this.footballWebPagesConfig.RAPIDAPI_KEY) {
             statusElement.textContent = 'API key configured';
             statusElement.className = 'status-indicator success';
+            console.log('API key status: Configured successfully');
         } else {
-            statusElement.textContent = 'API key missing';
+            statusElement.textContent = 'API key missing - retrying...';
             statusElement.className = 'status-indicator error';
+            console.log('API key status: Missing - configuration may still be loading');
+            
+            // If we don't have the config yet, try to load it again
+            if (!this.footballWebPagesConfig) {
+                this.retryLoadConfiguration();
+            }
         }
     }
 
