@@ -479,3 +479,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Export for use in other modules
 export default App;
+
+// Ensure the app initializes when the bundle loads
+if (typeof window !== 'undefined') {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM ready, initializing app from bundle...');
+            window.app = new App();
+            window.app.initialize().catch(console.error);
+        });
+    } else {
+        console.log('DOM already ready, initializing app from bundle...');
+        window.app = new App();
+        window.app.initialize().catch(console.error);
+    }
+}
