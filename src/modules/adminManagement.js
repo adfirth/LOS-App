@@ -28,10 +28,63 @@ class AdminManagementManager {
         this.setupEventListeners();
     }
 
-    // Set up event listeners for admin management
+    initializeAdminPage() {
+        console.log('🚀 Initializing admin page...');
+        
+        // Initialize competition settings
+        this.initializeCompetitionSettings();
+        
+        // Set up event listeners
+        this.setupEventListeners();
+        
+        // Ensure Save Settings button is properly enabled and has event listener
+        this.ensureSaveSettingsButtonReady();
+        
+        console.log('✅ Admin page initialization complete');
+    }
+
+    ensureSaveSettingsButtonReady() {
+        console.log('🔧 Ensuring Save Settings button is ready...');
+        
+        const saveSettingsBtn = document.querySelector('#save-settings-btn');
+        if (!saveSettingsBtn) {
+            console.error('Save Settings button not found');
+            return;
+        }
+        
+        // Force enable the button
+        saveSettingsBtn.disabled = false;
+        saveSettingsBtn.style.pointerEvents = 'auto';
+        saveSettingsBtn.style.opacity = '1';
+        saveSettingsBtn.style.cursor = 'pointer';
+        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+        saveSettingsBtn.style.color = 'var(--dark-text)';
+        saveSettingsBtn.classList.remove('disabled');
+        saveSettingsBtn.removeAttribute('disabled');
+        
+        // Remove any existing event listeners and re-attach
+        saveSettingsBtn.removeEventListener('click', window.saveCompetitionSettings);
+        saveSettingsBtn.addEventListener('click', window.saveCompetitionSettings);
+        
+        console.log('✅ Save Settings button is ready and enabled');
+        console.log('Button disabled state:', saveSettingsBtn.disabled);
+        console.log('Button pointer-events:', saveSettingsBtn.style.pointerEvents);
+        console.log('Button opacity:', saveSettingsBtn.style.opacity);
+        console.log('Button cursor:', saveSettingsBtn.style.cursor);
+        console.log('Button background color:', saveSettingsBtn.style.backgroundColor);
+        console.log('Button text color:', saveSettingsBtn.style.color);
+        console.log('Button classes:', saveSettingsBtn.className);
+        console.log('Button attributes:', Array.from(saveSettingsBtn.attributes).map(attr => `${attr.name}="${attr.value}"`));
+    }
+
     setupEventListeners() {
-        // Event listeners will be set up when specific functions are called
-        console.log('Admin management event listeners ready');
+        console.log('🔧 Setting up admin management event listeners...');
+        
+        // Set up settings event listeners
+        this.setupSettingsEventListeners();
+        
+        // Set up other event listeners as needed
+        console.log('✅ Admin management event listeners ready');
     }
 
     // Admin Dashboard Functions

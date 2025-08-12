@@ -4,63 +4,68 @@
 class ApiManager {
     constructor() {
         this.footballWebPagesConfig = null;
-        this.apiInitialized = false;
-        this.currentFixtures = null;
-        this.autoScoreUpdates = null;
-        this.realTimeScoreUpdates = null;
-        this.enhancedVidiprinter = null;
-        this.standardVidiprinter = null;
+        this.theSportsDbConfig = null;
+        this.initializeApiConfigurations();
     }
 
-    // Initialize API manager
-    initializeApiManager() {
-        if (this.apiInitialized) {
-            console.log('API manager already initialized, skipping...');
-            return;
-        }
+    async initializeApiConfigurations() {
+        console.log('🔧 Initializing API Manager...');
         
-        console.log('Initializing API manager...');
-        this.apiInitialized = true;
+        // Try to load Football Web Pages API configuration
+        this.loadFootballWebPagesConfig();
         
-        this.loadApiConfigurations();
-        this.setupEventListeners();
+        // Clean up TheSportsDB references
+        console.log('TheSportsDB API configuration removed - using Football Web Pages API instead');
     }
 
-    // Load API configurations
-    loadApiConfigurations() {
-        // Load Football Web Pages configuration
+    loadFootballWebPagesConfig() {
+        // Try multiple approaches to load the configuration
         if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
             this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
-            console.log('Football Web Pages API configuration loaded');
+            console.log('✅ Football Web Pages API configuration loaded from global variable');
+            console.log('API Key available:', !!this.footballWebPagesConfig.RAPIDAPI_KEY);
         } else {
-            console.warn('Football Web Pages API configuration not found - will retry during initialization');
-            // Try to load configuration again during initialization
-            this.retryLoadConfiguration();
+            // Try to access it from window object
+            if (window.FOOTBALL_WEBPAGES_CONFIG) {
+                this.footballWebPagesConfig = window.FOOTBALL_WEBPAGES_CONFIG;
+                console.log('✅ Football Web Pages API configuration loaded from window object');
+            } else {
+                console.warn('⚠️ Football Web Pages API configuration not found - will retry during initialization');
+                // Set up a retry mechanism
+                this.retryLoadConfiguration();
+            }
         }
-
-        // Note: TheSportsDB configuration removed - using Football Web Pages API instead
     }
 
-    // Retry loading configuration if not available initially
     retryLoadConfiguration() {
-        let retryCount = 0;
-        const maxRetries = 10;
+        let attempts = 0;
+        const maxAttempts = 10;
         
-        const retryInterval = setInterval(() => {
-            retryCount++;
+        const attemptLoad = () => {
+            attempts++;
+            console.log(`🔄 Attempt ${attempts}/${maxAttempts} to load Football Web Pages API configuration...`);
             
             if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
                 this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
-                console.log('Football Web Pages API configuration loaded on retry attempt', retryCount);
-                clearInterval(retryInterval);
-                
-                // Re-check API key status now that config is loaded
-                this.checkApiKeyStatus();
-            } else if (retryCount >= maxRetries) {
-                console.error('Failed to load Football Web Pages API configuration after', maxRetries, 'attempts');
-                clearInterval(retryInterval);
+                console.log('✅ Football Web Pages API configuration loaded on retry attempt', attempts);
+                return;
             }
-        }, 500); // Check every 500ms
+            
+            if (window.FOOTBALL_WEBPAGES_CONFIG) {
+                this.footballWebPagesConfig = window.FOOTBALL_WEBPAGES_CONFIG;
+                console.log('✅ Football Web Pages API configuration loaded from window object on retry attempt', attempts);
+                return;
+            }
+            
+            if (attempts < maxAttempts) {
+                setTimeout(attemptLoad, 500);
+            } else {
+                console.error('❌ Failed to load Football Web Pages API configuration after', maxAttempts, 'attempts');
+                console.error('This will prevent API functions from working properly');
+            }
+        };
+        
+        setTimeout(attemptLoad, 100);
     }
 
     // Set up event listeners
@@ -120,15 +125,24 @@ class ApiManager {
     }
 
     async testApiConnection() {
-        const statusElement = document.querySelector('#api-key-status');
-        const testBtn = document.querySelector('#test-api-connection');
+        console.log('🧪 Testing API connection...');
         
-        if (!statusElement || !testBtn) return;
+        const statusElement = document.querySelector('#api-key-status');
+        const testBtn = document.querySelector('#test-api-btn');
+        
+        if (!statusElement || !testBtn) {
+            console.error('Required elements not found for API test');
+            return;
+        }
         
         // Try to load configuration if not already loaded
-        if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
-            console.log('Football Web Pages API configuration loaded during test connection');
+        if (!this.footballWebPagesConfig) {
+            this.loadFootballWebPagesConfig();
+            
+            // Wait a bit for the config to load
+            if (!this.footballWebPagesConfig) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
         }
         
         // Check if we have the API configuration
@@ -138,31 +152,31 @@ class ApiManager {
             console.error('API configuration not available for test connection');
             return;
         }
-        
-        statusElement.textContent = 'Testing connection...';
-        statusElement.className = 'status-indicator checking';
-        testBtn.disabled = true;
-        
+
         try {
-            // Test with the Football Web Pages API directly
-            const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results?comp=5&season=2025-2026', {
+            statusElement.textContent = 'Testing connection...';
+            statusElement.className = 'status-indicator loading';
+            testBtn.disabled = true;
+
+            const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results', {
+                method: 'GET',
                 headers: {
                     'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
                     'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
                 }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
-                statusElement.textContent = 'Connection successful!';
+                statusElement.textContent = `✅ API connection successful! Received ${data.length || 0} items`;
                 statusElement.className = 'status-indicator success';
-                console.log('API connection test successful:', data);
+                console.log('✅ API test successful:', data);
             } else {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
-            console.error('API connection test failed:', error);
-            statusElement.textContent = 'Connection failed: ' + error.message;
+            console.error('❌ API test failed:', error);
+            statusElement.textContent = `❌ API connection failed: ${error.message}`;
             statusElement.className = 'status-indicator error';
         } finally {
             testBtn.disabled = false;
@@ -203,22 +217,34 @@ class ApiManager {
         }
     }
 
-    // Fetch fixtures for a date range
     async fetchDateRangeFixtures() {
-        const startDateInput = document.querySelector('#start-date');
-        const endDateInput = document.querySelector('#end-date');
-        const fixturesContainer = document.querySelector('#fixtures-container');
+        console.log('📅 Fetching fixtures by date range...');
+        
+        const startDate = document.querySelector('#start-date').value;
+        const endDate = document.querySelector('#end-date').value;
         const statusElement = document.querySelector('#fetch-status');
         
-        if (!startDateInput || !endDateInput || !fixturesContainer || !statusElement) {
-            console.error('Required elements not found for date range fetch');
+        if (!startDate || !endDate) {
+            if (statusElement) {
+                statusElement.textContent = 'Please select both start and end dates';
+                statusElement.className = 'status-message error';
+            }
             return;
         }
-        
+
+        if (!statusElement) {
+            console.error('Fetch status element not found');
+            return;
+        }
+
         // Try to load configuration if not already loaded
-        if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
-            console.log('Football Web Pages API configuration loaded during date range fetch');
+        if (!this.footballWebPagesConfig) {
+            this.loadFootballWebPagesConfig();
+            
+            // Wait a bit for the config to load
+            if (!this.footballWebPagesConfig) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
         }
         
         // Check if we have the API configuration
@@ -228,37 +254,43 @@ class ApiManager {
             console.error('API configuration not available for date range fetch');
             return;
         }
-        
-        const startDate = startDateInput.value;
-        const endDate = endDateInput.value;
-        
-        if (!startDate || !endDate) {
-            statusElement.textContent = 'Please select both start and end dates';
-            statusElement.className = 'status-message error';
-            return;
-        }
-        
-        statusElement.textContent = 'Fetching fixtures...';
-        statusElement.className = 'status-message info';
-        
+
         try {
-            // Use Football Web Pages API directly
-            const response = await fetch(`https://football-web-pages1.p.rapidapi.com/fixtures-results?comp=5&season=2025-2026&from=${startDate}&to=${endDate}`, {
+            statusElement.textContent = 'Fetching fixtures...';
+            statusElement.className = 'status-message loading';
+
+            const response = await fetch(`https://football-web-pages1.p.rapidapi.com/fixtures-results?from=${startDate}&to=${endDate}`, {
+                method: 'GET',
                 headers: {
                     'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
                     'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
                 }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
-                console.log('Fixtures data received:', data);
                 
-                // Display the fixtures
-                if (data.fixtures && Array.isArray(data.fixtures)) {
-                    this.displayFixtures(data.fixtures, fixturesContainer);
-                    statusElement.textContent = `Found ${data.fixtures.length} fixtures`;
+                if (data && data.length > 0) {
+                    // Display fixtures in a more organized way
+                    let fixturesHtml = '<h4>Fixtures Found:</h4><div class="fixtures-list">';
+                    data.forEach((fixture, index) => {
+                        if (index < 20) { // Limit to first 20 fixtures
+                            fixturesHtml += `
+                                <div class="fixture-item">
+                                    <strong>${fixture.homeTeam || 'TBD'} vs ${fixture.awayTeam || 'TBD'}</strong><br>
+                                    <small>Date: ${fixture.date || 'TBD'} | Competition: ${fixture.competition || 'TBD'}</small>
+                                </div>
+                            `;
+                        }
+                    });
+                    if (data.length > 20) {
+                        fixturesHtml += `<p><em>... and ${data.length - 20} more fixtures</em></p>`;
+                    }
+                    fixturesHtml += '</div>';
+                    
+                    statusElement.innerHTML = fixturesHtml;
                     statusElement.className = 'status-message success';
+                    console.log('✅ Date range fixtures fetched successfully:', data);
                 } else {
                     statusElement.textContent = 'No fixtures found for the selected date range';
                     statusElement.className = 'status-message info';
@@ -267,8 +299,8 @@ class ApiManager {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
-            console.error('Error fetching fixtures:', error);
-            statusElement.textContent = 'Error fetching fixtures: ' + error.message;
+            console.error('❌ Date range fetch failed:', error);
+            statusElement.textContent = `❌ Failed to fetch fixtures: ${error.message}`;
             statusElement.className = 'status-message error';
         }
     }

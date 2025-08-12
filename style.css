@@ -6895,3 +6895,124 @@ a:hover {
 .status-badge.POSTP, .status-badge.CANC {
     background-color: #fd7e14;
 }
+
+/* API Status Indicators */
+.status-indicator {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 8px 0;
+    font-weight: 500;
+    text-align: center;
+}
+
+.status-indicator.loading {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.status-indicator.success {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-indicator.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.status-indicator.checking {
+    background-color: #fff3e0;
+    color: #ef6c00;
+    border: 1px solid #ffcc02;
+}
+
+/* Status Messages */
+.status-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin: 12px 0;
+    font-weight: 500;
+}
+
+.status-message.loading {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.status-message.success {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.status-message.info {
+    background-color: #e8f4fd;
+    color: #0d47a1;
+    border: 1px solid #bbdefb;
+}
+
+/* Fixtures List */
+.fixtures-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    background-color: #f8f9fa;
+}
+
+.fixture-item {
+    padding: 8px;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 8px;
+}
+
+.fixture-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.fixture-item strong {
+    color: #495057;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.fixture-item small {
+    color: #6c757d;
+    font-size: 0.875em;
+}
+
+/* API Button Styling */
+#test-api-btn, #fetch-fixtures-btn {
+    background-color: var(--alty-yellow);
+    color: var(--dark-text);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+#test-api-btn:hover, #fetch-fixtures-btn:hover {
+    background-color: #e6c200;
+    transform: translateY(-1px);
+}
+
+#test-api-btn:disabled, #fetch-fixtures-btn:disabled {
+    background-color: #6c757d;
+    color: #ffffff;
+    cursor: not-allowed;
+    transform: none;
+}

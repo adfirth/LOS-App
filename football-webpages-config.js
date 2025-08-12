@@ -31,6 +31,14 @@ const FOOTBALL_WEBPAGES_SEASON_IDS = {
     '2023-2024': '2023-24'
 };
 
+// Ensure the config is available in the browser global scope
+if (typeof window !== 'undefined') {
+    window.FOOTBALL_WEBPAGES_CONFIG = FOOTBALL_WEBPAGES_CONFIG;
+    window.FOOTBALL_WEBPAGES_LEAGUE_IDS = FOOTBALL_WEBPAGES_LEAGUE_IDS;
+    window.FOOTBALL_WEBPAGES_SEASON_IDS = FOOTBALL_WEBPAGES_SEASON_IDS;
+    console.log('✅ Football Web Pages API configuration exposed to window object');
+}
+
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
