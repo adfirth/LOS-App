@@ -372,6 +372,9 @@ class App {
         // Also expose it directly in global scope for admin page compatibility
         window.initializeAdminPage = () => this.authManager.initializeAdminPage();
         
+        // CRITICAL: Make it available without window prefix for admin page compatibility
+        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        
         window.showAdminLoginForm = () => this.authManager.showAdminLoginForm();
         window.loadAdminPanelSettings = () => this.authManager.loadAdminPanelSettings();
         window.showSettingsError = (message) => this.authManager.showSettingsError(message);
@@ -421,6 +424,10 @@ class App {
             // Make it available without window prefix for admin page compatibility
             window.initializeAdminPage = window.initializeAdminPage;
             console.log('✅ initializeAdminPage function is now available globally');
+            
+            // CRITICAL: Also expose it directly in global scope
+            window.initializeAdminPage = window.initializeAdminPage;
+            console.log('✅ initializeAdminPage function is now available in global scope');
         } else {
             console.error('❌ initializeAdminPage function is NOT available!');
         }
@@ -428,6 +435,12 @@ class App {
         // Final verification
         console.log('🔍 Final check - initializeAdminPage type:', typeof initializeAdminPage);
         console.log('🔍 Final check - window.initializeAdminPage type:', typeof window.initializeAdminPage);
+        
+        // CRITICAL: Force expose in global scope
+        if (typeof window.initializeAdminPage === 'function') {
+            window.initializeAdminPage = window.initializeAdminPage;
+            console.log('🔍 Force check - initializeAdminPage available globally:', typeof initializeAdminPage);
+        }
     }
 
     // Load competition settings
