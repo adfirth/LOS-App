@@ -214,6 +214,73 @@ class AdminManagementManager {
         
         // Set up save settings button monitoring
         this.setupSaveSettingsButtonMonitoring();
+        
+        // Expose the saveCompetitionSettings function globally
+        window.saveCompetitionSettings = () => this.saveCompetitionSettings();
+    }
+    
+    // Save competition settings
+    async saveCompetitionSettings() {
+        try {
+            console.log('Saving competition settings...');
+            
+            const editionSelect = document.querySelector('#active-edition-select');
+            const gameweekSelect = document.querySelector('#active-gameweek-select');
+            
+            if (!editionSelect || !gameweekSelect) {
+                console.error('Required select elements not found');
+                return false;
+            }
+            
+            const newEdition = parseInt(editionSelect.value);
+            const newGameweek = gameweekSelect.value;
+            
+            console.log('New settings - Edition:', newEdition, 'Gameweek:', newGameweek);
+            
+            // Update global variables
+            window.currentActiveEdition = newEdition;
+            window.currentActiveGameweek = newGameweek;
+            
+            // Update app variables
+            if (window.app) {
+                window.app.currentActiveEdition = newEdition;
+                window.app.currentActiveGameweek = newGameweek;
+            }
+            
+            // Save to database
+            await this.db.collection('settings').doc('currentCompetition').set({
+                active_edition: newEdition,
+                active_gameweek: newGameweek,
+                last_updated: new Date()
+            });
+            
+            console.log('Settings saved successfully');
+            console.log('Global variables updated - Edition:', window.currentActiveEdition, 'Gameweek:', window.currentActiveGameweek);
+            
+            // Show success message
+            const statusElement = document.querySelector('#settings-status');
+            if (statusElement) {
+                statusElement.textContent = 'Settings saved successfully!';
+                statusElement.className = 'status-message success';
+                setTimeout(() => {
+                    statusElement.textContent = '';
+                    statusElement.className = 'status-message';
+                }, 3000);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error saving competition settings:', error);
+            
+            // Show error message
+            const statusElement = document.querySelector('#settings-status');
+            if (statusElement) {
+                statusElement.textContent = 'Error saving settings: ' + error.message;
+                statusElement.className = 'status-message error';
+            }
+            
+            return false;
+        }
     }
 
     // Function to continuously monitor and maintain the Save Settings button state

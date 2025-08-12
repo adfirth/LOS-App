@@ -245,27 +245,28 @@ class App {
         window.toggleTestimonials = () => this.mobileNavigationManager.toggleTestimonials();
         window.switchToFixturesTab = () => this.mobileNavigationManager.switchToFixturesTab();
         
-        // Admin Management-related functions (newly added)
-        window.buildAdminDashboard = (settings) => this.adminManagementManager.buildAdminDashboard(settings);
-        window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
-        window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
-        window.closePlayerEdit = () => this.adminManagementManager.closePlayerEdit();
-        window.loadPlayersForManagement = () => this.adminManagementManager.loadPlayersForManagement();
-        window.displayPlayers = (players) => this.adminManagementManager.displayPlayers(players);
-        window.searchPlayers = () => this.adminManagementManager.searchPlayers();
-        window.filterPlayers = () => this.adminManagementManager.filterPlayers();
-        window.editPlayer = (playerId) => this.adminManagementManager.editPlayer(playerId);
-        window.savePlayerEdit = (event) => this.adminManagementManager.savePlayerEdit(event);
-        window.archivePlayer = (playerId) => this.adminManagementManager.archivePlayer(playerId);
-        window.unarchivePlayer = (playerId) => this.adminManagementManager.unarchivePlayer(playerId);
-        window.addToTestWeeks = (playerId) => this.adminManagementManager.addToTestWeeks(playerId);
-        window.deletePlayer = (playerId) => this.adminManagementManager.deletePlayer(playerId);
-        window.resetAllPlayerLives = () => this.adminManagementManager.resetAllPlayerLives();
-        window.generateTestScores = () => this.adminManagementManager.generateTestScores();
-        window.initializeEnhancedVidiprinter = () => this.adminManagementManager.initializeEnhancedVidiprinter();
-        window.startEnhancedVidiprinter = () => this.adminManagementManager.startEnhancedVidiprinter();
-        window.stopEnhancedVidiprinter = () => this.adminManagementManager.stopEnhancedVidiprinter();
-        window.clearEnhancedVidiprinterFeed = () => this.adminManagementManager.clearEnhancedVidiprinterFeed();
+                 // Admin Management-related functions (newly added)
+         window.buildAdminDashboard = (settings) => this.adminManagementManager.buildAdminDashboard(settings);
+         window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
+         window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
+         window.closePlayerEdit = () => this.adminManagementManager.closePlayerEdit();
+         window.loadPlayersForManagement = () => this.adminManagementManager.loadPlayersForManagement();
+         window.displayPlayers = (players) => this.adminManagementManager.displayPlayers(players);
+         window.searchPlayers = () => this.adminManagementManager.searchPlayers();
+         window.filterPlayers = () => this.adminManagementManager.filterPlayers();
+         window.editPlayer = (playerId) => this.adminManagementManager.editPlayer(playerId);
+         window.savePlayerEdit = (event) => this.adminManagementManager.savePlayerEdit(event);
+         window.archivePlayer = (playerId) => this.adminManagementManager.archivePlayer(playerId);
+         window.unarchivePlayer = (playerId) => this.adminManagementManager.unarchivePlayer(playerId);
+         window.addToTestWeeks = (playerId) => this.adminManagementManager.addToTestWeeks(playerId);
+         window.deletePlayer = (playerId) => this.adminManagementManager.deletePlayer(playerId);
+         window.resetAllPlayerLives = () => this.adminManagementManager.resetAllPlayerLives();
+         window.generateTestScores = () => this.adminManagementManager.generateTestScores();
+         window.initializeEnhancedVidiprinter = () => this.adminManagementManager.initializeEnhancedVidiprinter();
+         window.startEnhancedVidiprinter = () => this.adminManagementManager.startEnhancedVidiprinter();
+         window.stopEnhancedVidiprinter = () => this.adminManagementManager.stopEnhancedVidiprinter();
+         window.clearEnhancedVidiprinterFeed = () => this.adminManagementManager.clearEnhancedVidiprinterFeed();
+         window.saveCompetitionSettings = () => this.adminManagementManager.saveCompetitionSettings();
         
         // Database-related functions (newly added)
         window.initializeDatabase = () => this.databaseManager.initializeDatabase();
@@ -318,9 +319,7 @@ class App {
         window.fetchAllFixtures = (league, season) => this.apiManager.fetchAllFixtures(league, season);
         window.fetchFixturesFromFootballWebPages = (league, season, matchday, startDate, endDate) => this.apiManager.fetchFixturesFromFootballWebPages(league, season, matchday, startDate, endDate);
         window.fetchScoresFromFootballWebPages = (league, season, matchday, existingFixtures) => this.apiManager.fetchScoresFromFootballWebPages(league, season, matchday, existingFixtures);
-        window.fetchFixturesFromTheSportsDB = (league, season, round) => this.apiManager.fetchFixturesFromTheSportsDB(league, season, round);
-        window.fetchScoresFromTheSportsDB = (league, season, round, existingFixtures) => this.apiManager.fetchScoresFromTheSportsDB(league, season, round, existingFixtures);
-        window.fetchAvailableRoundsFromTheSportsDB = (league, season) => this.apiManager.fetchAvailableRoundsFromTheSportsDB(league, season);
+        // Note: TheSportsDB API functions removed - using Football Web Pages API instead
         window.fetchEnhancedVidiprinterData = (competition, team, date) => this.apiManager.fetchEnhancedVidiprinterData(competition, team, date);
         window.fetchVidiprinterData = (competition) => this.apiManager.fetchVidiprinterData(competition);
         window.fetchScoresViaNetlify = (league, season, matchday, fixtures, startDate, endDate) => this.apiManager.fetchScoresViaNetlify(league, season, matchday, fixtures, startDate, endDate);

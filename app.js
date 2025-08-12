@@ -321,9 +321,7 @@ class App {
         window.fetchAllFixtures = (league, season) => this.apiManager.fetchAllFixtures(league, season);
         window.fetchFixturesFromFootballWebPages = (league, season, matchday, startDate, endDate) => this.apiManager.fetchFixturesFromFootballWebPages(league, season, matchday, startDate, endDate);
         window.fetchScoresFromFootballWebPages = (league, season, matchday, existingFixtures) => this.apiManager.fetchScoresFromFootballWebPages(league, season, matchday, existingFixtures);
-        window.fetchFixturesFromTheSportsDB = (league, season, round) => this.apiManager.fetchFixturesFromTheSportsDB(league, season, round);
-        window.fetchScoresFromTheSportsDB = (league, season, round, existingFixtures) => this.apiManager.fetchScoresFromTheSportsDB(league, season, round, existingFixtures);
-        window.fetchAvailableRoundsFromTheSportsDB = (league, season) => this.apiManager.fetchAvailableRoundsFromTheSportsDB(league, season);
+        // Note: TheSportsDB API functions removed - using Football Web Pages API instead
         window.fetchEnhancedVidiprinterData = (competition, team, date) => this.apiManager.fetchEnhancedVidiprinterData(competition, team, date);
         window.fetchVidiprinterData = (competition) => this.apiManager.fetchVidiprinterData(competition);
         window.fetchScoresViaNetlify = (league, season, matchday, fixtures, startDate, endDate) => this.apiManager.fetchScoresViaNetlify(league, season, matchday, fixtures, startDate, endDate);

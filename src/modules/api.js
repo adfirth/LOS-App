@@ -1,10 +1,9 @@
 // API Module
-// Handles all external API integrations, including Football Web Pages API, TheSportsDB API, vidiprinter APIs, and Netlify functions
+// Handles all external API integrations, including Football Web Pages API, vidiprinter APIs, and Netlify functions
 
 class ApiManager {
     constructor() {
         this.footballWebPagesConfig = null;
-        this.theSportsDbConfig = null;
         this.apiInitialized = false;
         this.currentFixtures = null;
         this.autoScoreUpdates = null;
@@ -37,13 +36,7 @@ class ApiManager {
             console.warn('Football Web Pages API configuration not found');
         }
 
-        // Load TheSportsDB configuration
-        if (typeof THESPORTSDB_CONFIG !== 'undefined') {
-            this.theSportsDbConfig = THESPORTSDB_CONFIG;
-            console.log('TheSportsDB API configuration loaded');
-        } else {
-            console.warn('TheSportsDB API configuration not found');
-        }
+        // Note: TheSportsDB configuration removed - using Football Web Pages API instead
     }
 
     // Set up event listeners
@@ -122,7 +115,13 @@ class ApiManager {
         const statusElement = document.querySelector('#api-key-status');
         if (!statusElement) return;
         
-        if (this.footballWebPagesConfig && this.footballWebPagesConfig.apiKey) {
+        // Try to load configuration if not already loaded
+        if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+            console.log('Football Web Pages API configuration loaded during status check');
+        }
+        
+        if (this.footballWebPagesConfig && this.footballWebPagesConfig.RAPIDAPI_KEY) {
             statusElement.textContent = 'API key configured';
             statusElement.className = 'status-indicator success';
         } else {
@@ -278,8 +277,8 @@ class ApiManager {
             // Fetch data for the start date
             const startResponse = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=5&team=0&date=${startDate}`, {
                 headers: {
-                    'X-RapidAPI-Key': 'your-api-key-here',
-                    'X-RapidAPI-Host': 'football-web-pages1.p.rapidapi.com'
+                    'X-RapidAPI-Key': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_KEY : '',
+                    'X-RapidAPI-Host': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_HOST : 'football-web-pages1.p.rapidapi.com'
                 }
             });
             
@@ -293,8 +292,8 @@ class ApiManager {
             // Fetch data for the end date
             const endResponse = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=5&team=0&date=${endDate}`, {
                 headers: {
-                    'X-RapidAPI-Key': 'your-api-key-here',
-                    'X-RapidAPI-Host': 'football-web-pages1.p.rapidapi.com'
+                    'X-RapidAPI-Key': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_KEY : '',
+                    'X-RapidAPI-Host': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_HOST : 'football-web-pages1.p.rapidapi.com'
                 }
             });
             
