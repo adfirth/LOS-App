@@ -400,6 +400,9 @@ class App {
         window.showModal = (content) => this.registrationManager.showModal(content);
         window.closeUserDetailsModal = () => this.registrationManager.closeUserDetailsModal();
         
+        // Admin functions
+        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        
         console.log('🔧 Global functions set up for backward compatibility');
     }
 
