@@ -17,6 +17,13 @@ class ScoresManager {
             return;
         }
         
+        // Check if we're on a page that needs scores management
+        const hasScoresElements = document.querySelector('#score-gameweek-select') || document.querySelector('#scores-container');
+        if (!hasScoresElements) {
+            console.log('Scores management elements not found on this page, skipping...');
+            return;
+        }
+        
         console.log('Initializing scores management...');
         this.scoresManagementInitialized = true;
         
@@ -90,16 +97,31 @@ class ScoresManager {
 
     // Initialize scores display
     initializeScoresDisplay() {
-        // Load initial scores for the current edition
-        if (typeof this.loadScoresForGameweek === 'function') {
-            this.loadScoresForGameweek();
+        // Only load if the required elements exist
+        if (document.querySelector('#score-gameweek-select') && document.querySelector('#scores-container')) {
+            // Load initial scores for the current edition
+            if (typeof this.loadScoresForGameweek === 'function') {
+                this.loadScoresForGameweek();
+            }
         }
     }
 
     // Load scores for a specific gameweek
     loadScoresForGameweek() {
-        const gameweek = document.querySelector('#score-gameweek-select').value;
+        const scoreGameweekSelect = document.querySelector('#score-gameweek-select');
         const container = document.querySelector('#scores-container');
+        
+        if (!scoreGameweekSelect) {
+            console.log('Score gameweek select not found, skipping scores load');
+            return;
+        }
+        
+        if (!container) {
+            console.log('Scores container not found, skipping scores load');
+            return;
+        }
+        
+        const gameweek = scoreGameweekSelect.value;
         
         console.log(`loadScoresForGameweek called - gameweek: ${gameweek}, currentActiveEdition: ${window.currentActiveEdition}`);
         
