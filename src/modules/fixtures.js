@@ -19,6 +19,13 @@ class FixturesManager {
             return;
         }
         
+        // Check if we're on a page that needs fixture management
+        const hasFixtureElements = document.querySelector('#gameweek-select') || document.querySelector('#score-gameweek-select');
+        if (!hasFixtureElements) {
+            console.log('Fixture management elements not found on this page, skipping...');
+            return;
+        }
+        
         console.log('Initializing fixture management...');
         this.fixtureManagementInitialized = true;
         
@@ -124,8 +131,13 @@ class FixturesManager {
 
     // Load existing fixtures
     loadExistingFixtures() {
-        this.loadFixturesForGameweek();
-        this.loadScoresForGameweek();
+        // Only load if the required elements exist
+        if (document.querySelector('#gameweek-select')) {
+            this.loadFixturesForGameweek();
+        }
+        if (document.querySelector('#score-gameweek-select')) {
+            this.loadScoresForGameweek();
+        }
     }
 
     // Initialize Football Web Pages API
@@ -275,7 +287,13 @@ class FixturesManager {
 
     // Load fixtures for gameweek
     loadFixturesForGameweek() {
-        const gameweek = document.querySelector('#gameweek-select').value;
+        const gameweekSelect = document.querySelector('#gameweek-select');
+        if (!gameweekSelect) {
+            console.log('Gameweek select not found, skipping fixture load');
+            return;
+        }
+        
+        const gameweek = gameweekSelect.value;
         // Use the same format as the main app.js file
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
         const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
@@ -331,7 +349,13 @@ class FixturesManager {
 
     // Load scores for gameweek
     loadScoresForGameweek() {
-        const gameweek = document.querySelector('#score-gameweek-select').value;
+        const scoreGameweekSelect = document.querySelector('#score-gameweek-select');
+        if (!scoreGameweekSelect) {
+            console.log('Score gameweek select not found, skipping scores load');
+            return;
+        }
+        
+        const gameweek = scoreGameweekSelect.value;
         // Use the same format as the main app.js file
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
         const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
