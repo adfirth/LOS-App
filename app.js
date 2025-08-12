@@ -403,14 +403,13 @@ class App {
         window.showModal = (content) => this.registrationManager.showModal(content);
         window.closeUserDetailsModal = () => this.registrationManager.closeUserDetailsModal();
         
-        // Admin functions
-        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
-        
         // Competition settings functions
         window.loadCompetitionSettings = () => this.loadCompetitionSettings();
         window.saveCompetitionSettings = () => this.saveCompetitionSettings();
         
         console.log('🔧 Global functions set up for backward compatibility');
+        console.log('🔍 Debug: initializeAdminPage available?', typeof window.initializeAdminPage);
+        console.log('🔍 Debug: window.initializeAdminPage =', window.initializeAdminPage);
     }
 
     // Load competition settings
