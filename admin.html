@@ -883,13 +883,20 @@
                 script.onload = function() {
                     console.log('Bundled app loaded successfully');
                     
+                    // Debug: Check what's available in global scope
+                    console.log('Debug: Checking global scope...');
+                    console.log('window.initializeAdminPage:', typeof window.initializeAdminPage);
+                    console.log('window.app:', typeof window.app);
+                    console.log('Available window properties:', Object.keys(window).filter(key => key.includes('Admin') || key.includes('admin')));
+                    
                     // Wait for all functions to be available, then initialize admin page
                     function waitForAdminFunctions() {
-                        if (typeof initializeAdminPage === 'function') {
+                        if (typeof window.initializeAdminPage === 'function') {
                             console.log('Initializing admin page...');
-                            initializeAdminPage();
+                            window.initializeAdminPage();
                         } else {
                             console.log('Waiting for admin functions to be available...');
+                            console.log('Current window.initializeAdminPage:', typeof window.initializeAdminPage);
                             setTimeout(waitForAdminFunctions, 100);
                         }
                     }
