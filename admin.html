@@ -706,6 +706,32 @@
                                             <option value="30000">30 seconds</option>
                                         </select>
                                     </div>
+                                    
+                                    <!-- Historical Data Controls -->
+                                    <div class="historical-data-section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dee2e6;">
+                                        <h6 style="margin-bottom: 0.5rem; color: #495057;">Historical Data</h6>
+                                        <div class="settings-row">
+                                            <label for="historical-start-date">Start Date:</label>
+                                            <input type="date" id="historical-start-date" style="padding: 0.375rem; border: 1px solid #ced4da; border-radius: 0.25rem;">
+                                        </div>
+                                        <div class="settings-row">
+                                            <label for="historical-start-time">Start Time:</label>
+                                            <input type="time" id="historical-start-time" value="14:55" style="padding: 0.375rem; border: 1px solid #ced4da; border-radius: 0.25rem;">
+                                        </div>
+                                        <div class="settings-row">
+                                            <label for="historical-end-date">End Date:</label>
+                                            <input type="date" id="historical-end-date" style="padding: 0.375rem; border: 1px solid #ced4da; border-radius: 0.25rem;">
+                                        </div>
+                                        <div class="settings-row">
+                                            <label for="historical-end-time">End Time:</label>
+                                            <input type="time" id="historical-end-time" value="17:30" style="padding: 0.375rem; border: 1px solid #ced4da; border-radius: 0.25rem;">
+                                        </div>
+                                        <div class="settings-row" style="margin-top: 0.5rem;">
+                                            <button id="fetch-historical-data-btn" class="btn btn-secondary" style="width: 100%;">
+                                                <i class="fas fa-history"></i> Fetch Historical Data
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="enhanced-vidiprinter-display">
@@ -851,32 +877,28 @@
         let firebaseTimeout = 0;
         function waitForFirebase() {
             if (typeof firebase !== 'undefined' && window.auth && window.db) {
-                console.log('Firebase is ready, loading app.js');
+                console.log('Firebase is ready, loading bundled app');
                 const script = document.createElement('script');
-                script.src = 'app.js';
+                script.src = 'dist/app.bundle.js';
                 script.onload = function() {
-                    console.log('app.js loaded successfully');
+                    console.log('Bundled app loaded successfully');
                     
-                    // Wait a moment for all functions to be available, then initialize admin page
-                    setTimeout(() => {
+                    // Wait for all functions to be available, then initialize admin page
+                    function waitForAdminFunctions() {
                         if (typeof initializeAdminPage === 'function') {
                             console.log('Initializing admin page...');
                             initializeAdminPage();
                         } else {
-                            console.warn('initializeAdminPage function not available yet, retrying...');
-                            setTimeout(() => {
-                                if (typeof initializeAdminPage === 'function') {
-                                    initializeAdminPage();
-                                } else {
-                                    console.error('initializeAdminPage function still not available');
-                                    showFirebaseError('Failed to initialize admin panel functions');
-                                }
-                            }, 500);
+                            console.log('Waiting for admin functions to be available...');
+                            setTimeout(waitForAdminFunctions, 100);
                         }
-                    }, 200);
+                    }
+                    
+                    // Start waiting for admin functions
+                    setTimeout(waitForAdminFunctions, 500);
                 };
                 script.onerror = function() {
-                    console.error('Failed to load app.js');
+                    console.error('Failed to load bundled app');
                     showFirebaseError('Failed to load admin panel application');
                 };
                 document.head.appendChild(script);
