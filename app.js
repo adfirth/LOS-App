@@ -91,6 +91,9 @@ class App {
             // Set up global references for backward compatibility
             this.setupGlobalReferences();
             
+            // Load competition settings
+            await this.loadCompetitionSettings();
+            
             // Initialize page-specific functionality
             this.initializePageSpecificFeatures();
             
@@ -166,41 +169,41 @@ class App {
         window.loadCurrentGameweekFixtures = () => this.fixturesManager.loadCurrentGameweekFixtures();
         window.saveFootballWebPagesSettings = () => this.fixturesManager.saveFootballWebPagesSettings();
         
-                       // Scores-related functions (newly added)
-               window.loadScoresForGameweek = () => this.scoresManager.loadScoresForGameweek();
-               window.saveScores = () => this.scoresManager.saveScores();
-               window.renderPlayerScores = (fixtures, gameweek) => this.scoresManager.renderPlayerScores(fixtures, gameweek);
-               window.renderDesktopPlayerScores = (fixtures, gameweek) => this.scoresManager.renderDesktopPlayerScores(fixtures, gameweek);
-               window.renderMobilePlayerScores = (fixtures, gameweek) => this.scoresManager.renderMobilePlayerScores(fixtures, gameweek);
-               window.checkPickStillValid = (pick, fixtures) => this.scoresManager.checkPickStillValid(pick, fixtures);
-               window.calculatePickResult = (pick, fixtures) => this.scoresManager.calculatePickResult(pick, fixtures);
-               window.processResults = (gameweek, fixtures) => this.scoresManager.processResults(gameweek, fixtures);
-               window.startAutoScoreUpdates = (gameweek) => this.scoresManager.startAutoScoreUpdates(gameweek);
-               window.stopAutoScoreUpdates = () => this.scoresManager.stopAutoScoreUpdates();
-               window.startRealTimeScoreUpdates = (gameweek) => this.scoresManager.startRealTimeScoreUpdates(gameweek);
-               window.stopRealTimeScoreUpdates = () => this.scoresManager.stopRealTimeScoreUpdates();
-               window.importScoresFromFootballWebPages = (gameweek) => this.scoresManager.importScoresFromFootballWebPages(gameweek);
-               window.importScoresFromFile = (file, gameweek) => this.scoresManager.importScoresFromFile(file, gameweek);
-               
-                       // UI-related functions (newly added)
+        // Scores-related functions
+        window.loadScoresForGameweek = () => this.scoresManager.loadScoresForGameweek();
+        window.saveScores = () => this.scoresManager.saveScores();
+        window.renderPlayerScores = (fixtures, gameweek) => this.scoresManager.renderPlayerScores(fixtures, gameweek);
+        window.renderDesktopPlayerScores = (fixtures, gameweek) => this.scoresManager.renderDesktopPlayerScores(fixtures, gameweek);
+        window.renderMobilePlayerScores = (fixtures, gameweek) => this.scoresManager.renderMobilePlayerScores(fixtures, gameweek);
+        window.checkPickStillValid = (pick, fixtures) => this.scoresManager.checkPickStillValid(pick, fixtures);
+        window.calculatePickResult = (pick, fixtures) => this.scoresManager.calculatePickResult(pick, fixtures);
+        window.processResults = (gameweek, fixtures) => this.scoresManager.processResults(gameweek, fixtures);
+        window.startAutoScoreUpdates = (gameweek) => this.scoresManager.startAutoScoreUpdates(gameweek);
+        window.stopAutoScoreUpdates = () => this.scoresManager.stopAutoScoreUpdates();
+        window.startRealTimeScoreUpdates = (gameweek) => this.scoresManager.startRealTimeScoreUpdates(gameweek);
+        window.stopRealTimeScoreUpdates = () => this.scoresManager.stopRealTimeScoreUpdates();
+        window.importScoresFromFootballWebPages = (gameweek) => this.scoresManager.importScoresFromFootballWebPages(gameweek);
+        window.importScoresFromFile = (file, gameweek) => this.scoresManager.importScoresFromFile(file, gameweek);
+        
+        // UI-related functions
         window.showModal = (content) => this.uiManager.showModal(content);
         window.closeUserDetailsModal = () => this.uiManager.closeUserDetailsModal();
         window.initializeDesktopTabs = () => this.uiManager.initializeDesktopTabs();
-                       window.renderDashboard = (user) => this.uiManager.renderDashboard(user);
+        window.renderDashboard = (user) => this.uiManager.renderDashboard(user);
         window.initializeTestimonialModal = () => this.uiManager.initializeTestimonialModal();
-               window.initializeRegistrationWindowDisplay = () => this.uiManager.initializeRegistrationWindowDisplay();
-               window.updateRegistrationWindowDisplay = () => this.uiManager.updateRegistrationWindowDisplay();
-               window.showRegistrationCountdown = (endDate) => this.uiManager.showRegistrationCountdown(endDate);
-               window.showNextRegistrationCountdown = (startDate) => this.uiManager.showNextRegistrationCountdown(startDate);
-               window.hideRegistrationCountdowns = () => this.uiManager.hideRegistrationCountdowns();
-               window.showRegisterButton = (show) => this.uiManager.showRegisterButton(show);
-               window.initializeVidiprinter = () => this.uiManager.initializeVidiprinter();
-               window.startVidiprinter = () => this.uiManager.startVidiprinter();
-               window.stopVidiprinter = () => this.uiManager.stopVidiprinter();
-               window.clearVidiprinterFeed = () => this.uiManager.clearVidiprinterFeed();
-               window.toggleAutoScroll = () => this.uiManager.toggleAutoScroll();
+        window.initializeRegistrationWindowDisplay = () => this.uiManager.initializeRegistrationWindowDisplay();
+        window.updateRegistrationWindowDisplay = () => this.uiManager.updateRegistrationWindowDisplay();
+        window.showRegistrationCountdown = (endDate) => this.uiManager.showRegistrationCountdown(endDate);
+        window.showNextRegistrationCountdown = (startDate) => this.uiManager.showNextRegistrationCountdown(startDate);
+        window.hideRegistrationCountdowns = () => this.uiManager.hideRegistrationCountdowns();
+        window.showRegisterButton = (show) => this.uiManager.showRegisterButton(show);
+        window.initializeVidiprinter = () => this.uiManager.initializeVidiprinter();
+        window.startVidiprinter = () => this.uiManager.startVidiprinter();
+        window.stopVidiprinter = () => this.uiManager.stopVidiprinter();
+        window.clearVidiprinterFeed = () => this.uiManager.clearVidiprinterFeed();
+        window.toggleAutoScroll = () => this.uiManager.toggleAutoScroll();
         
-        // Game Logic-related functions (newly added)
+        // Game Logic-related functions
         window.generatePickHistory = (picks) => this.gameLogicManager.generatePickHistory(picks);
         window.renderPickHistory = (picks, container, userId, userData) => this.gameLogicManager.renderPickHistory(picks, container, userId, userData);
         window.initializeGameweekNavigation = (currentGameWeek, userData, userId) => this.gameLogicManager.initializeGameweekNavigation(currentGameWeek, userData, userId);
@@ -230,7 +233,7 @@ class App {
         window.getUserRegisteredEditions = (userData) => this.gameLogicManager.getUserRegisteredEditions(userData);
         window.getActiveGameweek = () => this.gameLogicManager.getActiveGameweek();
         
-        // Mobile Navigation-related functions (newly added)
+        // Mobile Navigation-related functions
         window.initializeMobileTabs = () => this.mobileNavigationManager.initializeMobileTabs();
         window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.mobileNavigationManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
         window.renderMobileFixturesDisplay = (fixtures, userData, currentGameWeek, userId) => this.mobileNavigationManager.renderMobileFixturesDisplay(fixtures, userData, currentGameWeek, userId);
@@ -245,7 +248,7 @@ class App {
         window.toggleTestimonials = () => this.mobileNavigationManager.toggleTestimonials();
         window.switchToFixturesTab = () => this.mobileNavigationManager.switchToFixturesTab();
         
-        // Admin Management-related functions (newly added)
+        // Admin Management-related functions
         window.buildAdminDashboard = (settings) => this.adminManagementManager.buildAdminDashboard(settings);
         window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
         window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
@@ -267,7 +270,7 @@ class App {
         window.stopEnhancedVidiprinter = () => this.adminManagementManager.stopEnhancedVidiprinter();
         window.clearEnhancedVidiprinterFeed = () => this.adminManagementManager.clearEnhancedVidiprinterFeed();
         
-        // Database-related functions (newly added)
+        // Database-related functions
         window.initializeDatabase = () => this.databaseManager.initializeDatabase();
         window.checkAndInitializeDatabase = () => this.databaseManager.checkAndInitializeDatabase();
         window.getUserDocument = (userId) => this.databaseManager.getUserDocument(userId);
@@ -307,7 +310,7 @@ class App {
         window.getDatabaseReference = () => this.databaseManager.getDatabaseReference();
         window.isDatabaseInitialized = () => this.databaseManager.isDatabaseInitialized();
         
-        // API-related functions (newly added)
+        // API-related functions
         window.initializeFootballWebPagesAPI = () => this.apiManager.initializeFootballWebPagesAPI();
         window.testApiConnection = () => this.apiManager.testApiConnection();
         window.checkApiKeyStatus = () => this.apiManager.checkApiKeyStatus();
@@ -329,7 +332,7 @@ class App {
         window.importSelectedFixtures = () => this.apiManager.importSelectedFixtures();
         window.importFixturesToCurrentGameweek = (fixtures) => this.apiManager.importFixturesToCurrentGameweek(fixtures);
         
-        // Utilities-related functions (newly added)
+        // Utilities-related functions
         window.formatDeadlineDate = (date) => this.utilitiesManager.formatDeadlineDate(date);
         window.getOrdinalSuffix = (day) => this.utilitiesManager.getOrdinalSuffix(day);
         window.getDeadlineDateForGameweek = (gameweek) => this.utilitiesManager.getDeadlineDateForGameweek(gameweek);
@@ -403,7 +406,128 @@ class App {
         // Admin functions
         window.initializeAdminPage = () => this.authManager.initializeAdminPage();
         
+        // Competition settings functions
+        window.loadCompetitionSettings = () => this.loadCompetitionSettings();
+        window.saveCompetitionSettings = () => this.saveCompetitionSettings();
+        
         console.log('🔧 Global functions set up for backward compatibility');
+    }
+
+    // Load competition settings
+    async loadCompetitionSettings() {
+        try {
+            console.log('Loading competition settings...');
+            const settingsDoc = await this.db.collection('settings').doc('competition').get();
+            
+            if (settingsDoc.exists) {
+                const settings = settingsDoc.data();
+                console.log('Settings loaded:', settings);
+                
+                // Update global variables
+                window.currentActiveEdition = settings.active_edition || 1;
+                window.currentActiveGameweek = settings.active_gameweek || '1';
+                
+                // Update local variables
+                this.currentActiveEdition = window.currentActiveEdition;
+                this.currentActiveGameweek = window.currentActiveGameweek;
+                
+                console.log('Global variables updated - Edition:', window.currentActiveEdition, 'Gameweek:', window.currentActiveGameweek);
+                
+                // Update UI elements if they exist
+                const editionSelect = document.querySelector('#active-edition');
+                const gameweekSelect = document.querySelector('#active-gameweek');
+                
+                if (editionSelect) {
+                    editionSelect.value = window.currentActiveEdition;
+                    console.log('Edition select updated to:', window.currentActiveEdition);
+                }
+                
+                if (gameweekSelect) {
+                    gameweekSelect.value = window.currentActiveGameweek;
+                    console.log('Gameweek select updated to:', window.currentActiveGameweek);
+                }
+                
+                return settings;
+            } else {
+                console.log('No competition settings found, creating defaults...');
+                return await this.createDefaultSettings();
+            }
+        } catch (error) {
+            console.error('Error loading competition settings:', error);
+            return null;
+        }
+    }
+
+    // Save competition settings
+    async saveCompetitionSettings() {
+        try {
+            console.log('Saving competition settings...');
+            
+            const editionSelect = document.querySelector('#active-edition');
+            const gameweekSelect = document.querySelector('#active-gameweek');
+            
+            if (!editionSelect || !gameweekSelect) {
+                console.error('Required select elements not found');
+                return false;
+            }
+            
+            const newEdition = parseInt(editionSelect.value);
+            const newGameweek = gameweekSelect.value;
+            
+            console.log('New settings - Edition:', newEdition, 'Gameweek:', newGameweek);
+            
+            // Update global variables
+            window.currentActiveEdition = newEdition;
+            window.currentActiveGameweek = newGameweek;
+            
+            // Update local variables
+            this.currentActiveEdition = newEdition;
+            this.currentActiveGameweek = newGameweek;
+            
+            // Save to database
+            await this.db.collection('settings').doc('competition').set({
+                active_edition: newEdition,
+                active_gameweek: newGameweek,
+                last_updated: new Date()
+            });
+            
+            console.log('Settings saved successfully');
+            console.log('Global variables updated - Edition:', window.currentActiveEdition, 'Gameweek:', window.currentActiveGameweek);
+            
+            return true;
+        } catch (error) {
+            console.error('Error saving competition settings:', error);
+            return false;
+        }
+    }
+
+    // Create default settings
+    async createDefaultSettings() {
+        try {
+            console.log('Creating default competition settings...');
+            
+            const defaultSettings = {
+                active_edition: 1,
+                active_gameweek: '1',
+                last_updated: new Date()
+            };
+            
+            await this.db.collection('settings').doc('competition').set(defaultSettings);
+            
+            // Update global variables
+            window.currentActiveEdition = defaultSettings.active_edition;
+            window.currentActiveGameweek = defaultSettings.active_gameweek;
+            
+            // Update local variables
+            this.currentActiveEdition = defaultSettings.active_edition;
+            this.currentActiveGameweek = defaultSettings.active_gameweek;
+            
+            console.log('Default settings created and global variables updated');
+            return defaultSettings;
+        } catch (error) {
+            console.error('Error creating default settings:', error);
+            return null;
+        }
     }
 
     // Initialize page-specific features
