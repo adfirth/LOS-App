@@ -1058,10 +1058,16 @@ class AdminManagementManager {
         const eliminated = standings.filter(player => player.lives === 0).length;
         const averageLives = totalPlayers > 0 ? (standings.reduce((sum, player) => sum + player.lives, 0) / totalPlayers).toFixed(1) : '0.0';
         
-        document.querySelector('#total-players-count').textContent = totalPlayers;
-        document.querySelector('#survivors-count').textContent = survivors;
-        document.querySelector('#eliminated-count').textContent = eliminated;
-        document.querySelector('#average-lives').textContent = averageLives;
+        // Only update elements if they exist (admin page elements)
+        const totalPlayersElement = document.querySelector('#total-players-count');
+        const survivorsElement = document.querySelector('#survivors-count');
+        const eliminatedElement = document.querySelector('#eliminated-count');
+        const averageLivesElement = document.querySelector('#average-lives');
+        
+        if (totalPlayersElement) totalPlayersElement.textContent = totalPlayers;
+        if (survivorsElement) survivorsElement.textContent = survivors;
+        if (eliminatedElement) eliminatedElement.textContent = eliminated;
+        if (averageLivesElement) averageLivesElement.textContent = averageLives;
     }
 
     // Render standings table
