@@ -253,8 +253,8 @@ class GameLogicManager {
     initializeMobileGameweekNavigation(currentGameWeek, userData, userId) {
         console.log('Initializing mobile gameweek navigation for gameweek:', currentGameWeek);
         
-        // Get all mobile gameweek buttons
-        const mobileGameweekButtons = document.querySelectorAll('.mobile-gameweek-btn');
+        // Get all mobile gameweek tab buttons (they use the same class as desktop)
+        const mobileGameweekButtons = document.querySelectorAll('#mobile-gameweek-navigation .gameweek-tab');
         
         if (mobileGameweekButtons.length === 0) {
             console.log('No mobile gameweek buttons found');
@@ -272,6 +272,24 @@ class GameLogicManager {
                 this.navigateToGameweek(targetGameweek, userData, userId);
             });
         });
+        
+        // Also set up the mobile navigation controls (prev/next buttons)
+        const mobilePrevButton = document.querySelector('#mobile-prev-gameweek');
+        const mobileNextButton = document.querySelector('#mobile-next-gameweek');
+        const mobileCurrentGameweekDisplay = document.querySelector('#mobile-current-gameweek-display');
+        
+        if (mobileCurrentGameweekDisplay) {
+            const displayText = currentGameWeek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${currentGameWeek}`;
+            mobileCurrentGameweekDisplay.textContent = displayText;
+        }
+        
+        if (mobilePrevButton) {
+            mobilePrevButton.addEventListener('click', () => this.navigateGameweek(currentGameWeek, -1, userData, userId));
+        }
+        
+        if (mobileNextButton) {
+            mobileNextButton.addEventListener('click', () => this.navigateGameweek(currentGameWeek, 1, userData, userId));
+        }
         
         console.log('Mobile gameweek navigation initialized');
     }

@@ -56,7 +56,7 @@ export class LiveScoring {
         // Prevent multiple simultaneous loads
         if (this.isLoadingScores) {
             console.log('Scores already loading, skipping duplicate call');
-            return;
+            return Promise.resolve([]);
         }
         
         const scoreGameweekSelect = document.querySelector('#score-gameweek-select');
@@ -64,12 +64,12 @@ export class LiveScoring {
         
         if (!scoreGameweekSelect) {
             console.log('Score gameweek select not found, skipping scores load');
-            return;
+            return Promise.resolve([]);
         }
         
         if (!container) {
             console.log('Scores container not found, skipping scores load');
-            return;
+            return Promise.resolve([]);
         }
         
         const gameweek = scoreGameweekSelect.value;
@@ -82,20 +82,30 @@ export class LiveScoring {
         container.innerHTML = '';
         container.textContent = '';
         
-        // Add a small delay to ensure DOM is cleared before loading new content
-        setTimeout(() => {
-            this.loadScoresContent(gameweek, container);
-        }, 10);
+        // Return a promise that resolves with the fixtures data
+        return new Promise((resolve, reject) => {
+            // Add a small delay to ensure DOM is cleared before loading new content
+            setTimeout(async () => {
+                try {
+                    const fixtures = await this.loadScoresContent(gameweek, container);
+                    resolve(fixtures);
+                } catch (error) {
+                    reject(error);
+                }
+            }, 10);
+        });
     }
     
-    // Separate function to load the actual scores content
-    loadScoresContent(gameweek, container) {
+        // Separate function to load the actual scores content
+    async loadScoresContent(gameweek, container) {
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
         const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
         
         console.log(`Looking for fixtures in: ${editionGameweekKey}`);
         
-        this.db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
+        try {
+            const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
                 
@@ -130,21 +140,33 @@ export class LiveScoring {
                 });
                 
                 console.log(`✅ Scores loaded successfully for ${updatedFixtures.length} fixtures`);
+                
+                // Reset loading flag
+                this.isLoadingScores = false;
+                
+                // Return the fixtures data
+                return updatedFixtures;
             } else {
                 // No fixtures found for this edition and gameweek - don't fall back to old structure
                 console.log(`No fixtures found for Edition ${this.currentActiveEdition} Game Week ${gameweek} - not falling back to old structure`);
                 container.innerHTML = `<p>No fixtures found for Edition ${this.currentActiveEdition} Game Week ${gameweek}. Please add fixtures first.</p>`;
+                
+                // Reset loading flag
+                this.isLoadingScores = false;
+                
+                // Return empty array
+                return [];
             }
-            
-            // Reset loading flag
-            this.isLoadingScores = false;
-        }).catch(error => {
+        } catch (error) {
             console.error('Error loading scores from new structure:', error);
             container.innerHTML = `<p>Error loading fixtures for Edition ${this.currentActiveEdition} Game Week ${gameweek}. Please try again.</p>`;
             
             // Reset loading flag on error too
             this.isLoadingScores = false;
-        });
+            
+            // Re-throw the error
+            throw error;
+        }
     }
 
     // Add a score row for a fixture

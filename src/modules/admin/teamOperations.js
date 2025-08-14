@@ -47,6 +47,89 @@ export class TeamOperations {
         console.log('✅ As It Stands functionality setup complete');
     }
 
+    // Initialize As It Stands tab
+    initializeAsItStandsTab(deviceType = 'desktop') {
+        console.log(`🔧 Initializing As It Stands tab for ${deviceType}...`);
+        
+        try {
+            // Find the As It Stands content container
+            const contentContainer = document.querySelector(`#${deviceType}-as-it-stands-tab`);
+            if (!contentContainer) {
+                console.warn(`❌ As It Stands content container not found for ${deviceType}`);
+                return;
+            }
+            
+            // Create missing elements if they don't exist
+            this.createAsItStandsElements(contentContainer, deviceType);
+            
+            // Load initial standings
+            this.loadStandings();
+            
+            console.log(`✅ As It Stands tab initialized for ${deviceType}`);
+            
+        } catch (error) {
+            console.error(`❌ Error initializing As It Stands tab for ${deviceType}:`, error);
+        }
+    }
+
+    // Create missing As It Stands elements
+    createAsItStandsElements(container, deviceType) {
+        console.log(`🔧 Creating As It Stands elements for ${deviceType}...`);
+        
+        // Create gameweek selector if it doesn't exist
+        let gameweekSelector = container.querySelector('.gameweek-selector');
+        if (!gameweekSelector) {
+            gameweekSelector = document.createElement('div');
+            gameweekSelector.className = 'gameweek-selector';
+            gameweekSelector.innerHTML = `
+                <label for="standings-gameweek">Select Gameweek:</label>
+                <select id="standings-gameweek">
+                    <option value="1">Game Week 1</option>
+                    <option value="2">Game Week 2</option>
+                    <option value="3">Game Week 3</option>
+                    <option value="4">Game Week 4</option>
+                    <option value="5">Game Week 5</option>
+                    <option value="6">Game Week 6</option>
+                    <option value="7">Game Week 7</option>
+                    <option value="8">Game Week 8</option>
+                    <option value="9">Game Week 9</option>
+                    <option value="10">Game Week 10</option>
+                    <option value="tiebreak">Tiebreak Round</option>
+                </select>
+            `;
+            container.appendChild(gameweekSelector);
+            
+            // Add event listener for gameweek change
+            const select = gameweekSelector.querySelector('select');
+            if (select) {
+                select.addEventListener('change', () => {
+                    this.currentActiveGameweek = select.value;
+                    this.loadStandings();
+                });
+            }
+        }
+        
+        // Create standings container if it doesn't exist
+        let standingsContainer = container.querySelector('.standings-container');
+        if (!standingsContainer) {
+            standingsContainer = document.createElement('div');
+            standingsContainer.className = 'standings-container';
+            standingsContainer.innerHTML = '<p>Loading standings...</p>';
+            container.appendChild(standingsContainer);
+        }
+        
+        // Create standings summary if it doesn't exist
+        let standingsSummary = container.querySelector('.standings-summary');
+        if (!standingsSummary) {
+            standingsSummary = document.createElement('div');
+            standingsSummary.className = 'standings-summary';
+            standingsSummary.innerHTML = '<p>Loading summary...</p>';
+            container.appendChild(standingsSummary);
+        }
+        
+        console.log(`✅ As It Stands elements created for ${deviceType}`);
+    }
+
     // Load standings
     async loadStandings() {
         try {
