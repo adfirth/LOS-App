@@ -185,7 +185,16 @@ class AdminManagementManager {
                     console.log('Processing user:', userData.displayName, 'for edition:', selectedEdition);
                     
                     // Picks are stored using both edition-prefixed format (e.g., edition1_gw1) and simple format (e.g., gw1)
-                    const editionGameweekKey = `${selectedEdition}_${gwKey}`;
+                    // For the test edition, we need to handle both "editiontest" and "test" formats
+                    let editionGameweekKey;
+                    if (selectedEdition === 'editiontest') {
+                        editionGameweekKey = `editiontest_${gwKey}`;
+                    } else if (selectedEdition.startsWith('edition')) {
+                        editionGameweekKey = `${selectedEdition}_${gwKey}`;
+                    } else {
+                        editionGameweekKey = `edition${selectedEdition}_${gwKey}`;
+                    }
+                    
                     const playerPick = userData.picks && (userData.picks[editionGameweekKey] || userData.picks[gwKey]) ? 
                         (userData.picks[editionGameweekKey] || userData.picks[gwKey]) : 'No Pick Made';
                     
@@ -220,6 +229,9 @@ class AdminManagementManager {
                 }
             }
         };
+        
+        // Expose renderPicksTable as a class method
+        this.renderPicksTable = renderPicksTable;
         
         // Set up event listeners for picks controls
         if (picksEditionSelect) picksEditionSelect.addEventListener('change', renderPicksTable);
@@ -275,42 +287,40 @@ class AdminManagementManager {
                 if (targetPane) {
                     targetPane.classList.add('active');
                 }
+                
+                // Load specific content based on tab
+                if (targetTab === 'picks') {
+                    // Load picks for the current selection
+                    if (typeof this.renderPicksTable === 'function') {
+                        this.renderPicksTable();
+                    } else {
+                        console.log('renderPicksTable function not available, calling via global function');
+                        // Try to trigger the refresh picks button click
+                        const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
+                        if (refreshPicksBtn) {
+                            refreshPicksBtn.click();
+                        }
+                    }
+                } else if (targetTab === 'fixtures') {
+                    if (typeof window.loadFixturesForGameweek === 'function') {
+                        window.loadFixturesForGameweek();
+                    }
+                } else if (targetTab === 'scores') {
+                    if (typeof window.loadScoresForGameweek === 'function') {
+                        console.log('Loading scores for scores tab...');
+                        window.loadScoresForGameweek();
+                    }
+                } else if (targetTab === 'registration') {
+                    if (typeof window.refreshRegistrationStats === 'function') {
+                        window.refreshRegistrationStats();
+                    }
+                } else if (targetTab === 'settings') {
+                    if (typeof window.loadCompetitionSettings === 'function') {
+                        window.loadCompetitionSettings();
+                    }
+                }
             });
         });
-        
-        // Initialize admin tabs
-        if (!this.adminTabsInitialized) {
-            this.setupAdminTabs();
-        }
-        
-        // Initialize enhanced vidiprinter functionality
-        this.initializeEnhancedVidiprinter();
-        
-        // Set up save settings button monitoring
-        this.setupSaveSettingsButtonMonitoring();
-        
-        // Expose the saveCompetitionSettings function globally
-        window.saveCompetitionSettings = () => this.saveCompetitionSettings();
-        
-        // Expose the saveApiSuspensionSettings function globally
-        window.saveApiSuspensionSettings = () => this.saveApiSuspensionSettings();
-        
-        // Expose the isApiSuspended function globally
-        window.isApiSuspended = () => this.isApiSuspended();
-        window.adminManagementManager = this;
-        
-        // Expose the setDefaultSelection function globally for testing
-        window.setDefaultSelection = () => this.setDefaultSelection();
-        
-        console.log('✅ adminManagementManager exposed globally:', !!window.adminManagementManager);
-        
-        // Load API suspension settings
-        this.loadApiSuspensionSettings();
-        
-        // Set default selection after a short delay to ensure settings are loaded
-        setTimeout(() => {
-            this.setDefaultSelection();
-        }, 500);
     }
     
     // Save competition settings
@@ -511,7 +521,9 @@ class AdminManagementManager {
             // Add the event listener
             saveApiSuspensionBtn.addEventListener('click', () => {
                 console.log('API suspension save button clicked!');
-                if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
+                if (this.saveApiSuspensionSettings && typeof this.saveApiSuspensionSettings === 'function') {
+                    this.saveApiSuspensionSettings();
+                } else if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
                     window.saveApiSuspensionSettings();
                 } else {
                     console.error('saveApiSuspensionSettings function not available');
@@ -776,7 +788,15 @@ class AdminManagementManager {
             
             playersSnapshot.forEach(doc => {
                 const userData = doc.data();
-                const editionKey = `edition${edition}`;
+                // Handle different edition key formats
+                let editionKey;
+                if (edition === 'test') {
+                    editionKey = 'editiontest';
+                } else if (edition.startsWith('edition')) {
+                    editionKey = edition;
+                } else {
+                    editionKey = `edition${edition}`;
+                }
                 
                 // Check if user is registered for this edition and is active
                 if (userData.registrations && userData.registrations[editionKey] && userData.status !== 'archived') {
@@ -819,7 +839,14 @@ class AdminManagementManager {
             }
             
             // Fetch fixtures for the selected gameweek
-            const fixtureDocId = `edition${edition}_gw${gameweek}`;
+            let fixtureDocId;
+            if (edition === 'test') {
+                fixtureDocId = `editiontest_gw${gameweek}`;
+            } else if (edition.startsWith('edition')) {
+                fixtureDocId = `${edition}_gw${gameweek}`;
+            } else {
+                fixtureDocId = `edition${edition}_gw${gameweek}`;
+            }
             console.log(`🔍 Looking for fixtures document: ${fixtureDocId}`);
             
             const fixturesDoc = await this.db.collection('fixtures').doc(fixtureDocId).get();
@@ -984,17 +1011,20 @@ class AdminManagementManager {
                         status: lives > 0 ? 'Active' : 'Eliminated'
                     });
                     
-                    // Log the life change
-                    await this.db.collection('adminLogs').add({
+                    // Log the life change with a unique timestamp to avoid conflicts
+                    const timestamp = new Date();
+                    const logId = `life_change_${player.id}_${timestamp.getTime()}`;
+                    await this.db.collection('adminLogs').doc(logId).set({
                         action: 'life_lost',
                         playerId: player.id,
                         playerName: `${player.firstName} ${player.surname}`,
                         oldLives: oldLives,
                         newLives: lives,
                         gameweek: gameweek,
-                        reason: lastPickResult === 'Draw' ? 'Draw result' : 'Loss result',
-                        adminId: 'system',
-                        timestamp: new Date()
+                        lastPick: lastPick,
+                        lastPickResult: lastPickResult,
+                        timestamp: timestamp,
+                        reason: 'Automatic life deduction based on pick result'
                     });
                     
                     console.log(`🔄 Player ${player.firstName} ${player.surname} lives updated: ${oldLives} → ${lives}`);
@@ -1532,7 +1562,9 @@ class AdminManagementManager {
                     saveApiSuspensionBtn.removeEventListener('click', window.saveApiSuspensionSettings);
                     saveApiSuspensionBtn.addEventListener('click', () => {
                         console.log('API suspension save button clicked!');
-                        if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
+                        if (this.saveApiSuspensionSettings && typeof this.saveApiSuspensionSettings === 'function') {
+                            this.saveApiSuspensionSettings();
+                        } else if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
                             window.saveApiSuspensionSettings();
                         } else {
                             console.error('saveApiSuspensionSettings function not available');
@@ -1592,7 +1624,9 @@ class AdminManagementManager {
                         saveApiSuspensionBtn.removeEventListener('click', window.saveApiSuspensionSettings);
                         saveApiSuspensionBtn.addEventListener('click', () => {
                             console.log('API suspension save button clicked!');
-                            if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
+                            if (this.saveApiSuspensionSettings && typeof this.saveApiSuspensionSettings === 'function') {
+                                this.saveApiSuspensionSettings();
+                            } else if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
                                 window.saveApiSuspensionSettings();
                             } else {
                                 console.error('saveApiSuspensionSettings function not available');
@@ -1895,17 +1929,40 @@ class AdminManagementManager {
             editionSelectors.forEach(selectorId => {
                 const selector = document.querySelector(selectorId);
                 if (selector) {
-                    // Check if the current edition option exists in this selector
-                    const optionExists = Array.from(selector.options).some(option => option.value === currentEdition);
+                    // Handle different edition selector formats
+                    let targetEdition = currentEdition;
+                    
+                    // If this is the picks edition selector, it uses "editiontest" format
+                    if (selectorId === '#picks-edition-select') {
+                        if (currentEdition === 'test') {
+                            targetEdition = 'editiontest';
+                        } else if (currentEdition.startsWith('edition')) {
+                            targetEdition = currentEdition; // Already in correct format
+                        } else {
+                            targetEdition = `edition${currentEdition}`;
+                        }
+                    } else {
+                        // For other selectors (standings, etc.), use the simple format
+                        if (currentEdition === 'editiontest') {
+                            targetEdition = 'test';
+                        } else if (currentEdition.startsWith('edition')) {
+                            targetEdition = currentEdition.replace('edition', '');
+                        } else {
+                            targetEdition = currentEdition;
+                        }
+                    }
+                    
+                    // Check if the target edition option exists in this selector
+                    const optionExists = Array.from(selector.options).some(option => option.value === targetEdition);
                     if (optionExists) {
-                        selector.value = currentEdition;
-                        console.log(`✅ Set ${selectorId} to default edition: ${currentEdition}`);
+                        selector.value = targetEdition;
+                        console.log(`✅ Set ${selectorId} to default edition: ${targetEdition}`);
                         
                         // Trigger change event to ensure any listeners are notified
                         const event = new Event('change', { bubbles: true });
                         selector.dispatchEvent(event);
                     } else {
-                        console.log(`⚠️ Edition ${currentEdition} not available in ${selectorId}`);
+                        console.log(`⚠️ Edition ${targetEdition} not available in ${selectorId}`);
                         console.log(`🔍 Available options:`, Array.from(selector.options).map(opt => opt.value));
                     }
                 } else {
@@ -1964,7 +2021,17 @@ class AdminManagementManager {
                 
                 // Load specific content based on tab
                 if (targetTab === 'picks') {
-                    // Picks tab content is handled by buildAdminDashboard
+                    // Load picks for the current selection
+                    if (typeof this.renderPicksTable === 'function') {
+                        this.renderPicksTable();
+                    } else {
+                        console.log('renderPicksTable function not available, calling via global function');
+                        // Try to trigger the refresh picks button click
+                        const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
+                        if (refreshPicksBtn) {
+                            refreshPicksBtn.click();
+                        }
+                    }
                 } else if (targetTab === 'fixtures') {
                     if (typeof window.loadFixturesForGameweek === 'function') {
                         window.loadFixturesForGameweek();
