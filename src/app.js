@@ -479,6 +479,10 @@ class App {
             case 'admin':
                 console.log('🔧 Initializing admin page features...');
                 // Admin-specific initialization
+                if (this.adminManagementManager) {
+                    console.log('🔧 Initializing admin management...');
+                    this.adminManagementManager.initializeAdminPage();
+                }
                 break;
             case 'dashboard':
                 console.log('🔧 Initializing dashboard features...');
@@ -513,7 +517,11 @@ class App {
                 break;
             default:
                 console.log('🔧 Initializing general page features...');
-                // General initialization
+                // General initialization - this is the main page (index.html)
+                if (this.registrationManager) {
+                    console.log('🔧 Initializing main page registration features...');
+                    this.registrationManager.initializeMainPage();
+                }
                 break;
         }
     }

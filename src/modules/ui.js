@@ -136,37 +136,37 @@ class UIManager {
         if (targetTab === 'as-it-stands') {
             console.log('As It Stands tab clicked');
             // Run diagnostics first
-            if (typeof diagnoseAsItStandsElements === 'function') {
-                diagnoseAsItStandsElements();
+            if (window.app && window.app.utilitiesManager) {
+                window.app.utilitiesManager.diagnoseAsItStandsElements();
             }
             // Only initialize if not already done
             if (!window.asItStandsInitialized_desktop && !window.asItStandsInitialized_mobile) {
-                if (typeof initializeAsItStandsTab === 'function') {
-                    initializeAsItStandsTab('desktop');
+                if (window.app && window.app.teamOperations) {
+                    window.app.teamOperations.initializeAsItStandsTab('desktop');
                 }
             }
         } else if (targetTab === 'scores') {
-            if (typeof loadPlayerScores === 'function') {
-                loadPlayerScores().then(async fixtures => {
-                    console.log('loadPlayerScores returned:', fixtures);
+            if (window.app && window.app.scoresManager) {
+                window.app.scoresManager.loadScoresForGameweek().then(async fixtures => {
+                    console.log('loadScoresForGameweek returned:', fixtures);
                     // Get current gameweek for display
-                    const currentGameweek = getActiveGameweek();
-                    if (typeof renderPlayerScores === 'function') {
-                        await renderPlayerScores(fixtures, currentGameweek);
+                    const currentGameweek = window.app.currentActiveGameweek;
+                    if (window.app && window.app.scoresManager) {
+                        await window.app.scoresManager.renderPlayerScores(fixtures, currentGameweek);
                     }
-                    if (typeof renderMobilePlayerScores === 'function') {
-                        renderMobilePlayerScores(fixtures, currentGameweek);
+                    if (window.app && window.app.scoresManager) {
+                        window.app.scoresManager.renderMobilePlayerScores(fixtures, currentGameweek);
                     }
                 }).catch(error => {
                     console.error('Error loading player scores:', error);
-                    if (typeof showNoScoresMessage === 'function') {
-                        showNoScoresMessage();
+                    if (window.app && window.app.scoresManager) {
+                        window.app.scoresManager.showNoScoresMessage();
                     }
                 });
             }
         } else if (targetTab === 'vidiprinter') {
-            if (typeof initializePlayerVidiprinter === 'function') {
-                initializePlayerVidiprinter();
+            if (window.app && window.app.apiManager) {
+                window.app.apiManager.initializePlayerVidiprinter();
             }
         }
     }
@@ -184,8 +184,8 @@ class UIManager {
         console.log('Dashboard rendered, running As It Stands diagnostics...');
         setTimeout(() => {
             console.log('Running delayed diagnostics...');
-            if (typeof diagnoseAsItStandsElements === 'function') {
-                diagnoseAsItStandsElements();
+            if (window.app && window.app.utilitiesManager) {
+                window.app.utilitiesManager.diagnoseAsItStandsElements();
             }
         }, 1000);
         
@@ -195,8 +195,8 @@ class UIManager {
             const userData = userDoc.data();
             const userEdition = this.getUserEdition(userData);
             const allGameweeks = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'tiebreak'];
-            if (typeof batchCheckDeadlines === 'function') {
-                await batchCheckDeadlines(allGameweeks, userEdition);
+            if (window.app && window.app.gameLogicManager) {
+                await window.app.gameLogicManager.batchCheckDeadlines(allGameweeks, userEdition);
             }
         }
         
@@ -249,24 +249,24 @@ class UIManager {
                 this.updateLivesDisplay(userData, livesRemaining, mobileLivesRemaining, desktopLivesRemaining);
 
                 // Render pick history for desktop, mobile, and legacy (only if containers exist)
-                if (typeof renderPickHistory === 'function') {
+                if (window.app && window.app.gameLogicManager) {
                     if (picksHistoryContainer) {
-                        await renderPickHistory(userData.picks || {}, picksHistoryContainer, user.uid, userData);
+                        await window.app.gameLogicManager.renderPickHistory(userData.picks || {}, picksHistoryContainer, user.uid, userData);
                     }
                     if (mobilePicksHistoryContainer) {
-                        await renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, user.uid, userData);
+                        await window.app.gameLogicManager.renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, user.uid, userData);
                     }
                     if (desktopPicksHistoryContainer) {
-                        await renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, user.uid, userData);
+                        await window.app.gameLogicManager.renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, user.uid, userData);
                     }
                 }
                 
                 // Initialize gameweek navigation for both desktop and mobile
-                if (typeof initializeGameweekNavigation === 'function') {
-                    initializeGameweekNavigation(currentGameWeek, userData, user.uid);
+                if (window.app && window.app.gameLogicManager) {
+                    window.app.gameLogicManager.initializeGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
-                if (typeof initializeMobileGameweekNavigation === 'function') {
-                    initializeMobileGameweekNavigation(currentGameWeek, userData, user.uid);
+                if (window.app && window.app.gameLogicManager) {
+                    window.app.gameLogicManager.initializeMobileGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
                 
                 // Check for auto-picks needed

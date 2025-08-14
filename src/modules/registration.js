@@ -39,6 +39,31 @@ class RegistrationManager {
         this.refreshRegistrationStats();
     }
 
+    // Initialize main page functionality (index.html)
+    initializeMainPage() {
+        console.log('🔧 Initializing main page functionality...');
+        
+        // Check registration window status
+        console.log('🔧 Checking registration window status...');
+        this.checkRegistrationWindow();
+        
+        // Initialize any other main page features
+        console.log('🔧 Initializing main page features...');
+        this.initializeMainPageFeatures();
+        
+        console.log('✅ Main page initialization completed');
+    }
+
+    // Initialize main page features
+    initializeMainPageFeatures() {
+        console.log('🔧 Setting up main page event listeners...');
+        
+        // Set up any main page specific event listeners
+        // This could include navigation, testimonials, etc.
+        
+        console.log('✅ Main page features initialized');
+    }
+
     // Initialize registration page functionality
     initializeRegistrationPage() {
         console.log('🔧 Initializing registration page functionality...');
