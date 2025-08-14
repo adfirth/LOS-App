@@ -1982,16 +1982,21 @@ class AdminManagementManager {
             return;
         }
         
-        console.log('Setting up admin tabs...');
+        console.log('🔧 Setting up admin tabs...');
         this.adminTabsInitialized = true;
         
         // Simple tab functionality for admin panel
         const tabs = document.querySelectorAll('.admin-tab');
         const tabPanes = document.querySelectorAll('.tab-pane');
         
+        console.log('Found tabs:', tabs.length, 'Found panes:', tabPanes.length);
+        
         tabs.forEach(tab => {
+            const targetTab = tab.getAttribute('data-tab');
+            console.log('Setting up tab:', targetTab);
+            
             tab.addEventListener('click', () => {
-                const targetTab = tab.getAttribute('data-tab');
+                console.log('🎯 Tab clicked:', targetTab);
                 
                 // Remove active class from all tabs and panes
                 tabs.forEach(t => t.classList.remove('active'));
@@ -2006,11 +2011,13 @@ class AdminManagementManager {
                 
                 // Load specific content based on tab
                 if (targetTab === 'picks') {
+                    console.log('🎯 Picks tab clicked - calling renderPicksTable...');
                     // Load picks for the current selection
                     if (typeof this.renderPicksTable === 'function') {
+                        console.log('✅ renderPicksTable function found, calling it...');
                         this.renderPicksTable();
                     } else {
-                        console.log('renderPicksTable function not available, calling via global function');
+                        console.log('❌ renderPicksTable function not available, calling via global function');
                         // Try to trigger the refresh picks button click
                         const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
                         if (refreshPicksBtn) {
@@ -2037,6 +2044,8 @@ class AdminManagementManager {
                 }
             });
         });
+        
+        console.log('✅ Admin tabs setup complete');
     }
 
     // Player Management Functions
