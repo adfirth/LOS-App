@@ -43,8 +43,8 @@ class App {
         try {
             console.log('🚀 Initializing LOS App...');
             
-            // Initialize Firebase references
-            this.initializeFirebaseReferences();
+            // Wait for Firebase to be available
+            await this.waitForFirebase();
             
             // Initialize managers
             await this.initializeManagers();
@@ -78,6 +78,55 @@ class App {
             };
             checkFirebase();
         });
+    }
+
+    // Initialize all managers
+    async initializeManagers() {
+        // Initialize managers
+        this.authManager = new AuthManager();
+        this.registrationManager = new RegistrationManager(this.db, this.auth);
+        this.fixturesManager = new FixturesManager(this.db);
+        this.scoresManager = new ScoresManager(this.db);
+        this.uiManager = new UIManager(this.db);
+        this.gameLogicManager = new GameLogicManager(this.db);
+        this.mobileNavigationManager = new MobileNavigationManager(this.db);
+        this.adminManagementManager = new AdminManagementManager(this.db);
+        this.databaseManager = new DatabaseManager(); // Initialize Database Manager
+        this.apiManager = new ApiManager(); // Initialize API Manager
+        this.utilitiesManager = new UtilitiesManager(); // Initialize Utilities Manager
+        
+        // Initialize auth manager
+        await this.authManager.initialize(this.db, this.auth);
+        
+        // Initialize fixtures manager
+        this.fixturesManager.initializeFixtureManagement();
+        
+        // Initialize scores manager
+        this.scoresManager.initializeScoresManagement();
+        
+        // Initialize UI manager
+        this.uiManager.initializeUIManagement();
+        
+        // Initialize game logic manager
+        this.gameLogicManager.initializeGameLogicManagement();
+        
+        // Initialize mobile navigation manager
+        this.mobileNavigationManager.initializeMobileNavigationManagement();
+        
+        // Initialize admin management manager
+        this.adminManagementManager.initializeAdminManagement();
+        
+        // Initialize database manager
+        this.databaseManager.initializeDatabaseManager();
+        
+        // Initialize API manager
+        this.apiManager.initializeApiManager();
+        
+        // Initialize utilities manager
+        this.utilitiesManager.initializeUtilitiesManager();
+        
+        // Set up global references for backward compatibility
+        this.setupGlobalReferences();
     }
 
     // Set up global references for backward compatibility
@@ -378,47 +427,39 @@ class App {
     }
 
     // Expose admin functions globally for admin.html
-    exposeAdminFunctions() {
+    exposeAdminFunctionsGlobally() {
+        // Expose admin functions to global scope for admin.html
+        window.adminManagementManager = this.adminManagementManager;
+        window.authManager = this.authManager;
+        window.registrationManager = this.registrationManager;
+        window.fixturesManager = this.fixturesManager;
+        window.scoresManager = this.scoresManager;
+        window.uiManager = this.uiManager;
+        window.gameLogicManager = this.gameLogicManager;
+        window.mobileNavigationManager = this.mobileNavigationManager;
+        window.databaseManager = this.databaseManager;
+        window.apiManager = this.apiManager;
+        window.utilitiesManager = this.utilitiesManager;
+        
+        // Expose specific admin functions
+        window.initializeAdminLoginHandlers = () => this.authManager.initializeAdminLoginHandlers();
+        window.handleAdminLogin = (e) => this.authManager.handleAdminLogin(e);
+        window.handleAdminLogout = () => this.authManager.handleAdminLogout();
+        window.extendAdminSession = () => this.authManager.extendAdminSession();
+        
         console.log('🔧 Exposing admin functions globally...');
-        
-        // Expose the main admin initialization function
-        window.initializeAdminPage = () => {
-            console.log('🔧 Global initializeAdminPage called');
-            if (this.adminManagementManager) {
-                this.adminManagementManager.initializeAdminPage();
-            } else {
-                console.error('Admin management manager not available');
-            }
-        };
-
-        // Expose other admin functions that admin.html might need
-        window.initializeAdminLoginHandlers = () => {
-            console.log('🔧 Global initializeAdminLoginHandlers called');
-            if (this.authManager) {
-                this.authManager.initializeAdminLoginHandlers();
-            } else {
-                console.error('Auth manager not available');
-            }
-        };
-
-        // Expose the app instance globally for debugging
-        window.app = this;
-        
-        // Expose additional admin functions that might be needed
-        if (this.adminManagementManager) {
-            // Expose methods that are referenced in admin.html
-            window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
-            window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
-            window.closePlayerEdit = () => this.adminManagementManager.closePlayerEdit();
-            window.searchPlayers = () => this.adminManagementManager.searchPlayers();
-            window.filterPlayers = () => this.adminManagementManager.filterPlayers();
-            window.checkOrphanedAccounts = () => this.adminManagementManager.checkOrphanedAccounts();
-            window.showFirebaseAuthDeletionInstructions = () => this.adminManagementManager.showFirebaseAuthDeletionInstructions();
-        }
-        
-        console.log('✅ Admin functions exposed globally');
         console.log('Available global functions:', {
-            initializeAdminPage: typeof window.initializeAdminPage,
+            adminManagementManager: typeof window.adminManagementManager,
+            authManager: typeof window.authManager,
+            registrationManager: typeof window.registrationManager,
+            fixturesManager: typeof window.fixturesManager,
+            scoresManager: typeof window.scoresManager,
+            uiManager: typeof window.uiManager,
+            gameLogicManager: typeof window.gameLogicManager,
+            mobileNavigationManager: typeof window.mobileNavigationManager,
+            databaseManager: typeof window.databaseManager,
+            apiManager: typeof window.apiManager,
+            utilitiesManager: typeof window.utilitiesManager,
             initializeAdminLoginHandlers: typeof window.initializeAdminLoginHandlers,
             app: typeof window.app
         });
