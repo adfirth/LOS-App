@@ -141,7 +141,10 @@ class UIManager {
             }
             // Only initialize if not already done
             if (!window.asItStandsInitialized_desktop && !window.asItStandsInitialized_mobile) {
-                if (window.app && window.app.teamOperations) {
+                if (window.app && window.app.adminManagementManager && window.app.adminManagementManager.teamOperations) {
+                    window.app.adminManagementManager.teamOperations.initializeAsItStandsTab('desktop');
+                } else if (window.app && window.app.teamOperations) {
+                    // Fallback for direct access
                     window.app.teamOperations.initializeAsItStandsTab('desktop');
                 }
             }
