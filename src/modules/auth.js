@@ -21,6 +21,117 @@ class AuthManager {
         this.setupAdminPageHandling();
     }
 
+    // Initialize login page functionality
+    initializeLoginPage() {
+        console.log('🔧 Initializing login page functionality...');
+        
+        // Initialize login form handlers
+        this.initializeLoginFormHandlers();
+        
+        // Check if user is already logged in and redirect if necessary
+        this.checkExistingAuthState();
+        
+        console.log('✅ Login page initialization completed');
+    }
+
+    // Initialize login form handlers
+    initializeLoginFormHandlers() {
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLoginSubmit(e));
+        }
+    }
+
+    // Check existing authentication state
+    checkExistingAuthState() {
+        if (this.currentUser) {
+            console.log('🔍 User already logged in, redirecting to dashboard...');
+            // Redirect to dashboard if user is already logged in
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 1000);
+        }
+    }
+
+    // Handle login form submission
+    async handleLoginSubmit(e) {
+        e.preventDefault();
+        console.log('🔧 Handling login form submission...');
+
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const submitButton = document.querySelector('#login-form button[type="submit"]');
+        const errorElement = document.getElementById('login-error-message');
+
+        if (!email || !password) {
+            this.showLoginError('Please enter both email and password', errorElement);
+            return;
+        }
+
+        try {
+            // Disable submit button and show loading state
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Signing in...';
+            }
+
+            // Sign in with Firebase
+            const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            console.log('✅ User signed in successfully:', user.email);
+
+            // Clear any error messages
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+
+            // Redirect to dashboard
+            window.location.href = '/dashboard.html';
+
+        } catch (error) {
+            console.error('❌ Login error:', error);
+            
+            // Re-enable submit button
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign In';
+            }
+
+            // Show error message
+            const errorMessage = this.getLoginErrorMessage(error);
+            this.showLoginError(errorMessage, errorElement);
+        }
+    }
+
+    // Show login error message
+    showLoginError(message, errorElement) {
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Get user-friendly login error message
+    getLoginErrorMessage(error) {
+        if (error.code === 'auth/user-not-found') {
+            return 'No account found with this email address.';
+        } else if (error.code === 'auth/wrong-password') {
+            return 'Incorrect password. Please try again.';
+        } else if (error.code === 'auth/invalid-email') {
+            return 'Please enter a valid email address.';
+        } else if (error.code === 'auth/too-many-requests') {
+            return 'Too many failed attempts. Please try again later.';
+        } else if (error.code === 'auth/user-disabled') {
+            return 'This account has been disabled. Please contact support.';
+        } else {
+            return 'An error occurred during sign in. Please try again.';
+        }
+    }
+
     // Set up Firebase auth state listener
     setupAuthListener() {
         if (!this.auth) {

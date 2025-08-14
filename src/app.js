@@ -62,9 +62,6 @@ class App {
             // Initialize auth manager
             await this.authManager.initialize(this.db, this.auth);
             
-            // Initialize registration manager
-            this.registrationManager.initializeRegistrationManagement();
-            
             // Initialize fixtures manager
             this.fixturesManager.initializeFixtureManagement();
             
@@ -489,7 +486,14 @@ class App {
                 console.log('🔧 Initializing registration page features...');
                 // Registration-specific initialization
                 if (this.registrationManager) {
-                    this.registrationManager.initializeRegistrationPage();
+                    this.registrationManager.initializeRegistrationManagement();
+                }
+                break;
+            case 'login':
+                console.log('🔧 Initializing login page features...');
+                // Login-specific initialization
+                if (this.authManager) {
+                    this.authManager.initializeLoginPage();
                 }
                 break;
             default:
@@ -502,10 +506,13 @@ class App {
     // Get current page identifier
     getCurrentPage() {
         const path = window.location.pathname;
-        if (path.includes('admin')) return 'admin';
-        if (path.includes('dashboard')) return 'dashboard';
-        if (path.includes('register')) return 'register';
-        if (path.includes('login')) return 'login';
+        const url = window.location.href;
+        
+        // Check for login in both pathname and full URL (for Netlify routing)
+        if (path.includes('admin') || url.includes('admin')) return 'admin';
+        if (path.includes('dashboard') || url.includes('dashboard')) return 'dashboard';
+        if (path.includes('register') || url.includes('register')) return 'register';
+        if (path.includes('login') || url.includes('login')) return 'login';
         return 'general';
     }
 

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Age Verification</title>
+    <style>
+        .age-verification-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .age-btn {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .age-btn:hover {
+            border-color: #28a745;
+            background: #f8fff9;
+            box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
+        }
+
+        .age-btn.selected {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            transform: translateY(-1px);
+            font-weight: bold;
+        }
+
+        .age-btn.disabled {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+            border-color: #ddd;
+        }
+
+        .test-result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Age Verification Buttons</h1>
+    
+    <div class="form-group">
+        <label>Age Verification *</label>
+        <div class="age-verification-buttons">
+            <button type="button" id="age-yes-btn" class="age-btn">Yes, I am older than 16</button>
+            <button type="button" id="age-no-btn" class="age-btn">No, I am under 16</button>
+        </div>
+        <input type="hidden" id="register-age-verified" required>
+    </div>
+
+    <div class="test-result">
+        <h3>Test Results:</h3>
+        <p>Selected value: <span id="selected-value">None</span></p>
+        <p>Button states: <span id="button-states">Initial</span></p>
+    </div>
+
+    <script>
+        console.log('🔍 Test page loaded, initializing age verification...');
+        
+        // Initialize age verification buttons
+        function initializeAgeVerification() {
+            console.log('🔍 Initializing age verification buttons...');
+            
+            const ageYesBtn = document.getElementById('age-yes-btn');
+            const ageNoBtn = document.getElementById('age-no-btn');
+            const ageVerifiedInput = document.getElementById('register-age-verified');
+
+            console.log('🔍 Age verification elements found:', {
+                ageYesBtn: !!ageYesBtn,
+                ageNoBtn: !!ageNoBtn,
+                ageVerifiedInput: !!ageVerifiedInput
+            });
+
+            if (ageYesBtn && ageNoBtn && ageVerifiedInput) {
+                console.log('✅ All age verification elements found, adding event listeners...');
+                
+                ageYesBtn.addEventListener('click', () => {
+                    console.log('✅ Age Yes button clicked');
+                    // Remove selected class from both buttons
+                    ageYesBtn.classList.remove('selected');
+                    ageNoBtn.classList.remove('selected');
+                    
+                    // Add selected class to yes button
+                    ageYesBtn.classList.add('selected');
+                    
+                    // Set the hidden input value
+                    ageVerifiedInput.value = 'yes';
+                    
+                    // Update test display
+                    updateTestDisplay();
+                    
+                    console.log('Age verification: Yes selected');
+                });
+
+                ageNoBtn.addEventListener('click', () => {
+                    console.log('✅ Age No button clicked');
+                    // Remove selected class from both buttons
+                    ageYesBtn.classList.remove('selected');
+                    ageNoBtn.classList.remove('selected');
+                    
+                    // Add selected class to no button
+                    ageNoBtn.classList.add('selected');
+                    
+                    // Set the hidden input value
+                    ageVerifiedInput.value = 'no';
+                    
+                    // Update test display
+                    updateTestDisplay();
+                    
+                    console.log('Age verification: No selected');
+                });
+                
+                console.log('✅ Age verification event listeners added successfully');
+            } else {
+                console.error('❌ Some age verification elements not found:', {
+                    ageYesBtn: !!ageYesBtn,
+                    ageNoBtn: !!ageNoBtn,
+                    ageVerifiedInput: !!ageVerifiedInput
+                });
+            }
+        }
+
+        function updateTestDisplay() {
+            const selectedValue = document.getElementById('register-age-verified').value;
+            const buttonStates = document.getElementById('button-states');
+            
+            document.getElementById('selected-value').textContent = selectedValue || 'None';
+            
+            const yesBtn = document.getElementById('age-yes-btn');
+            const noBtn = document.getElementById('age-no-btn');
+            
+            buttonStates.textContent = `Yes: ${yesBtn.classList.contains('selected') ? 'Selected' : 'Not Selected'}, No: ${noBtn.classList.contains('selected') ? 'Selected' : 'Not Selected'}`;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔍 DOM loaded, initializing...');
+            initializeAgeVerification();
+        });
+    </script>
+</body>
+</html>

@@ -226,6 +226,11 @@ class RegistrationManager {
             // Clear form
             this.clearRegistrationForm();
 
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 2000);
+
         } catch (error) {
             console.error('Registration error:', error);
             this.showRegistrationError(this.getRegistrationErrorMessage(error));
@@ -273,6 +278,11 @@ class RegistrationManager {
 
             // Clear form
             this.clearReRegistrationForm();
+
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 2000);
 
         } catch (error) {
             console.error('Re-registration error:', error);
