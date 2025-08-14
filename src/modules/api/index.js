@@ -190,6 +190,16 @@ export class ApiManager {
         return this.vidiprinterAPI.fetchEnhancedVidiprinterData(competition, team, date);
     }
 
+    // Initialize player vidiprinter functionality
+    initializePlayerVidiprinter() {
+        console.log('🔧 Initializing player vidiprinter...');
+        
+        // This method can be used to set up any player-specific vidiprinter features
+        // For now, it's a placeholder that can be expanded later
+        
+        console.log('✅ Player vidiprinter initialized');
+    }
+
     // Data Processor methods
     convertApiFixtureToDatabase(fixture) {
         return this.dataProcessor.convertApiFixtureToDatabase(fixture);

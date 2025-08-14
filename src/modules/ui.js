@@ -147,22 +147,27 @@ class UIManager {
             }
         } else if (targetTab === 'scores') {
             if (window.app && window.app.scoresManager) {
-                window.app.scoresManager.loadScoresForGameweek().then(async fixtures => {
-                    console.log('loadScoresForGameweek returned:', fixtures);
-                    // Get current gameweek for display
-                    const currentGameweek = window.app.currentActiveGameweek;
-                    if (window.app && window.app.scoresManager) {
-                        await window.app.scoresManager.renderPlayerScores(fixtures, currentGameweek);
-                    }
-                    if (window.app && window.app.scoresManager) {
-                        window.app.scoresManager.renderMobilePlayerScores(fixtures, currentGameweek);
-                    }
-                }).catch(error => {
-                    console.error('Error loading player scores:', error);
-                    if (window.app && window.app.scoresManager) {
-                        window.app.scoresManager.showNoScoresMessage();
-                    }
-                });
+                try {
+                    const loadMethod = window.app.scoresManager.loadScoresForGameweek.bind(window.app.scoresManager);
+                    loadMethod().then(async fixtures => {
+                        console.log('loadScoresForGameweek returned:', fixtures);
+                        // Get current gameweek for display
+                        const currentGameweek = window.app.currentActiveGameweek;
+                        if (window.app && window.app.scoresManager) {
+                            await window.app.scoresManager.renderPlayerScores(fixtures, currentGameweek);
+                        }
+                        if (window.app && window.app.scoresManager) {
+                            window.app.scoresManager.renderMobilePlayerScores(fixtures, currentGameweek);
+                        }
+                    }).catch(error => {
+                        console.error('Error loading player scores:', error);
+                        if (window.app && window.app.scoresManager) {
+                            window.app.scoresManager.showNoScoresMessage();
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error calling loadScoresForGameweek:', error);
+                }
             }
         } else if (targetTab === 'vidiprinter') {
             if (window.app && window.app.apiManager) {

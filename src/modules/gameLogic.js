@@ -249,6 +249,33 @@ class GameLogicManager {
         }
     }
 
+    // Initialize mobile gameweek navigation
+    initializeMobileGameweekNavigation(currentGameWeek, userData, userId) {
+        console.log('Initializing mobile gameweek navigation for gameweek:', currentGameWeek);
+        
+        // Get all mobile gameweek buttons
+        const mobileGameweekButtons = document.querySelectorAll('.mobile-gameweek-btn');
+        
+        if (mobileGameweekButtons.length === 0) {
+            console.log('No mobile gameweek buttons found');
+            return;
+        }
+        
+        // Set active gameweek
+        this.setActiveGameweek(currentGameWeek);
+        
+        // Add click event listeners to all mobile gameweek buttons
+        mobileGameweekButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetGameweek = button.getAttribute('data-gameweek');
+                console.log('Navigating to mobile gameweek:', targetGameweek);
+                this.navigateToGameweek(targetGameweek, userData, userId);
+            });
+        });
+        
+        console.log('Mobile gameweek navigation initialized');
+    }
+
     // --- PICK OPERATIONS ---
 
     // Remove pick
