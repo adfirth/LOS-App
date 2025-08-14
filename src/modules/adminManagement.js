@@ -40,6 +40,9 @@ class AdminManagementManager {
         // Initialize competition settings
         this.initializeCompetitionSettings();
         
+        // Build admin dashboard to ensure all functions are exposed
+        this.buildAdminDashboard();
+        
         // Set up event listeners
         this.setupEventListeners();
         
