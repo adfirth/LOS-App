@@ -292,57 +292,20 @@ class AdminManagementManager {
         this.setupSettingsEventListeners();
         
         // Initialize admin tabs
-        const tabs = document.querySelectorAll('.admin-tab');
-        const tabPanes = document.querySelectorAll('.tab-pane');
+        this.setupAdminTabs();
         
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetTab = tab.getAttribute('data-tab');
-                
-                // Remove active class from all tabs and panes
-                tabs.forEach(t => t.classList.remove('active'));
-                tabPanes.forEach(p => p.classList.remove('active'));
-                
-                // Add active class to clicked tab and corresponding pane
-                tab.classList.add('active');
-                const targetPane = document.getElementById(`${targetTab}-tab`);
-                if (targetPane) {
-                    targetPane.classList.add('active');
-                }
-                
-                // Load specific content based on tab
-                if (targetTab === 'picks') {
-                    // Load picks for the current selection
-                    if (typeof this.renderPicksTable === 'function') {
-                        this.renderPicksTable();
-                    } else {
-                        console.log('renderPicksTable function not available, calling via global function');
-                        // Try to trigger the refresh picks button click
-                        const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
-                        if (refreshPicksBtn) {
-                            refreshPicksBtn.click();
-                        }
-                    }
-                } else if (targetTab === 'fixtures') {
-                    if (typeof window.loadFixturesForGameweek === 'function') {
-                        window.loadFixturesForGameweek();
-                    }
-                } else if (targetTab === 'scores') {
-                    if (typeof window.loadScoresForGameweek === 'function') {
-                        console.log('Loading scores for scores tab...');
-                        window.loadScoresForGameweek();
-                    }
-                } else if (targetTab === 'registration') {
-                    if (typeof window.refreshRegistrationStats === 'function') {
-                        window.refreshRegistrationStats();
-                    }
-                } else if (targetTab === 'settings') {
-                    if (typeof window.loadCompetitionSettings === 'function') {
-                        window.loadCompetitionSettings();
-                    }
-                }
-            });
-        });
+        // Initialize fixture management
+        if (!this.fixtureManagementInitialized) {
+            this.initializeFixtureManagement();
+        }
+        
+        // Load initial data
+        if (typeof window.loadFixturesForGameweek === 'function') {
+            window.loadFixturesForGameweek();
+        }
+        if (typeof window.loadScoresForGameweek === 'function') {
+            window.loadScoresForGameweek();
+        }
     }
     
     // Save competition settings
