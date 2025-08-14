@@ -1246,6 +1246,30 @@
                 }
             }
             
+            // Load picks if Picks tab was clicked
+            if (tabName === 'picks') {
+                console.log('🎯 Picks tab clicked - calling renderPicksTable...');
+                console.log('🔍 adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                console.log('🔍 adminManagementManager object:', window.adminManagementManager);
+                if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.renderPicksTable) {
+                    console.log('✅ Calling renderPicksTable...');
+                    window.adminManagementManager.renderPicksTable();
+                } else {
+                    console.log('❌ adminManagementManager.renderPicksTable not available yet');
+                    console.log('🔍 Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
+                    // Try to trigger the refresh picks button click as fallback
+                    setTimeout(() => {
+                        const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
+                        if (refreshPicksBtn) {
+                            console.log('🔄 Triggering refresh picks button click as fallback...');
+                            refreshPicksBtn.click();
+                        } else {
+                            console.log('❌ Refresh picks button not found');
+                        }
+                    }, 500);
+                }
+            }
+            
             // Set default gameweek selection for all tabs
             if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.setDefaultSelection) {
                 console.log('🔧 Setting default selection for tab:', tabName);
