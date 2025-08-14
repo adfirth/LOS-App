@@ -1,75 +1,39 @@
-// API Module
-// Handles all external API integrations, including Football Web Pages API, vidiprinter APIs, and Netlify functions
+// Football Web Pages API Module
+// Handles all Football Web Pages API integrations, including fixtures, scores, and vidiprinter data
 
-class ApiManager {
-    constructor() {
-        this.footballWebPagesConfig = null;
-        this.theSportsDbConfig = null;
-        this.initializeApiConfigurations();
+export class FootballWebPagesAPI {
+    constructor(db = null, currentActiveEdition = 1) {
+        this.db = db;
+        this.currentActiveEdition = currentActiveEdition;
+        this.config = null;
+        this.initializeConfiguration();
     }
 
-    // Get configuration safely, retrying if needed
-    getConfiguration() {
-        if (!this.isConfigurationLoaded()) {
-            this.retryLoadConfigurationIfNeeded();
-            return null;
-        }
-        return this.footballWebPagesConfig;
+    // Initialize configuration
+    initializeConfiguration() {
+        this.loadConfiguration();
     }
 
-    // Check if configuration is available
-    isConfigurationLoaded() {
-        return this.footballWebPagesConfig !== null;
-    }
-
-    // Retry loading configuration if not available
-    retryLoadConfigurationIfNeeded() {
-        if (!this.isConfigurationLoaded()) {
-            console.log('🔄 Configuration not loaded, retrying...');
-            this.loadFootballWebPagesConfig();
-        }
-    }
-
-    // Initialize the API manager
-    initializeApiManager() {
-        console.log('🔧 Initializing API Manager...');
-        this.initializeApiConfigurations();
-        this.setupEventListeners();
-    }
-
-    async initializeApiConfigurations() {
-        console.log('🔧 Initializing API Manager...');
-        
-        // Try to load Football Web Pages API configuration
-        this.loadFootballWebPagesConfig();
-        
-        // Clean up TheSportsDB references
-        console.log('TheSportsDB API configuration removed - using Football Web Pages API instead');
-    }
-
-    loadFootballWebPagesConfig() {
-        // Try multiple approaches to load the configuration
+    // Load configuration from global variables
+    loadConfiguration() {
         if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+            this.config = FOOTBALL_WEBPAGES_CONFIG;
             console.log('✅ Football Web Pages API configuration loaded from global variable');
-            console.log('API Key available:', !!this.footballWebPagesConfig.RAPIDAPI_KEY);
+            console.log('API Key available:', !!this.config.RAPIDAPI_KEY);
+            return true;
+        } else if (window.FOOTBALL_WEBPAGES_CONFIG) {
+            this.config = window.FOOTBALL_WEBPAGES_CONFIG;
+            console.log('✅ Football Web Pages API configuration loaded from window object');
+            console.log('API Key available:', !!this.config.RAPIDAPI_KEY);
             return true;
         } else {
-            // Try to access it from window object
-            if (window.FOOTBALL_WEBPAGES_CONFIG) {
-                this.footballWebPagesConfig = window.FOOTBALL_WEBPAGES_CONFIG;
-                console.log('✅ Football Web Pages API configuration loaded from window object');
-                console.log('API Key available:', !!this.footballWebPagesConfig.RAPIDAPI_KEY);
-                return true;
-            } else {
-                console.warn('⚠️ Football Web Pages API configuration not found - will retry during initialization');
-                // Set up a retry mechanism
-                this.retryLoadConfiguration();
-                return false;
-            }
+            console.warn('⚠️ Football Web Pages API configuration not found - will retry during initialization');
+            this.retryLoadConfiguration();
+            return false;
         }
     }
 
+    // Retry loading configuration with exponential backoff
     retryLoadConfiguration() {
         let attempts = 0;
         const maxAttempts = 10;
@@ -79,30 +43,30 @@ class ApiManager {
             console.log(`🔄 Attempt ${attempts}/${maxAttempts} to load Football Web Pages API configuration...`);
             
             if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-                this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+                this.config = FOOTBALL_WEBPAGES_CONFIG;
                 console.log('✅ Football Web Pages API configuration loaded on retry attempt', attempts);
                 return;
             }
             
             if (window.FOOTBALL_WEBPAGES_CONFIG) {
-                this.footballWebPagesConfig = window.FOOTBALL_WEBPAGES_CONFIG;
+                this.config = window.FOOTBALL_WEBPAGES_CONFIG;
                 console.log('✅ Football Web Pages API configuration loaded from window object on retry attempt', attempts);
                 return;
             }
             
             if (attempts < maxAttempts) {
-                setTimeout(attemptLoad, 1000); // Increased delay to 1 second
+                setTimeout(attemptLoad, 1000);
             } else {
                 console.error('❌ Failed to load Football Web Pages API configuration after', maxAttempts, 'attempts');
                 console.error('This will prevent API functions from working properly');
                 
-                // Try one more time after a longer delay in case scripts are still loading
+                // Try one more time after a longer delay
                 setTimeout(() => {
                     if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-                        this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+                        this.config = FOOTBALL_WEBPAGES_CONFIG;
                         console.log('✅ Football Web Pages API configuration loaded on final attempt');
                     } else if (window.FOOTBALL_WEBPAGES_CONFIG) {
-                        this.footballWebPagesConfig = window.FOOTBALL_WEBPAGES_CONFIG;
+                        this.config = window.FOOTBALL_WEBPAGES_CONFIG;
                         console.log('✅ Football Web Pages API configuration loaded from window object on final attempt');
                     }
                 }, 2000);
@@ -112,87 +76,23 @@ class ApiManager {
         setTimeout(attemptLoad, 100);
     }
 
-    // Set up event listeners
-    setupEventListeners() {
-        // Initialize Football Web Pages API when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            this.initializeFootballWebPagesAPI();
-        });
+    // Check if configuration is available
+    isConfigurationLoaded() {
+        return this.config !== null;
     }
 
-    // FOOTBALL WEB PAGES API INTEGRATION
-    initializeFootballWebPagesAPI() {
-        console.log('🔧 Initializing Football Web Pages API integration...');
-        
-        const testApiConnectionBtn = document.querySelector('#test-api-connection');
-        const fetchDateRangeFixturesBtn = document.querySelector('#fetch-date-range-fixtures-btn');
-        const fetchAllFixturesBtn = document.querySelector('#fetch-all-fixtures-btn');
-        const selectAllFixturesBtn = document.querySelector('#select-all-fixtures-btn');
-        const deselectAllFixturesBtn = document.querySelector('#deselect-all-fixtures-btn');
-        const importSelectedFixturesBtn = document.querySelector('#import-selected-fixtures-btn');
-        const fetchHistoricalDataBtn = document.querySelector('#fetch-historical-data-btn');
-        
-        console.log('🔍 Found buttons:', {
-            testApiConnection: !!testApiConnectionBtn,
-            fetchDateRangeFixtures: !!fetchDateRangeFixturesBtn,
-            fetchAllFixtures: !!fetchAllFixturesBtn,
-            selectAllFixtures: !!selectAllFixturesBtn,
-            deselectAllFixtures: !!deselectAllFixturesBtn,
-            importSelectedFixtures: !!importSelectedFixturesBtn,
-            fetchHistoricalData: !!fetchHistoricalDataBtn
-        });
-        
-        // Check API key status on initialization
-        this.checkApiKeyStatus();
-        
-        if (testApiConnectionBtn) {
-            testApiConnectionBtn.addEventListener('click', () => this.testApiConnection());
+    // Get configuration safely
+    getConfiguration() {
+        if (!this.isConfigurationLoaded()) {
+            this.retryLoadConfiguration();
+            return null;
         }
-        if (fetchDateRangeFixturesBtn) {
-            console.log('✅ Date Range Fetch button found and event listener attached');
-            console.log('Button disabled state:', fetchDateRangeFixturesBtn.disabled);
-            console.log('Button style display:', fetchDateRangeFixturesBtn.style.display);
-            console.log('Button classes:', fetchDateRangeFixturesBtn.className);
-            console.log('Button text content:', fetchDateRangeFixturesBtn.textContent);
-            
-            fetchDateRangeFixturesBtn.addEventListener('click', () => {
-                console.log('📅 Date Range Fetch button clicked!');
-                this.fetchDateRangeFixtures();
-            });
-        } else {
-            console.error('❌ Date Range Fetch button not found!');
-        }
-        if (fetchAllFixturesBtn) {
-            fetchAllFixturesBtn.addEventListener('click', () => this.fetchAllFixtures());
-        }
-        if (selectAllFixturesBtn) {
-            selectAllFixturesBtn.addEventListener('click', () => this.selectAllFixtures());
-        }
-        if (deselectAllFixturesBtn) {
-            deselectAllFixturesBtn.addEventListener('click', () => this.deselectAllFixtures());
-        }
-        if (importSelectedFixturesBtn) {
-            importSelectedFixturesBtn.addEventListener('click', () => this.importSelectedFixtures());
-        }
-        if (fetchHistoricalDataBtn) {
-            fetchHistoricalDataBtn.addEventListener('click', () => {
-                // Get current date for historical data fetch
-                const now = new Date();
-                const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7); // Last 7 days
-                const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                
-                this.fetchHistoricalVidiprinterData(
-                    startDate.toISOString().split('T')[0], // YYYY-MM-DD format
-                    '00:00',
-                    endDate.toISOString().split('T')[0],
-                    '23:59'
-                );
-            });
-        }
+        return this.config;
     }
 
+    // Test API connection
     async testApiConnection() {
-        console.log('🧪 Testing API connection...');
+        console.log('🧪 Testing Football Web Pages API connection...');
         
         const statusElement = document.querySelector('#api-key-status');
         const testBtn = document.querySelector('#test-api-btn');
@@ -203,17 +103,17 @@ class ApiManager {
         }
         
         // Try to load configuration if not already loaded
-        if (!this.footballWebPagesConfig) {
-            this.loadFootballWebPagesConfig();
+        if (!this.config) {
+            this.loadConfiguration();
             
             // Wait a bit for the config to load
-            if (!this.footballWebPagesConfig) {
+            if (!this.config) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
         
         // Check if we have the API configuration
-        if (!this.footballWebPagesConfig || !this.footballWebPagesConfig.RAPIDAPI_KEY) {
+        if (!this.config || !this.config.RAPIDAPI_KEY) {
             statusElement.textContent = 'API key not configured - please refresh the page';
             statusElement.className = 'status-indicator error';
             console.error('API configuration not available for test connection');
@@ -228,8 +128,8 @@ class ApiManager {
             const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results', {
                 method: 'GET',
                 headers: {
-                    'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
-                    'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
+                    'X-RapidAPI-Key': this.config.RAPIDAPI_KEY,
+                    'X-RapidAPI-Host': this.config.RAPIDAPI_HOST
                 }
             });
 
@@ -256,19 +156,16 @@ class ApiManager {
         if (!statusElement) return;
         
         console.log('checkApiKeyStatus called');
-        console.log('Current footballWebPagesConfig:', this.footballWebPagesConfig);
+        console.log('Current config:', this.config);
         console.log('FOOTBALL_WEBPAGES_CONFIG available:', typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined');
-        if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-            console.log('FOOTBALL_WEBPAGES_CONFIG content:', FOOTBALL_WEBPAGES_CONFIG);
-        }
         
         // Try to load configuration if not already loaded
-        if (!this.footballWebPagesConfig && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-            this.footballWebPagesConfig = FOOTBALL_WEBPAGES_CONFIG;
+        if (!this.config && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+            this.config = FOOTBALL_WEBPAGES_CONFIG;
             console.log('Football Web Pages API configuration loaded during status check');
         }
         
-        if (this.footballWebPagesConfig && this.footballWebPagesConfig.RAPIDAPI_KEY) {
+        if (this.config && this.config.RAPIDAPI_KEY) {
             statusElement.textContent = 'API key configured';
             statusElement.className = 'status-indicator success';
             console.log('API key status: Configured successfully');
@@ -278,12 +175,13 @@ class ApiManager {
             console.log('API key status: Missing - configuration may still be loading');
             
             // If we don't have the config yet, try to load it again
-            if (!this.footballWebPagesConfig) {
+            if (!this.config) {
                 this.retryLoadConfiguration();
             }
         }
     }
 
+    // Fetch fixtures by date range
     async fetchDateRangeFixtures() {
         console.log('📅 Fetching fixtures by date range...');
         
@@ -315,17 +213,17 @@ class ApiManager {
         }
 
         // Try to load configuration if not already loaded
-        if (!this.footballWebPagesConfig) {
-            this.loadFootballWebPagesConfig();
+        if (!this.config) {
+            this.loadConfiguration();
             
             // Wait a bit for the config to load
-            if (!this.footballWebPagesConfig) {
+            if (!this.config) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
         
         // Check if we have the API configuration
-        if (!this.footballWebPagesConfig || !this.footballWebPagesConfig.RAPIDAPI_KEY) {
+        if (!this.config || !this.config.RAPIDAPI_KEY) {
             statusElement.textContent = 'API key not configured - please refresh the page';
             statusElement.className = 'status-message error';
             console.error('API configuration not available for date range fetch');
@@ -361,8 +259,8 @@ class ApiManager {
                     response = await fetch(`https://football-web-pages1.p.rapidapi.com/fixtures-results.json?from=${dateFormat}&to=${dateFormat}&comp=${league}&season=${season}`, {
                         method: 'GET',
                         headers: {
-                            'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
-                            'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
+                            'X-RapidAPI-Key': this.config.RAPIDAPI_KEY,
+                            'X-RapidAPI-Host': this.config.RAPIDAPI_HOST
                         }
                     });
                     
@@ -384,14 +282,13 @@ class ApiManager {
                 response = await fetch(`https://football-web-pages1.p.rapidapi.com/fixtures-results.json?comp=${league}&round=0&team=0`, {
                     method: 'GET',
                     headers: {
-                        'X-RapidAPI-Key': this.footballWebPagesConfig.RAPIDAPI_KEY,
-                        'X-RapidAPI-Host': this.footballWebPagesConfig.RAPIDAPI_HOST
+                        'X-RapidAPI-Key': this.config.RAPIDAPI_KEY,
+                        'X-RapidAPI-Host': this.config.RAPIDAPI_HOST
                     }
                 });
             }
 
             console.log(`📅 API Response Status: ${response.status} ${response.statusText}`);
-            console.log(`📅 API Response Headers:`, Object.fromEntries(response.headers.entries()));
             
             if (response.ok) {
                 const data = await response.json();
@@ -459,20 +356,6 @@ class ApiManager {
                     
                     // Log the first few filtered fixtures to see their structure
                     console.log('📅 First 3 filtered fixtures structure:', filteredFixtures.slice(0, 3));
-                    console.log('📅 First filtered fixture detailed:', JSON.stringify(filteredFixtures[0], null, 2));
-                    console.log('📅 First filtered fixture keys:', Object.keys(filteredFixtures[0]));
-                    
-                    // Debug score structure specifically
-                    if (filteredFixtures.length > 0) {
-                        const firstFixture = filteredFixtures[0];
-                        console.log('🔍 Score debugging for first fixture:');
-                        console.log('  - fixture["home-team"]:', firstFixture['home-team']);
-                        console.log('  - fixture["away-team"]:', firstFixture['away-team']);
-                        console.log('  - fixture["home-team"]?.score:', firstFixture['home-team']?.score);
-                        console.log('  - fixture["away-team"]?.score:', firstFixture['away-team']?.score);
-                        console.log('  - All keys containing "score":', Object.keys(firstFixture).filter(key => key.toLowerCase().includes('score')));
-                        console.log('  - All keys containing "goal":', Object.keys(firstFixture).filter(key => key.toLowerCase().includes('goal')));
-                    }
                     
                     filteredFixtures.forEach((fixture, index) => {
                         if (index < 20) { // Limit to first 20 fixtures
@@ -521,15 +404,6 @@ class ApiManager {
                                           'TBD';
                             
                             const status = fixture.status?.full || fixture.status?.short || 'TBD';
-                            
-                            // Debug score values for this specific fixture
-                            if (index < 3) { // Only log first 3 fixtures to avoid spam
-                                console.log(`🔍 Fixture ${index + 1} score debugging:`);
-                                console.log(`  - ${homeTeam} vs ${awayTeam}`);
-                                console.log(`  - Home score found: ${homeScore} (from: ${fixture['home-team']?.score || fixture['home-team']?.goals || 'not found'})`);
-                                console.log(`  - Away score found: ${awayScore} (from: ${fixture['away-team']?.score || fixture['away-team']?.goals || 'not found'})`);
-                                console.log(`  - Raw fixture data:`, fixture);
-                            }
                             
                             fixturesHtml += `
                                 <div class="fixture-item">
@@ -632,305 +506,18 @@ class ApiManager {
 
     // Select all fixtures
     selectAllFixtures() {
+        console.log('✅ Selecting all fixtures...');
         const checkboxes = document.querySelectorAll('.fixture-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = true;
-        });
+        checkboxes.forEach(checkbox => checkbox.checked = true);
+        console.log(`✅ Selected ${checkboxes.length} fixtures`);
     }
-
+    
     // Deselect all fixtures
     deselectAllFixtures() {
+        console.log('❌ Deselecting all fixtures...');
         const checkboxes = document.querySelectorAll('.fixture-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
-        });
-    }
-
-
-
-    // HISTORICAL VIDIPRINTER DATA FETCHING
-    async fetchHistoricalVidiprinterData(startDate, startTime, endDate, endTime) {
-        console.log('📅 Fetching historical vidiprinter data:', { startDate, startTime, endDate, endTime });
-        
-        try {
-            // Try to fetch data for the date range, but also try some fallback dates
-            const datesToTry = [
-                startDate,
-                endDate,
-                '2025-08-09', // Known date with fixtures
-                '2025-08-10', // Day after known fixtures
-                '2025-08-08'  // Day before known fixtures
-            ];
-            
-            const allEvents = [];
-            const triedDates = new Set();
-            
-            for (const date of datesToTry) {
-                if (triedDates.has(date)) continue;
-                triedDates.add(date);
-                
-                console.log(`📅 Trying to fetch vidiprinter data for date: ${date}`);
-                
-                try {
-                    const response = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=5&team=0&date=${date}`, {
-                        headers: {
-                            'X-RapidAPI-Key': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_KEY : '',
-                            'X-RapidAPI-Host': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_HOST : 'football-web-pages1.p.rapidapi.com'
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        console.log(`📅 Failed to fetch data for ${date}: ${response.status} ${response.statusText}`);
-                        continue;
-                    }
-                    
-                    const data = await response.json();
-                    console.log(`📅 Response for ${date}:`, data);
-                    
-                    if (data.vidiprinter && data.vidiprinter.events && Array.isArray(data.vidiprinter.events)) {
-                        console.log(`📅 Found ${data.vidiprinter.events.length} events for ${date}`);
-                        if (data.vidiprinter.events.length > 0) {
-                            allEvents.push(...data.vidiprinter.events);
-                            console.log(`📅 Added ${data.vidiprinter.events.length} events from ${date}`);
-                        }
-                    } else {
-                        console.log(`📅 No events found for ${date}`);
-                    }
-                } catch (error) {
-                    console.log(`📅 Error fetching data for ${date}:`, error);
-                }
-            }
-            
-            console.log(`📅 Total events collected from all dates: ${allEvents.length}`);
-            
-            if (allEvents.length === 0) {
-                console.log('📅 No events found for any date, returning empty result');
-                return {
-                    events: [],
-                    startDate,
-                    startTime,
-                    endDate,
-                    endTime,
-                    message: 'No vidiprinter events found for the requested date range or fallback dates'
-                };
-            }
-            
-            // Filter events based on time range
-            const filteredEvents = this.filterEventsByTimeRange(allEvents, startDate, startTime, endDate, endTime);
-            
-            console.log('📅 Filtered events:', filteredEvents);
-            
-            return {
-                events: filteredEvents,
-                startDate,
-                startTime,
-                endDate,
-                endTime
-            };
-            
-        } catch (error) {
-            console.error('❌ Error fetching historical vidiprinter data:', error);
-            throw error;
-        }
-    }
-
-    // Filter events by time range
-    filterEventsByTimeRange(events, startDate, startTime, endDate, endTime) {
-        if (!events || !Array.isArray(events)) {
-            console.log('❌ No events array provided or not an array');
-            return [];
-        }
-        
-        console.log(`🔍 Filtering ${events.length} events between ${startDate} ${startTime} and ${endDate} ${endTime}`);
-        
-        const filteredEvents = events.filter(event => {
-            if (!event['date/time']) {
-                console.log('❌ Event missing date/time:', event);
-                return false;
-            }
-            
-            const eventDateTime = this.parseEventDateTime(event['date/time']);
-            if (!eventDateTime) {
-                console.log('❌ Failed to parse event date/time:', event['date/time']);
-                return false;
-            }
-            
-            const startDateTime = new Date(`${startDate} ${startTime}`);
-            const endDateTime = new Date(`${endDate} ${endTime}`);
-            
-            console.log(`📅 Event: ${event['date/time']} -> Parsed: ${eventDateTime}`);
-            console.log(`📅 Start: ${startDate} ${startTime} -> ${startDateTime}`);
-            console.log(`📅 End: ${endDate} ${endTime} -> ${endDateTime}`);
-            console.log(`📅 In range: ${eventDateTime >= startDateTime && eventDateTime <= endDateTime}`);
-            
-            return eventDateTime >= startDateTime && eventDateTime <= endDateTime;
-        });
-        
-        console.log(`✅ Filtered events result: ${filteredEvents.length} events`);
-        return filteredEvents;
-    }
-
-    // Parse event date/time string
-    parseEventDateTime(dateTimeString) {
-        console.log(`🔍 Parsing date/time: "${dateTimeString}"`);
-        
-        // Handle format: "2025-08-09 22:33:44"
-        const [datePart, timePart] = dateTimeString.split(' ');
-        console.log(`📅 Date part: "${datePart}", Time part: "${timePart}"`);
-        
-        if (!datePart || !timePart) {
-            console.log('❌ Invalid date/time format - missing date or time part');
-            return null;
-        }
-        
-        const [year, month, day] = datePart.split('-');
-        const [hour, minute, second] = timePart.split(':');
-        
-        console.log(`📅 Parsed: Year=${year}, Month=${month}, Day=${day}, Hour=${hour}, Minute=${minute}, Second=${second}`);
-        
-        if (!year || !month || !day || !hour || !minute || !second) {
-            console.log('❌ Invalid date/time format - missing components');
-            return null;
-        }
-        
-        const parsedDate = new Date(year, month - 1, day, hour, minute, second);
-        console.log(`📅 Final parsed date: ${parsedDate}`);
-        
-        return parsedDate;
-    }
-
-    // Fetch historical data for a specific interval
-    async fetchHistoricalDataForInterval(startDate, startTime, endDate, endTime) {
-        console.log('Fetching historical data for interval:', { startDate, startTime, endDate, endTime });
-        
-        try {
-            const data = await this.fetchHistoricalVidiprinterData(startDate, startTime, endDate, endTime);
-            return data;
-        } catch (error) {
-            console.error('Error fetching historical data for interval:', error);
-            throw error;
-        }
-    }
-
-    // Fetch current vidiprinter data for a competition
-    async fetchVidiprinterData(competition = 5) {
-        console.log('📺 Fetching current vidiprinter data for competition:', competition);
-        
-        try {
-            const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-            const currentTime = new Date().toLocaleTimeString('en-GB', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false 
-            });
-            
-            console.log(`📺 Fetching vidiprinter for date: ${currentDate}, time: ${currentTime}`);
-            
-            // Try current date first
-            let response = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=${competition}&team=0&date=${currentDate}`, {
-                headers: {
-                    'X-RapidAPI-Key': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_KEY : '',
-                    'X-RapidAPI-Host': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_HOST : 'football-web-pages1.p.rapidapi.com'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            let data = await response.json();
-            console.log('📺 Current date vidiprinter response:', data);
-            
-            // If no events on current date, try recent dates
-            if (!data.vidiprinter || !data.vidiprinter.events || data.vidiprinter.events.length === 0) {
-                console.log('📺 No events on current date, trying recent dates...');
-                
-                const recentDates = [
-                    '2025-08-09', // Known date with fixtures
-                    '2025-08-10', // Day after
-                    '2025-08-08'  // Day before
-                ];
-                
-                for (const date of recentDates) {
-                    console.log(`📺 Trying date: ${date}`);
-                    response = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=${competition}&team=0&date=${date}`, {
-                        headers: {
-                            'X-RapidAPI-Key': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_KEY : '',
-                            'X-RapidAPI-Host': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_HOST : 'football-web-pages1.p.rapidapi.com'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        data = await response.json();
-                        console.log(`📺 Response for ${date}:`, data);
-                        
-                        if (data.vidiprinter && data.vidiprinter.events && data.vidiprinter.events.length > 0) {
-                            console.log(`📺 Found ${data.vidiprinter.events.length} events for ${date}`);
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            if (data.vidiprinter && data.vidiprinter.events && data.vidiprinter.events.length > 0) {
-                console.log(`📺 Returning ${data.vidiprinter.events.length} events from vidiprinter`);
-                return data.vidiprinter.events;
-            } else {
-                console.log('📺 No events found in any vidiprinter response');
-                // Return a placeholder event to show the system is working
-                return [{
-                    text: 'No live matches currently available. The vidiprinter will update when matches are in progress.',
-                    type: 'status',
-                    'date/time': new Date().toISOString()
-                }];
-            }
-            
-        } catch (error) {
-            console.error('❌ Error fetching vidiprinter data:', error);
-            // Return a placeholder event to show the system is working
-            return [{
-                text: 'Vidiprinter system is running. Waiting for live match updates...',
-                type: 'status',
-                'date/time': new Date().toISOString()
-            }];
-        }
-    }
-
-    // Fetch enhanced vidiprinter data for a competition, team, and date
-    async fetchEnhancedVidiprinterData(competition = 5, team = 0, date = null) {
-        console.log('Fetching enhanced vidiprinter data:', { competition, team, date });
-        
-        try {
-            const targetDate = date || new Date().toISOString().split('T')[0]; // Use provided date or current date
-            console.log(`📅 Fetching enhanced vidiprinter for date: ${targetDate}`);
-            
-            const response = await fetch(`https://football-web-pages1.p.rapidapi.com/vidiprinter.json?comp=${competition}&team=${team}&date=${targetDate}`, {
-                headers: {
-                    'X-RapidAPI-Key': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_KEY : '',
-                    'X-RapidAPI-Host': this.footballWebPagesConfig ? this.footballWebPagesConfig.RAPIDAPI_HOST : 'football-web-pages1.p.rapidapi.com'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            console.log('📺 Enhanced vidiprinter API response:', data);
-            
-            if (data.vidiprinter && data.vidiprinter.events) {
-                console.log(`📺 Found ${data.vidiprinter.events.length} events in enhanced vidiprinter response`);
-                return data.vidiprinter.events;
-            } else {
-                console.log('📺 No events found in enhanced vidiprinter response');
-                return [];
-            }
-            
-        } catch (error) {
-            console.error('Error fetching enhanced vidiprinter data:', error);
-            return [];
-        }
+        checkboxes.forEach(checkbox => checkbox.checked = false);
+        console.log(`❌ Deselected ${checkboxes.length} fixtures`);
     }
 
     // Import selected fixtures to a game week
@@ -977,24 +564,28 @@ class ApiManager {
             
             // Use the same format as the fixtures manager
             const gameweekKey = gameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${gameWeek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
             
             // Save to Firestore
-            await window.db.collection('fixtures').doc(editionGameweekKey).set({
-                fixtures: fixturesToSave,
-                gameweek: gameWeek,
-                edition: window.currentActiveEdition,
-                lastUpdated: new Date(),
-                importedFrom: 'API'
-            });
+            if (this.db) {
+                await this.db.collection('fixtures').doc(editionGameweekKey).set({
+                    fixtures: fixturesToSave,
+                    gameweek: gameWeek,
+                    edition: this.currentActiveEdition,
+                    lastUpdated: new Date(),
+                    importedFrom: 'API'
+                });
+            } else {
+                console.error('Database not available for saving fixtures');
+                throw new Error('Database not available');
+            }
             
             console.log(`📥 Successfully saved ${fixturesToSave.length} fixtures to Game Week ${gameWeek}`);
             alert(`Successfully imported ${fixturesToSave.length} fixtures to Game Week ${gameWeek}!`);
             
             // Refresh the fixture display to show the imported fixtures
-            if (window.loadFixturesForGameweek) {
-                window.loadFixturesForGameweek();
-            }
+            // Note: This will need to be handled by the calling code
+            console.log('Fixtures imported successfully. Please refresh the fixture display manually.');
             
             // Uncheck all checkboxes after import
             checkboxes.forEach(checkbox => checkbox.checked = false);
@@ -1018,27 +609,9 @@ class ApiManager {
             }
         }
     }
-    
-    // Select all fixtures
-    selectAllFixtures() {
-        console.log('✅ Selecting all fixtures...');
-        const checkboxes = document.querySelectorAll('.fixture-checkbox');
-        checkboxes.forEach(checkbox => checkbox.checked = true);
-        console.log(`✅ Selected ${checkboxes.length} fixtures`);
-    }
-    
-    // Deselect all fixtures
-    deselectAllFixtures() {
-        console.log('❌ Deselecting all fixtures...');
-        const checkboxes = document.querySelectorAll('.fixture-checkbox');
-        checkboxes.forEach(checkbox => checkbox.checked = false);
-        console.log(`❌ Deselected ${checkboxes.length} fixtures`);
-    }
 
     // Cleanup method
     cleanup() {
-        console.log('🧹 API Manager cleanup completed');
+        console.log('🧹 Football Web Pages API cleanup completed');
     }
 }
-
-export default ApiManager;

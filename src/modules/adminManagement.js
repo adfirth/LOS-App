@@ -2,8 +2,10 @@
 // Handles all admin-related functionality including dashboard, player management, and competition settings
 
 class AdminManagementManager {
-    constructor(db) {
+    constructor(db, fixturesManager = null, scoresManager = null) {
         this.db = db;
+        this.fixturesManager = fixturesManager;
+        this.scoresManager = scoresManager;
         this.adminManagementInitialized = false;
         this.adminDashboardInitialized = false;
         this.adminTabsInitialized = false;
@@ -75,8 +77,8 @@ class AdminManagementManager {
         saveSettingsBtn.removeAttribute('disabled');
         
         // Remove any existing event listeners and re-attach
-        saveSettingsBtn.removeEventListener('click', window.saveCompetitionSettings);
-        saveSettingsBtn.addEventListener('click', window.saveCompetitionSettings);
+        saveSettingsBtn.removeEventListener('click', () => this.saveCompetitionSettings());
+        saveSettingsBtn.addEventListener('click', () => this.saveCompetitionSettings());
         
         console.log('✅ Save Settings button is ready and enabled');
         console.log('Button disabled state:', saveSettingsBtn.disabled);
@@ -1533,8 +1535,8 @@ class AdminManagementManager {
                     saveSettingsBtn.removeAttribute('disabled');
                     
                     // Re-attach event listener
-                    saveSettingsBtn.removeEventListener('click', window.saveCompetitionSettings);
-                    saveSettingsBtn.addEventListener('click', window.saveCompetitionSettings);
+                    saveSettingsBtn.removeEventListener('click', () => this.saveCompetitionSettings());
+                    saveSettingsBtn.addEventListener('click', () => this.saveCompetitionSettings());
                 }
             }
             
@@ -1556,18 +1558,16 @@ class AdminManagementManager {
                     saveApiSuspensionBtn.removeAttribute('disabled');
                     
                     // Re-attach event listener
-                    saveApiSuspensionBtn.removeEventListener('click', window.saveApiSuspensionSettings);
-                    saveApiSuspensionBtn.addEventListener('click', () => {
-                        console.log('API suspension save button clicked!');
-                        if (this.saveApiSuspensionSettings && typeof this.saveApiSuspensionSettings === 'function') {
-                            this.saveApiSuspensionSettings();
-                        } else if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
-                            window.saveApiSuspensionSettings();
-                        } else {
-                            console.error('saveApiSuspensionSettings function not available');
-                            alert('Error: API suspension function not available. Please refresh the page.');
-                        }
-                    });
+                            saveApiSuspensionBtn.removeEventListener('click', () => this.saveApiSuspensionSettings());
+        saveApiSuspensionBtn.addEventListener('click', () => {
+            console.log('API suspension save button clicked!');
+            if (this.saveApiSuspensionSettings && typeof this.saveApiSuspensionSettings === 'function') {
+                this.saveApiSuspensionSettings();
+            } else {
+                console.error('saveApiSuspensionSettings function not available');
+                alert('Error: API suspension function not available. Please refresh the page.');
+            }
+        });
                 }
             }
             
@@ -1597,8 +1597,8 @@ class AdminManagementManager {
                         saveSettingsBtn.removeAttribute('disabled');
                         
                         // Re-attach event listener
-                        saveSettingsBtn.removeEventListener('click', window.saveCompetitionSettings);
-                        saveSettingsBtn.addEventListener('click', window.saveCompetitionSettings);
+                        saveSettingsBtn.removeEventListener('click', () => this.saveCompetitionSettings());
+                        saveSettingsBtn.addEventListener('click', () => this.saveCompetitionSettings());
                     }
                     
                     // Also monitor the API suspension button
@@ -1618,13 +1618,11 @@ class AdminManagementManager {
                         saveApiSuspensionBtn.removeAttribute('disabled');
                         
                         // Re-attach event listener
-                        saveApiSuspensionBtn.removeEventListener('click', window.saveApiSuspensionSettings);
+                        saveApiSuspensionBtn.removeEventListener('click', () => this.saveApiSuspensionSettings());
                         saveApiSuspensionBtn.addEventListener('click', () => {
                             console.log('API suspension save button clicked!');
                             if (this.saveApiSuspensionSettings && typeof this.saveApiSuspensionSettings === 'function') {
                                 this.saveApiSuspensionSettings();
-                            } else if (window.saveApiSuspensionSettings && typeof window.saveApiSuspensionSettings === 'function') {
-                                window.saveApiSuspensionSettings();
                             } else {
                                 console.error('saveApiSuspensionSettings function not available');
                                 alert('Error: API suspension function not available. Please refresh the page.');
@@ -1660,21 +1658,21 @@ class AdminManagementManager {
         const scoresFileInput = document.querySelector('#scores-file-input');
 
         if (addFixtureBtn) {
-            addFixtureBtn.addEventListener('click', window.addFixtureRow);
+            addFixtureBtn.addEventListener('click', () => this.fixturesManager.addFixtureRow());
         }
         if (saveFixturesBtn) {
-            saveFixturesBtn.addEventListener('click', window.saveFixtures);
+            saveFixturesBtn.addEventListener('click', () => this.fixturesManager.saveFixtures());
         }
         if (checkFixturesBtn) {
-            checkFixturesBtn.addEventListener('click', window.checkFixtures);
+            checkFixturesBtn.addEventListener('click', () => this.fixturesManager.checkFixtures());
         }
         if (saveScoresBtn) {
-            saveScoresBtn.addEventListener('click', window.saveScores);
+            saveScoresBtn.addEventListener('click', () => this.scoresManager.saveScores());
         }
         if (importFootballWebPagesScoresBtn) {
             importFootballWebPagesScoresBtn.addEventListener('click', () => {
                 const selectedGameweek = scoreGameweekSelect ? scoreGameweekSelect.value : '1';
-                window.importScoresFromFootballWebPages(selectedGameweek);
+                this.scoresManager.importScoresFromFootballWebPages(selectedGameweek);
             });
         }
         if (scoresFileInput) {
@@ -1682,26 +1680,22 @@ class AdminManagementManager {
                 const file = e.target.files[0];
                 if (file) {
                     const selectedGameweek = scoreGameweekSelect ? scoreGameweekSelect.value : '1';
-                    window.importScoresFromFile(file, selectedGameweek);
+                    this.scoresManager.importScoresFromFile(file, selectedGameweek);
                 }
             });
         }
         
         // Set up gameweek select change handlers
         if (gameweekSelect) {
-            gameweekSelect.addEventListener('change', window.loadFixturesForGameweek);
+            gameweekSelect.addEventListener('change', () => this.fixturesManager.loadFixturesForGameweek());
         }
         if (scoreGameweekSelect) {
-            scoreGameweekSelect.addEventListener('change', window.loadScoresForGameweek);
+            scoreGameweekSelect.addEventListener('change', () => this.scoresManager.loadScoresForGameweek());
         }
         
         // Load initial data
-        if (typeof window.loadFixturesForGameweek === 'function') {
-            window.loadFixturesForGameweek();
-        }
-        if (typeof window.loadScoresForGameweek === 'function') {
-            window.loadScoresForGameweek();
-        }
+        this.fixturesManager.loadFixturesForGameweek();
+        this.scoresManager.loadScoresForGameweek();
     }
 
     // Registration Management Functions

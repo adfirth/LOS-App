@@ -267,25 +267,25 @@
                             <div class="registration-stats">
                                 <h4>Registration Statistics</h4>
                                 <div class="stats-grid">
-                                    <div class="stat-card clickable" id="total-registrations-card" onclick="showPlayerManagement('total')">
+                                    <div class="stat-card clickable" id="total-registrations-card" data-player-type="total">
                                         <h5>Active Registrations</h5>
                                         <p id="total-registrations">0</p>
                                         <small>Click to manage active players (excludes archived)</small>
                                     </div>
-                                    <div class="stat-card clickable" id="current-edition-card" onclick="showPlayerManagement('current')">
+                                    <div class="stat-card clickable" id="current-edition-card" data-player-type="current">
                                         <h5>Current Edition</h5>
                                         <p id="current-edition-registrations">0</p>
                                         <small>Click to manage current edition players</small>
                                     </div>
-                                    <div class="stat-card clickable" id="archived-players-card" onclick="showPlayerManagement('archived')">
+                                    <div class="stat-card clickable" id="archived-players-card" data-player-type="archived">
                                         <h5>Archived Players</h5>
                                         <p id="archived-players-count">0</p>
                                         <small>Click to manage archived players</small>
                                     </div>
                                 </div>
                                 <button id="refresh-registration-stats" class="cta-button">Refresh Statistics</button>
-                                <button id="check-orphaned-accounts" class="secondary-button" style="margin-left: 10px;" onclick="checkOrphanedAccounts()">Check Orphaned Accounts</button>
-                                <button id="firebase-auth-help" class="secondary-button" style="margin-left: 10px;" onclick="showFirebaseAuthDeletionInstructions()">Firebase Auth Help</button>
+                                <button id="check-orphaned-accounts" class="secondary-button" style="margin-left: 10px;">Check Orphaned Accounts</button>
+                                <button id="firebase-auth-help" class="secondary-button" style="margin-left: 10px;">Firebase Auth Help</button>
                             </div>
 
                             <!-- Player Management Modal -->
@@ -293,13 +293,13 @@
                                 <div class="user-details-modal">
                                     <div class="modal-header">
                                         <h3 id="player-management-title">Player Management</h3>
-                                        <button class="close-modal" onclick="closePlayerManagement()">&times;</button>
+                                        <button class="close-modal" id="close-player-management">&times;</button>
                                     </div>
                                     <div class="modal-body">
                                         <div class="player-management-controls">
                                             <div class="search-controls">
                                                 <input type="text" id="player-search" placeholder="Search players by name or email..." class="form-group input">
-                                                <button onclick="searchPlayers()" class="secondary-button">Search</button>
+                                                <button id="search-players-btn" class="secondary-button">Search</button>
                                             </div>
                                             <div class="filter-controls">
                                                 <select id="player-status-filter" onchange="filterPlayers()">
@@ -334,7 +334,7 @@
                                 <div class="user-details-modal">
                                     <div class="modal-header">
                                         <h3>Edit Player</h3>
-                                        <button class="close-modal" onclick="closePlayerEdit()">&times;</button>
+                                        <button class="close-modal" id="close-player-edit">&times;</button>
                                     </div>
                                     <div class="modal-body">
                                         <form id="player-edit-form">
@@ -392,7 +392,7 @@
                                             </div>
                                             <div class="button-group">
                                                 <button type="submit" class="cta-button">Save Changes</button>
-                                                <button type="button" class="secondary-button" onclick="closePlayerEdit()">Cancel</button>
+                                                <button type="button" class="secondary-button" id="cancel-player-edit">Cancel</button>
                                             </div>
                                         </form>
                                     </div>
@@ -1168,7 +1168,7 @@
                         <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #dc3545;"></i>
                         <h3>Initialization Error</h3>
                         <p>${message}</p>
-                        <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                                        <button id="reload-page-btn" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
                             <i class="fas fa-redo"></i> Refresh Page
                         </button>
                     </div>

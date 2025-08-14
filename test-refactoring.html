@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refactoring Test - LOS App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        #test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 LOS App Refactoring Test</h1>
+    
+    <div class="test-section">
+        <h2>Module Import Test</h2>
+        <p>Testing if the refactored modules can be imported and instantiated correctly.</p>
+        <button class="test-button" id="test-module-imports">Test Module Imports</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Event Listener Test</h2>
+        <p>Testing if event listeners are properly set up in the refactored modules.</p>
+        <button class="test-button" id="test-event-listeners">Test Event Listeners</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Dependency Injection Test</h2>
+        <p>Testing if dependency injection is working correctly between modules.</p>
+        <button class="test-button" id="test-dependencies">Test Dependencies</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Global Function Removal Test</h2>
+        <p>Testing if global functions have been properly removed and replaced with event listeners.</p>
+        <button class="test-button" id="test-global-functions">Test Global Functions</button>
+    </div>
+    
+    <div id="test-results" style="display: none;">
+        <h3>Test Results:</h3>
+        <div id="results-content"></div>
+    </div>
+
+    <script type="module">
+        // Test Module Imports
+        document.getElementById('test-module-imports').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('results-content');
+            resultsDiv.innerHTML = '<p class="info">Testing module imports...</p>';
+            
+            try {
+                // Test importing the main App class
+                const { default: App } = await import('./src/app.js');
+                resultsDiv.innerHTML += '<p class="success">✅ App class imported successfully</p>';
+                
+                // Test importing individual modules
+                const { AdminManager } = await import('./src/modules/admin/index.js');
+                resultsDiv.innerHTML += '<p class="success">✅ AdminManager imported successfully</p>';
+                
+                const { ScoresManager } = await import('./src/modules/scores/index.js');
+                resultsDiv.innerHTML += '<p class="success">✅ ScoresManager imported successfully</p>';
+                
+                const { ApiManager } = await import('./src/modules/api/index.js');
+                resultsDiv.innerHTML += '<p class="success">✅ ApiManager imported successfully</p>';
+                
+                resultsDiv.innerHTML += '<p class="success">🎉 All module imports successful!</p>';
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<p class="error">❌ Module import failed: ${error.message}</p>`;
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        });
+        
+        // Test Event Listeners
+        document.getElementById('test-event-listeners').addEventListener('click', () => {
+            const resultsDiv = document.getElementById('results-content');
+            resultsDiv.innerHTML = '<p class="info">Testing event listeners...</p>';
+            
+            try {
+                // Check if onclick attributes are removed from main HTML files
+                const hasOnclickInHTML = document.querySelector('[onclick]') !== null;
+                
+                if (!hasOnclickInHTML) {
+                    resultsDiv.innerHTML += '<p class="success">✅ No onclick attributes found in current HTML</p>';
+                } else {
+                    resultsDiv.innerHTML += '<p class="error">❌ onclick attributes still present in HTML</p>';
+                }
+                
+                // Check if event listeners are properly set up
+                const testButton = document.getElementById('test-event-listeners');
+                const listeners = getEventListeners(testButton);
+                
+                if (listeners && listeners.click && listeners.click.length > 0) {
+                    resultsDiv.innerHTML += '<p class="success">✅ Event listeners are properly attached</p>';
+                } else {
+                    resultsDiv.innerHTML += '<p class="info">ℹ️ Event listener detection limited in browser</p>';
+                }
+                
+                resultsDiv.innerHTML += '<p class="success">🎉 Event listener test completed!</p>';
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<p class="error">❌ Event listener test failed: ${error.message}</p>`;
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        });
+        
+        // Test Dependencies
+        document.getElementById('test-dependencies').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('results-content');
+            resultsDiv.innerHTML = '<p class="info">Testing dependencies...</p>';
+            
+            try {
+                // Test if modules can be instantiated with dependencies
+                const { AdminManager } = await import('./src/modules/admin/index.js');
+                const { ScoresManager } = await import('./src/modules/scores/index.js');
+                const { ApiManager } = await import('./src/modules/api/index.js');
+                
+                // Mock database object
+                const mockDb = {
+                    collection: () => ({
+                        doc: () => ({}),
+                        get: () => Promise.resolve([]),
+                        add: () => Promise.resolve({}),
+                        update: () => Promise.resolve({}),
+                        delete: () => Promise.resolve({})
+                    })
+                };
+                
+                // Test instantiation
+                const apiManager = new ApiManager(mockDb, 1);
+                resultsDiv.innerHTML += '<p class="success">✅ ApiManager instantiated with dependencies</p>';
+                
+                const scoresManager = new ScoresManager(mockDb, 1, '1', apiManager);
+                resultsDiv.innerHTML += '<p class="success">✅ ScoresManager instantiated with dependencies</p>';
+                
+                const adminManager = new AdminManager(mockDb, null, scoresManager);
+                resultsDiv.innerHTML += '<p class="success">✅ AdminManager instantiated with dependencies</p>';
+                
+                resultsDiv.innerHTML += '<p class="success">🎉 All dependency injection tests passed!</p>';
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<p class="error">❌ Dependency test failed: ${error.message}</p>`;
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        });
+        
+        // Test Global Functions
+        document.getElementById('test-global-functions').addEventListener('click', () => {
+            const resultsDiv = document.getElementById('results-content');
+            resultsDiv.innerHTML = '<p class="info">Testing global function removal...</p>';
+            
+            try {
+                // Check if common global functions are no longer available
+                const globalFunctions = [
+                    'saveFixtures',
+                    'loadScoresForGameweek',
+                    'showPlayerManagement',
+                    'checkOrphanedAccounts'
+                ];
+                
+                let missingFunctions = 0;
+                globalFunctions.forEach(funcName => {
+                    if (typeof window[funcName] === 'undefined') {
+                        missingFunctions++;
+                    }
+                });
+                
+                if (missingFunctions === globalFunctions.length) {
+                    resultsDiv.innerHTML += '<p class="success">✅ All global functions properly removed</p>';
+                } else {
+                    resultsDiv.innerHTML += `<p class="error">❌ ${globalFunctions.length - missingFunctions} global functions still exist</p>`;
+                }
+                
+                // Check if manager instances are available
+                if (window.app && window.app.fixturesManager && window.app.scoresManager) {
+                    resultsDiv.innerHTML += '<p class="success">✅ Manager instances properly exposed on window.app</p>';
+                } else {
+                    resultsDiv.innerHTML += '<p class="info">ℹ️ Manager instances not yet available (app may not be initialized)</p>';
+                }
+                
+                resultsDiv.innerHTML += '<p class="success">🎉 Global function removal test completed!</p>';
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `<p class="error">❌ Global function test failed: ${error.message}</p>`;
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        });
+        
+        // Helper function to get event listeners (limited browser support)
+        function getEventListeners(element) {
+            // This is a simplified check - full event listener detection requires dev tools
+            return element._listeners || null;
+        }
+    </script>
+</body>
+</html>

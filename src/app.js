@@ -6,13 +6,13 @@ console.log('🔍 src/app.js file is being loaded and parsed...');
 import AuthManager from './modules/auth.js';
 import RegistrationManager from './modules/registration.js';
 import FixturesManager from './modules/fixtures.js';
-import ScoresManager from './modules/scores.js';
+import ScoresManager from './modules/scores/index.js';
 import UIManager from './modules/ui.js';
 import GameLogicManager from './modules/gameLogic.js';
 import MobileNavigationManager from './modules/mobileNavigation.js';
-import AdminManagementManager from './modules/adminManagement.js';
+import { AdminManager } from './modules/admin/index.js';
 import DatabaseManager from './modules/database.js'; // New Database Module import
-import ApiManager from './modules/api.js'; // New API Module import
+import ApiManager from './modules/api/index.js'; // New modular API Module import
 import UtilitiesManager from './modules/utilities.js'; // New Utilities Module import
 
 console.log('🔍 Imports completed, about to define App class...');
@@ -86,13 +86,13 @@ class App {
         this.authManager = new AuthManager();
         this.registrationManager = new RegistrationManager(this.db, this.auth);
         this.fixturesManager = new FixturesManager(this.db);
-        this.scoresManager = new ScoresManager(this.db);
+        this.apiManager = new ApiManager(this.db, this.currentActiveEdition); // Initialize API Manager first
+        this.scoresManager = new ScoresManager(this.db, this.currentActiveEdition, this.currentActiveGameweek, this.apiManager);
         this.uiManager = new UIManager(this.db);
         this.gameLogicManager = new GameLogicManager(this.db);
         this.mobileNavigationManager = new MobileNavigationManager(this.db);
-        this.adminManagementManager = new AdminManagementManager(this.db);
+        this.adminManagementManager = new AdminManager(this.db, this.fixturesManager, this.scoresManager);
         this.databaseManager = new DatabaseManager(); // Initialize Database Manager
-        this.apiManager = new ApiManager(); // Initialize API Manager
         this.utilitiesManager = new UtilitiesManager(); // Initialize Utilities Manager
         
         // Initialize auth manager
@@ -100,6 +100,9 @@ class App {
         
         // Initialize fixtures manager
         this.fixturesManager.initializeFixtureManagement();
+        
+        // Initialize API manager first (needed by scores manager)
+        this.apiManager.initializeApiManager();
         
         // Initialize scores manager
         this.scoresManager.initializeScoresManagement();
@@ -118,9 +121,6 @@ class App {
         
         // Initialize database manager
         this.databaseManager.initializeDatabaseManager();
-        
-        // Initialize API manager
-        this.apiManager.initializeApiManager();
         
         // Initialize utilities manager
         this.utilitiesManager.initializeUtilitiesManager();
@@ -159,274 +159,274 @@ class App {
 
     // Set up global functions for backward compatibility
     setupGlobalFunctions() {
-        // Fixtures-related functions
-        window.initializeFixtureManagement = () => this.fixturesManager.initializeFixtureManagement();
-        window.addFixtureRow = () => this.fixturesManager.addFixtureRow();
-        window.removeFixtureRow = (button) => this.fixturesManager.removeFixtureRow(button);
-        window.saveFixtures = () => this.fixturesManager.saveFixtures();
-        window.checkFixtures = () => this.fixturesManager.checkFixtures();
-        window.editFixtures = () => this.fixturesManager.editFixtures();
-        window.switchToViewMode = () => this.fixturesManager.switchToViewMode();
-        window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
-        window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
-        window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
-        window.loadFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadFixturesForDeadline(gameweek, userData, userId);
-        window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
-        window.switchToFixturesTab = () => this.fixturesManager.switchToFixturesTab();
-        window.renderFixturesDisplay = (fixtures, userData, gameweek, userId) => this.fixturesManager.renderFixturesDisplay(fixtures, userData, gameweek, userId);
-        window.renderMobileFixturesDisplay = (fixtures, userData, gameweek, userId) => this.fixturesManager.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
-        window.renderAsItStandsStandings = (players, fixtures, gameweek, edition, platform) => this.fixturesManager.renderAsItStandsStandings(players, fixtures, gameweek, edition, platform);
-        window.loadCurrentGameweekFixtures = () => this.fixturesManager.loadCurrentGameweekFixtures();
-        window.saveFootballWebPagesSettings = () => this.fixturesManager.saveFootballWebPagesSettings();
+        // Fixtures-related functions - REMOVED: Now handled by FixturesManager event listeners
+        // window.initializeFixtureManagement = () => this.fixturesManager.initializeFixtureManagement();
+        // window.addFixtureRow = () => this.fixturesManager.addFixtureRow();
+        // window.removeFixtureRow = (button) => this.fixturesManager.removeFixtureRow(button);
+        // window.saveFixtures = () => this.fixturesManager.saveFixtures();
+        // window.checkFixtures = () => this.fixturesManager.checkFixtures();
+        // window.editFixtures = () => this.fixturesManager.editFixtures();
+        // window.switchToViewMode = () => this.fixturesManager.switchToViewMode();
+        // window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
+        // window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
+        // window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
+        // window.loadFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadFixturesForDeadline(gameweek, userData, userId);
+        // window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
+        // window.switchToFixturesTab = () => this.fixturesManager.switchToFixturesTab();
+        // window.renderFixturesDisplay = (fixtures, userData, gameweek, userId) => this.fixturesManager.renderFixturesDisplay(fixtures, userData, gameweek, userId);
+        // window.renderMobileFixturesDisplay = (fixtures, userData, gameweek, userId) => this.fixturesManager.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
+        // window.renderAsItStandsStandings = (players, fixtures, gameweek, edition, platform) => this.fixturesManager.renderAsItStandsStandings(players, fixtures, gameweek, edition, platform);
+        // window.loadCurrentGameweekFixtures = () => this.fixturesManager.loadCurrentGameweekFixtures();
+        // window.saveFootballWebPagesSettings = () => this.fixturesManager.saveFootballWebPagesSettings();
         
-                       // Scores-related functions (newly added)
-               window.loadScoresForGameweek = () => this.scoresManager.loadScoresForGameweek();
-               window.saveScores = () => this.scoresManager.saveScores();
-               window.renderPlayerScores = (fixtures, gameweek) => this.scoresManager.renderPlayerScores(fixtures, gameweek);
-               window.renderDesktopPlayerScores = (fixtures, gameweek) => this.scoresManager.renderDesktopPlayerScores(fixtures, gameweek);
-               window.renderMobilePlayerScores = (fixtures, gameweek) => this.scoresManager.renderMobilePlayerScores(fixtures, gameweek);
-               window.checkPickStillValid = (pick, fixtures) => this.scoresManager.checkPickStillValid(pick, fixtures);
-               window.calculatePickResult = (pick, fixtures) => this.scoresManager.calculatePickResult(pick, fixtures);
-               window.processResults = (gameweek, fixtures) => this.scoresManager.processResults(gameweek, fixtures);
-               window.startAutoScoreUpdates = (gameweek) => this.scoresManager.startAutoScoreUpdates(gameweek);
-               window.stopAutoScoreUpdates = () => this.scoresManager.stopAutoScoreUpdates();
-               window.startRealTimeScoreUpdates = (gameweek) => this.scoresManager.startRealTimeScoreUpdates(gameweek);
-               window.stopRealTimeScoreUpdates = () => this.scoresManager.stopRealTimeScoreUpdates();
-               window.importScoresFromFootballWebPages = (gameweek) => this.scoresManager.importScoresFromFootballWebPages(gameweek);
-               window.importScoresFromFile = (file, gameweek) => this.scoresManager.importScoresFromFile(file, gameweek);
-               window.testFootballWebPagesAPI = () => this.scoresManager.testFootballWebPagesAPI();
+                       // Scores-related functions - REMOVED: Now handled by ScoresManager event listeners
+               // window.loadScoresForGameweek = () => this.scoresManager.loadScoresForGameweek();
+               // window.saveScores = () => this.scoresManager.saveScores();
+               // window.renderPlayerScores = (fixtures, gameweek) => this.scoresManager.renderPlayerScores(fixtures, gameweek);
+               // window.renderDesktopPlayerScores = (fixtures, gameweek) => this.scoresManager.renderDesktopPlayerScores(fixtures, gameweek);
+               // window.renderMobilePlayerScores = (fixtures, gameweek) => this.scoresManager.renderMobilePlayerScores(fixtures, gameweek);
+               // window.checkPickStillValid = (pick, fixtures) => this.scoresManager.checkPickStillValid(pick, fixtures);
+               // window.calculatePickResult = (pick, fixtures) => this.scoresManager.calculatePickResult(pick, fixtures);
+               // window.processResults = (gameweek, fixtures) => this.scoresManager.processResults(gameweek, fixtures);
+               // window.startAutoScoreUpdates = (gameweek) => this.scoresManager.startAutoScoreUpdates(gameweek);
+               // window.stopAutoScoreUpdates = () => this.scoresManager.stopAutoScoreUpdates();
+               // window.startRealTimeScoreUpdates = (gameweek) => this.scoresManager.startRealTimeScoreUpdates(gameweek);
+               // window.stopRealTimeScoreUpdates = () => this.scoresManager.stopRealTimeScoreUpdates();
+               // window.importScoresFromFootballWebPages = (gameweek) => this.scoresManager.importScoresFromFootballWebPages(gameweek);
+               // window.importScoresFromFile = (file, gameweek) => this.scoresManager.importScoresFromFile(file, gameweek);
+               // window.testFootballWebPagesAPI = () => this.scoresManager.testFootballWebPagesAPI();
                
-                       // UI-related functions (newly added)
-        window.showModal = (content) => this.uiManager.showModal(content);
-        window.closeUserDetailsModal = () => this.uiManager.closeUserDetailsModal();
-        window.initializeDesktopTabs = () => this.uiManager.initializeDesktopTabs();
-                       window.renderDashboard = (user) => this.uiManager.renderDashboard(user);
-        window.initializeTestimonialModal = () => this.uiManager.initializeTestimonialModal();
-               window.initializeRegistrationWindowDisplay = () => this.uiManager.initializeRegistrationWindowDisplay();
-               window.updateRegistrationWindowDisplay = () => this.uiManager.updateRegistrationWindowDisplay();
-               window.showRegistrationCountdown = (endDate) => this.uiManager.showRegistrationCountdown(endDate);
-               window.showNextRegistrationCountdown = (startDate) => this.uiManager.showNextRegistrationCountdown(startDate);
-               window.hideRegistrationCountdowns = () => this.uiManager.hideRegistrationCountdowns();
-               window.showRegisterButton = (show) => this.uiManager.showRegisterButton(show);
-               window.initializeVidiprinter = () => this.uiManager.initializeVidiprinter();
-               window.startVidiprinter = () => this.uiManager.startVidiprinter();
-               window.stopVidiprinter = () => this.uiManager.stopVidiprinter();
-               window.clearVidiprinterFeed = () => this.uiManager.clearVidiprinterFeed();
-               window.toggleAutoScroll = () => this.uiManager.toggleAutoScroll();
+                       // UI-related functions - REMOVED: Now handled by UIManager event listeners
+        // window.showModal = (content) => this.uiManager.showModal(content);
+        // window.closeUserDetailsModal = () => this.uiManager.closeUserDetailsModal();
+        // window.initializeDesktopTabs = () => this.uiManager.initializeDesktopTabs();
+        // window.renderDashboard = (user) => this.uiManager.renderDashboard(user);
+        // window.initializeTestimonialModal = () => this.uiManager.initializeTestimonialModal();
+        // window.initializeRegistrationWindowDisplay = () => this.uiManager.initializeRegistrationWindowDisplay();
+        // window.updateRegistrationWindowDisplay = () => this.uiManager.updateRegistrationWindowDisplay();
+        // window.showRegistrationCountdown = (endDate) => this.uiManager.showRegistrationCountdown(endDate);
+        // window.showNextRegistrationCountdown = (startDate) => this.uiManager.showNextRegistrationCountdown(startDate);
+        // window.hideRegistrationCountdowns = () => this.uiManager.hideRegistrationCountdowns();
+        // window.showRegisterButton = (show) => this.uiManager.showRegisterButton(show);
+        // window.initializeVidiprinter = () => this.uiManager.initializeVidiprinter();
+        // window.startVidiprinter = () => this.uiManager.startVidiprinter();
+        // window.stopVidiprinter = () => this.uiManager.stopVidiprinter();
+        // window.clearVidiprinterFeed = () => this.uiManager.clearVidiprinterFeed();
+        // window.toggleAutoScroll = () => this.uiManager.toggleAutoScroll();
         
-        // Game Logic-related functions (newly added)
-        window.generatePickHistory = (picks) => this.gameLogicManager.generatePickHistory(picks);
-        window.renderPickHistory = (picks, container, userId, userData) => this.gameLogicManager.renderPickHistory(picks, container, userId, userData);
-        window.initializeGameweekNavigation = (currentGameWeek, userData, userId) => this.gameLogicManager.initializeGameweekNavigation(currentGameWeek, userData, userId);
-        window.initializeMobileGameweekNavigation = (currentGameWeek, userData, userId) => this.mobileNavigationManager.initializeMobileGameweekNavigation(currentGameWeek, userData, userId);
-        window.navigateToGameweek = (gameweek, userData, userId) => this.gameLogicManager.navigateToGameweek(gameweek, userData, userId);
-        window.navigateGameweek = (currentGameWeek, direction, userData, userId) => this.gameLogicManager.navigateGameweek(currentGameWeek, direction, userData, userId);
-        window.checkAndAssignAutoPicks = (userData, currentGameWeek, userId) => this.gameLogicManager.checkAndAssignAutoPicks(userData, currentGameWeek, userId);
-        window.updatePickStatusHeader = (currentGameWeek, userData, userId) => this.gameLogicManager.updatePickStatusHeader(currentGameWeek, userData, userId);
-        window.updateMobilePickStatusHeader = (currentGameWeek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(currentGameWeek, userData, userId);
-        window.startDeadlineChecker = () => this.gameLogicManager.startDeadlineChecker();
-        window.initializeEnhancedVidiprinter = () => this.gameLogicManager.initializeEnhancedVidiprinter();
-        window.updateNavigationButtons = (currentGameWeek, prevButton, nextButton) => this.gameLogicManager.updateNavigationButtons(currentGameWeek, prevButton, nextButton);
-        window.updateActiveTab = (currentGameWeek, gameweekTabs) => this.gameLogicManager.updateActiveTab(currentGameWeek, gameweekTabs);
-        window.updateTabStates = (gameweekTabs) => this.gameLogicManager.updateTabStates(gameweekTabs);
-        window.navigateGameweek = (currentGameWeek, direction, userData, userId) => this.gameLogicManager.navigateGameweek(currentGameWeek, direction, userData, userId);
-        window.removePick = (userId, gameweekKey) => this.gameLogicManager.removePick(userId, gameweekKey);
-        window.makePick = (userId, gameweek) => this.gameLogicManager.makePick(userId, gameweek);
-        window.selectTeamAsTempPick = (teamName, gameweek, userId) => this.gameLogicManager.selectTeamAsTempPick(teamName, gameweek, userId);
-        window.refreshDisplayAfterPickUpdate = (gameweek, userId) => this.gameLogicManager.refreshDisplayAfterPickUpdate(gameweek, userId);
-        window.saveTempPick = (gameweek, userId) => this.gameLogicManager.saveTempPick(gameweek, userId);
-        window.releaseFuturePick = (teamName, gameweek, userId) => this.gameLogicManager.releaseFuturePick(teamName, gameweek, userId);
-        window.selectTeamAsPick = (teamName, gameweek, userId) => this.gameLogicManager.selectTeamAsPick(teamName, gameweek, userId);
-        window.assignAutoPick = (userData, gameweek, userId) => this.gameLogicManager.assignAutoPick(userData, gameweek, userId);
-        window.getDeadlineDateForGameweek = (gameweek) => this.gameLogicManager.getDeadlineDateForGameweek(gameweek);
-        window.formatDeadlineDate = (date) => this.gameLogicManager.formatDeadlineDate(date);
-        window.getOrdinalSuffix = (day) => this.gameLogicManager.getOrdinalSuffix(day);
-        window.checkDeadlineForGameweek = (gameweek, edition) => this.gameLogicManager.checkDeadlineForGameweek(gameweek, edition);
-        window.batchCheckDeadlines = (gameweeks, edition) => this.gameLogicManager.batchCheckDeadlines(gameweeks, edition);
-        window.getTeamStatusSimple = (teamName, userData, currentGameWeek, userId) => this.gameLogicManager.getTeamStatusSimple(teamName, userData, currentGameWeek, userId);
-        window.getTeamStatus = (teamName, userData, currentGameWeek, userId) => this.gameLogicManager.getTeamStatus(teamName, userData, currentGameWeek, userId);
-        window.getUserEdition = (userData) => this.gameLogicManager.getUserEdition(userData);
-        window.getUserRegisteredEditions = (userData) => this.gameLogicManager.getUserRegisteredEditions(userData);
-        window.getActiveGameweek = () => this.gameLogicManager.getActiveGameweek();
+        // Game Logic-related functions - REMOVED: Now handled by GameLogicManager directly
+        // window.generatePickHistory = (picks) => this.gameLogicManager.generatePickHistory(picks);
+        // window.renderPickHistory = (picks, container, userId, userData) => this.gameLogicManager.renderPickHistory(picks, container, userId, userData);
+        // window.initializeGameweekNavigation = (currentGameWeek, userData, userId) => this.gameLogicManager.initializeGameweekNavigation(currentGameWeek, userData, userId);
+        // window.initializeMobileGameweekNavigation = (currentGameWeek, userData, userId) => this.mobileNavigationManager.initializeMobileGameweekNavigation(currentGameWeek, userData, userId);
+        // window.navigateToGameweek = (gameweek, userData, userId) => this.gameLogicManager.navigateToGameweek(gameweek, userData, userId);
+        // window.navigateGameweek = (currentGameWeek, direction, userData, userId) => this.gameLogicManager.navigateGameweek(currentGameWeek, direction, userData, userId);
+        // window.checkAndAssignAutoPicks = (userData, currentGameWeek, userId) => this.gameLogicManager.checkAndAssignAutoPicks(userData, currentGameWeek, userId);
+        // window.updatePickStatusHeader = (currentGameWeek, userData, userId) => this.gameLogicManager.updatePickStatusHeader(currentGameWeek, userData, userId);
+        // window.updateMobilePickStatusHeader = (currentGameWeek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(currentGameWeek, userData, userId);
+        // window.startDeadlineChecker = () => this.gameLogicManager.startDeadlineChecker();
+        // window.initializeEnhancedVidiprinter = () => this.gameLogicManager.initializeEnhancedVidiprinter();
+        // window.updateNavigationButtons = (currentGameWeek, prevButton, nextButton) => this.gameLogicManager.updateNavigationButtons(currentGameWeek, prevButton, nextButton);
+        // window.updateActiveTab = (currentGameWeek, gameweekTabs) => this.gameLogicManager.updateActiveTab(currentGameWeek, gameweekTabs);
+        // window.updateTabStates = (gameweekTabs) => this.gameLogicManager.updateTabStates(gameweekTabs);
+        // window.navigateGameweek = (currentGameWeek, direction, userData, userId) => this.gameLogicManager.navigateGameweek(currentGameWeek, direction, userData, userId);
+        // window.removePick = (userId, gameweekKey) => this.gameLogicManager.removePick(userId, gameweekKey);
+        // window.makePick = (userId, gameweek) => this.gameLogicManager.makePick(userId, gameweek);
+        // window.selectTeamAsTempPick = (teamName, gameweek, userId) => this.gameLogicManager.selectTeamAsTempPick(teamName, gameweek, userId);
+        // window.refreshDisplayAfterPickUpdate = (gameweek, userId) => this.gameLogicManager.refreshDisplayAfterPickUpdate(gameweek, userId);
+        // window.saveTempPick = (gameweek, userId) => this.gameLogicManager.saveTempPick(gameweek, userId);
+        // window.releaseFuturePick = (teamName, gameweek, userId) => this.gameLogicManager.releaseFuturePick(teamName, gameweek, userId);
+        // window.selectTeamAsPick = (teamName, gameweek, userId) => this.gameLogicManager.selectTeamAsPick(teamName, gameweek, userId);
+        // window.assignAutoPick = (userData, gameweek, userId) => this.gameLogicManager.assignAutoPick(userData, gameweek, userId);
+        // window.getDeadlineDateForGameweek = (gameweek) => this.gameLogicManager.getDeadlineDateForGameweek(gameCode);
+        // window.formatDeadlineDate = (date) => this.gameLogicManager.formatDeadlineDate(date);
+        // window.getOrdinalSuffix = (day) => this.gameLogicManager.getOrdinalSuffix(day);
+        // window.checkDeadlineForGameweek = (gameweek, edition) => this.gameLogicManager.checkDeadlineForGameweek(gameweek, edition);
+        // window.batchCheckDeadlines = (gameweeks, edition) => this.gameLogicManager.batchCheckDeadlines(gameweeks, edition);
+        // window.getTeamStatusSimple = (teamName, userData, currentGameWeek, userId) => this.gameLogicManager.getTeamStatusSimple(teamName, userData, currentGameWeek, userId);
+        // window.getTeamStatus = (teamName, userData, currentGameWeek, userId) => this.gameLogicManager.getTeamStatus(teamName, userData, currentGameWeek, userId);
+        // window.getUserEdition = (userData) => this.gameLogicManager.getUserEdition(userData);
+        // window.getUserRegisteredEditions = (userData) => this.gameLogicManager.getUserRegisteredEditions(userData);
+        // window.getActiveGameweek = () => this.gameLogicManager.getActiveGameweek();
         
-        // Mobile Navigation-related functions (newly added)
-        window.initializeMobileTabs = () => this.mobileNavigationManager.initializeMobileTabs();
-        window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.mobileNavigationManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
-        window.renderMobileFixturesDisplay = (fixtures, userData, currentGameWeek, userId) => this.mobileNavigationManager.renderMobileFixturesDisplay(fixtures, userData, currentGameWeek, userId);
-        window.updateMobilePickStatusHeader = (gameweek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(gameweek, userData, userId);
-        window.initializeMobileGameweekNavigation = (currentGameWeek, userData, userId) => this.mobileNavigationManager.initializeMobileGameweekNavigation(currentGameWeek, userData, userId);
-        window.updateMobileNavigationButtons = (currentGameWeek, prevButton, nextButton) => this.mobileNavigationManager.updateMobileNavigationButtons(currentGameWeek, prevButton, nextButton);
-        window.updateMobileActiveTab = (currentGameWeek, gameweekTabs) => this.mobileNavigationManager.updateMobileActiveTab(currentGameWeek, gameweekTabs);
-        window.updateMobileTabStates = (gameweekTabs) => this.mobileNavigationManager.updateMobileTabStates(gameweekTabs);
-        window.navigateMobileGameweek = (currentGameWeek, direction, userData, userId) => this.mobileNavigationManager.navigateMobileGameweek(currentGameWeek, direction, userData, userId);
-        window.navigateToMobileGameweek = (gameweek, userData, userId) => this.mobileNavigationManager.navigateToMobileGameweek(gameweek, userData, userId);
-        window.renderMobilePlayerScores = (fixtures, gameweek) => this.mobileNavigationManager.renderMobilePlayerScores(fixtures, gameweek);
-        window.toggleTestimonials = () => this.mobileNavigationManager.toggleTestimonials();
-        window.switchToFixturesTab = () => this.mobileNavigationManager.switchToFixturesTab();
+        // Mobile Navigation-related functions - REMOVED: Now handled by MobileNavigationManager directly
+        // window.initializeMobileTabs = () => this.mobileNavigationManager.initializeMobileTabs();
+        // window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.mobileNavigationManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
+        // window.renderMobileFixturesDisplay = (fixtures, userData, currentGameWeek, userId) => this.mobileNavigationManager.renderMobileFixturesDisplay(fixtures, userData, currentGameWeek, userId);
+        // window.updateMobilePickStatusHeader = (gameweek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(gameweek, userData, userId);
+        // window.initializeMobileGameweekNavigation = (currentGameWeek, userData, userId) => this.mobileNavigationManager.initializeMobileGameweekNavigation(currentGameWeek, userData, userId);
+        // window.updateMobileNavigationButtons = (currentGameWeek, prevButton, nextButton) => this.mobileNavigationManager.updateMobileNavigationButtons(currentGameWeek, prevButton, nextButton);
+        // window.updateMobileActiveTab = (currentGameWeek, gameweekTabs) => this.mobileNavigationManager.updateMobileActiveTab(currentGameWeek, gameweekTabs);
+        // window.updateMobileTabStates = (gameweekTabs) => this.mobileNavigationManager.updateMobileTabStates(gameweekTabs);
+        // window.navigateMobileGameweek = (currentGameWeek, direction, userData, userId) => this.mobileNavigationManager.navigateMobileGameweek(currentGameWeek, direction, userData, userId);
+        // window.navigateToMobileGameweek = (gameweek, userData, userId) => this.mobileNavigationManager.navigateToMobileGameweek(gameweek, userData, userId);
+        // window.renderMobilePlayerScores = (fixtures, gameweek) => this.mobileNavigationManager.renderMobilePlayerScores(fixtures, gameweek);
+        // window.toggleTestimonials = () => this.mobileNavigationManager.toggleTestimonials();
+        // window.switchToFixturesTab = () => this.mobileNavigationManager.switchToFixturesTab();
         
-                 // Admin Management-related functions (newly added)
-         window.buildAdminDashboard = (settings) => this.adminManagementManager.buildAdminDashboard(settings);
-         window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
-         window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
-         window.closePlayerEdit = () => this.adminManagementManager.closePlayerEdit();
-         window.loadPlayersForManagement = () => this.adminManagementManager.loadPlayersForManagement();
-         window.displayPlayers = (players) => this.adminManagementManager.displayPlayers(players);
-         window.searchPlayers = () => this.adminManagementManager.searchPlayers();
-         window.filterPlayers = () => this.adminManagementManager.filterPlayers();
-         window.editPlayer = (playerId) => this.adminManagementManager.editPlayer(playerId);
-         window.savePlayerEdit = (event) => this.adminManagementManager.savePlayerEdit(event);
-         window.archivePlayer = (playerId) => this.adminManagementManager.archivePlayer(playerId);
-         window.unarchivePlayer = (playerId) => this.adminManagementManager.unarchivePlayer(playerId);
-         window.addToTestWeeks = (playerId) => this.adminManagementManager.addToTestWeeks(playerId);
-         window.deletePlayer = (playerId) => this.adminManagementManager.deletePlayer(playerId);
-         window.resetAllPlayerLives = () => this.adminManagementManager.resetAllPlayerLives();
-         window.generateTestScores = () => this.adminManagementManager.generateTestScores();
-         window.initializeEnhancedVidiprinter = () => this.adminManagementManager.initializeEnhancedVidiprinter();
-         window.startEnhancedVidiprinter = () => this.adminManagementManager.startEnhancedVidiprinter();
-         window.stopEnhancedVidiprinter = () => this.adminManagementManager.stopEnhancedVidiprinter();
-         window.clearEnhancedVidiprinterFeed = () => this.adminManagementManager.clearEnhancedVidiprinterFeed();
-         window.saveCompetitionSettings = () => this.adminManagementManager.saveCompetitionSettings();
+                 // Admin Management-related functions - REMOVED: Now handled by AdminManagementManager directly
+         // window.buildAdminDashboard = (settings) => this.adminManagementManager.buildAdminDashboard(settings);
+         // window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
+         // window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
+         // window.closePlayerEdit = () => this.adminManagementManager.closePlayerEdit();
+         // window.loadPlayersForManagement = () => this.adminManagementManager.loadPlayersForManagement();
+         // window.displayPlayers = (players) => this.adminManagementManager.displayPlayers(players);
+         // window.searchPlayers = () => this.adminManagementManager.searchPlayers();
+         // window.filterPlayers = () => this.adminManagementManager.filterPlayers();
+         // window.editPlayer = (playerId) => this.adminManagementManager.editPlayer(playerId);
+         // window.savePlayerEdit = (event) => this.adminManagementManager.savePlayerEdit(event);
+         // window.archivePlayer = (playerId) => this.adminManagementManager.archivePlayer(playerId);
+         // window.unarchivePlayer = (playerId) => this.adminManagementManager.unarchivePlayer(playerId);
+         // window.addToTestWeeks = (playerId) => this.adminManagementManager.addToTestWeeks(playerId);
+         // window.deletePlayer = (playerId) => this.adminManagementManager.deletePlayer(playerId);
+         // window.resetAllPlayerLives = () => this.adminManagementManager.resetAllPlayerLives();
+         // window.generateTestScores = () => this.adminManagementManager.generateTestScores();
+         // window.initializeEnhancedVidiprinter = () => this.adminManagementManager.initializeEnhancedVidiprinter();
+         // window.startEnhancedVidiprinter = () => this.adminManagementManager.startEnhancedVidiprinter();
+         // window.stopEnhancedVidiprinter = () => this.adminManagementManager.stopEnhancedVidiprinter();
+         // window.clearEnhancedVidiprinterFeed = () => this.adminManagementManager.clearEnhancedVidiprinterFeed();
+         // window.saveCompetitionSettings = () => this.adminManagementManager.saveCompetitionSettings();
         
-        // Database-related functions (newly added)
-        window.initializeDatabase = () => this.databaseManager.initializeDatabase();
-        window.checkAndInitializeDatabase = () => this.databaseManager.checkAndInitializeDatabase();
-        window.getUserDocument = (userId) => this.databaseManager.getUserDocument(userId);
-        window.updateUserDocument = (userId, updateData) => this.databaseManager.updateUserDocument(userId, updateData);
-        window.saveEditionPreference = (edition, userId) => this.databaseManager.saveEditionPreference(edition, userId);
-        window.saveUserDefaultEdition = (userId) => this.databaseManager.saveUserDefaultEdition(userId);
-        window.getAllUsers = () => this.databaseManager.getAllUsers();
-        window.getUsersByEdition = (edition) => this.databaseManager.getUsersByEdition(edition);
-        window.getUsersOrderedByName = (limit) => this.databaseManager.getUsersOrderedByName(limit);
-        window.getSettingsDocument = (docId) => this.databaseManager.getSettingsDocument(docId);
-        window.setSettingsDocument = (docId, settings) => this.databaseManager.setSettingsDocument(docId, settings);
-        window.getRegistrationSettings = (edition) => this.databaseManager.getRegistrationSettings(edition);
-        window.setRegistrationSettings = (edition, settings) => this.databaseManager.setRegistrationSettings(edition, settings);
-        window.getFixturesDocument = (gameweekKey) => this.databaseManager.getFixturesDocument(gameweekKey);
-        window.updateFixturesDocument = (gameweekKey, fixturesData) => this.databaseManager.updateFixturesDocument(gameweekKey, fixturesData);
-        window.deleteFixturesDocument = (gameweekKey) => this.databaseManager.deleteFixturesDocument(gameweekKey);
-        window.updateUserPick = (userId, gameweekKey, pickData) => this.databaseManager.updateUserPick(userId, gameweekKey, pickData);
-        window.removeUserPick = (userId, gameweekKey) => this.databaseManager.removeUserPick(userId, gameweekKey);
-        window.getUserPicks = (userId) => this.databaseManager.getUserPicks(userId);
-        window.updateUserRegistration = (userId, edition, registrationData) => this.databaseManager.updateUserRegistration(userId, edition, registrationData);
-        window.removeUserRegistration = (userId, edition) => this.databaseManager.removeUserRegistration(userId, edition);
-        window.checkAdminStatus = (userId) => this.databaseManager.checkAdminStatus(userId);
-        window.updateUserStatus = (userId, status, additionalData) => this.databaseManager.updateUserStatus(userId, status, additionalData);
-        window.resetAllPlayerLives = () => this.databaseManager.resetAllPlayerLives();
-        window.batchUpdateUsers = (updates) => this.databaseManager.batchUpdateUsers(updates);
-        window.batchDeleteUsers = (userIds) => this.databaseManager.batchDeleteUsers(userIds);
-        window.startRealTimeScoreUpdates = (gameweek, callback) => this.databaseManager.startRealTimeScoreUpdates(gameweek, callback);
-        window.stopRealTimeScoreUpdates = () => this.databaseManager.stopRealTimeScoreUpdates();
-        window.startEnhancedVidiprinter = (callback) => this.databaseManager.startEnhancedVidiprinter(callback);
-        window.stopEnhancedVidiprinter = () => this.databaseManager.stopEnhancedVidiprinter();
-        window.startDeadlineChecker = (callback) => this.databaseManager.startDeadlineChecker(callback);
-        window.stopDeadlineChecker = () => this.databaseManager.stopDeadlineChecker();
-        window.startAdminSessionMonitoring = (userId, timeoutCallback, warningCallback) => this.databaseManager.startAdminSessionMonitoring(userId, timeoutCallback, warningCallback);
-        window.stopAdminSessionMonitoring = () => this.databaseManager.stopAdminSessionMonitoring();
-        window.startAdminTokenRefresh = (user, refreshCallback) => this.databaseManager.startAdminTokenRefresh(user, refreshCallback);
-        window.stopAdminTokenRefresh = () => this.databaseManager.stopAdminTokenRefresh();
-        window.getDatabaseReference = () => this.databaseManager.getDatabaseReference();
-        window.isDatabaseInitialized = () => this.databaseManager.isDatabaseInitialized();
+        // Database-related functions - REMOVED: Now handled by DatabaseManager directly
+        // window.initializeDatabase = () => this.databaseManager.initializeDatabase();
+        // window.checkAndInitializeDatabase = () => this.databaseManager.checkAndInitializeDatabase();
+        // window.getUserDocument = (userId) => this.databaseManager.getUserDocument(userId);
+        // window.updateUserDocument = (userId, updateData) => this.databaseManager.updateUserDocument(userId, updateData);
+        // window.saveEditionPreference = (edition, userId) => this.databaseManager.saveEditionPreference(edition, userId);
+        // window.saveUserDefaultEdition = (userId) => this.databaseManager.saveUserDefaultEdition(userId);
+        // window.getAllUsers = () => this.databaseManager.getAllUsers();
+        // window.getUsersByEdition = (edition) => this.databaseManager.getUsersByEdition(edition);
+        // window.getUsersOrderedByName = (limit) => this.databaseManager.getUsersOrderedByName(limit);
+        // window.getSettingsDocument = (docId) => this.databaseManager.getSettingsDocument(docId);
+        // window.setSettingsDocument = (docId, settings) => this.databaseManager.setSettingsDocument(docId, settings);
+        // window.getRegistrationSettings = (edition) => this.databaseManager.getRegistrationSettings(edition);
+        // window.setRegistrationSettings = (edition, settings) => this.databaseManager.setRegistrationSettings(edition, settings);
+        // window.getFixturesDocument = (gameweekKey) => this.databaseManager.getFixturesDocument(gameweekKey);
+        // window.updateFixturesDocument = (gameweekKey, fixturesData) => this.databaseManager.updateFixturesDocument(gameweekKey, fixturesData);
+        // window.deleteFixturesDocument = (gameweekKey) => this.databaseManager.deleteFixturesDocument(gameweekKey);
+        // window.updateUserPick = (userId, gameweekKey, pickData) => this.databaseManager.updateUserPick(userId, gameweekKey, pickData);
+        // window.removeUserPick = (userId, gameweekKey) => this.databaseManager.removeUserPick(userId, gameweekKey);
+        // window.getUserPicks = (userId) => this.databaseManager.getUserPicks(userId);
+        // window.updateUserRegistration = (userId, edition, registrationData) => this.databaseManager.updateUserRegistration(userId, edition, registrationData);
+        // window.removeUserRegistration = (userId, edition) => this.databaseManager.removeUserRegistration(userId, edition);
+        // window.checkAdminStatus = (userId) => this.databaseManager.checkAdminStatus(userId);
+        // window.updateUserStatus = (userId, status, additionalData) => this.databaseManager.updateUserStatus(userId, status, additionalData);
+        // window.resetAllPlayerLives = () => this.databaseManager.resetAllPlayerLives();
+        // window.batchUpdateUsers = (updates) => this.databaseManager.batchUpdateUsers(updates);
+        // window.batchDeleteUsers = (userIds) => this.databaseManager.batchDeleteUsers(userIds);
+        // window.startRealTimeScoreUpdates = (gameweek, callback) => this.databaseManager.startRealTimeScoreUpdates(gameweek, callback);
+        // window.stopRealTimeScoreUpdates = () => this.databaseManager.stopRealTimeScoreUpdates();
+        // window.startEnhancedVidiprinter = (callback) => this.databaseManager.startEnhancedVidiprinter(callback);
+        // window.stopEnhancedVidiprinter = () => this.databaseManager.stopEnhancedVidiprinter();
+        // window.startDeadlineChecker = (callback) => this.databaseManager.startDeadlineChecker(callback);
+        // window.stopDeadlineChecker = () => this.databaseManager.stopDeadlineChecker();
+        // window.startAdminSessionMonitoring = (userId, timeoutCallback, warningCallback) => this.databaseManager.startAdminSessionMonitoring(userId, timeoutCallback, warningCallback);
+        // window.stopAdminSessionMonitoring = () => this.databaseManager.stopAdminSessionMonitoring();
+        // window.startAdminTokenRefresh = (user, refreshCallback) => this.databaseManager.startAdminTokenRefresh(user, refreshCallback);
+        // window.stopAdminTokenRefresh = () => this.databaseManager.stopAdminTokenRefresh();
+        // window.getDatabaseReference = () => this.databaseManager.getDatabaseReference();
+        // window.isDatabaseInitialized = () => this.databaseManager.isDatabaseInitialized();
         
-        // API-related functions (newly added)
-        window.initializeFootballWebPagesAPI = () => this.apiManager.initializeFootballWebPagesAPI();
-        window.testApiConnection = () => this.apiManager.testApiConnection();
-        window.checkApiKeyStatus = () => this.apiManager.checkApiKeyStatus();
-        window.fetchAvailableMatchdays = (league, season) => this.apiManager.fetchAvailableMatchdays(league, season);
-        window.fetchSingleFixtures = (league, season, matchday) => this.apiManager.fetchSingleFixtures(league, season, matchday);
-        window.fetchSingleScores = (league, season, matchday) => this.apiManager.fetchSingleScores(league, season, matchday);
-        window.fetchDateRangeFixtures = (league, season, startDate, endDate) => this.apiManager.fetchDateRangeFixtures(league, season, startDate, endDate);
-        window.fetchAllFixtures = (league, season) => this.apiManager.fetchAllFixtures(league, season);
-        window.fetchFixturesFromFootballWebPages = (league, season, matchday, startDate, endDate) => this.apiManager.fetchFixturesFromFootballWebPages(league, season, matchday, startDate, endDate);
-        window.fetchScoresFromFootballWebPages = (league, season, matchday, existingFixtures) => this.apiManager.fetchScoresFromFootballWebPages(league, season, matchday, existingFixtures);
+        // API-related functions - REMOVED: Now handled by ApiManager directly
+        // window.initializeFootballWebPagesAPI = () => this.apiManager.initializeFootballWebPagesAPI();
+        // window.testApiConnection = () => this.apiManager.testApiConnection();
+        // window.checkApiKeyStatus = () => this.apiManager.checkApiKeyStatus();
+        // window.fetchAvailableMatchdays = (league, season) => this.apiManager.fetchAvailableMatchdays(league, season);
+        // window.fetchSingleFixtures = (league, season, matchday) => this.apiManager.fetchSingleFixtures(league, season, matchday);
+        // window.fetchSingleScores = (league, season, matchday) => this.apiManager.fetchSingleScores(league, season, matchday);
+        // window.fetchDateRangeFixtures = (league, season, startDate, endDate) => this.apiManager.fetchDateRangeFixtures(league, season, startDate, endDate);
+        // window.fetchAllFixtures = (league, season) => this.apiManager.fetchAllFixtures(league, season);
+        // window.fetchFixturesFromFootballWebPages = (league, season, matchday, startDate, endDate) => this.apiManager.fetchFixturesFromFootballWebPages(league, season, matchday, startDate, endDate);
+        // window.fetchScoresFromFootballWebPages = (league, season, matchday, existingFixtures) => this.apiManager.fetchScoresFromFootballWebPages(league, season, matchday, existingFixtures);
         // Note: TheSportsDB API functions removed - using Football Web Pages API instead
-        window.fetchEnhancedVidiprinterData = (competition, team, date) => this.apiManager.fetchEnhancedVidiprinterData(competition, team, date);
-        window.fetchVidiprinterData = (competition) => this.apiManager.fetchVidiprinterData(competition);
-        window.fetchScoresViaNetlify = (league, season, matchday, fixtures, startDate, endDate) => this.apiManager.fetchScoresViaNetlify(league, season, matchday, fixtures, startDate, endDate);
-        window.selectAllFixtures = () => this.apiManager.selectAllFixtures();
-        window.deselectAllFixtures = () => this.apiManager.deselectAllFixtures();
-        window.importSelectedFixtures = () => this.apiManager.importSelectedFixtures();
-        window.importFixturesToCurrentGameweek = (fixtures) => this.apiManager.importFixturesToCurrentGameweek(fixtures);
+        // window.fetchEnhancedVidiprinterData = (competition, team, date) => this.apiManager.fetchEnhancedVidiprinterData(competition, team, date);
+        // window.fetchVidiprinterData = (competition) => this.apiManager.fetchVidiprinterData(competition);
+        // window.fetchScoresViaNetlify = (league, season, matchday, fixtures, startDate, endDate) => this.apiManager.fetchScoresViaNetlify(league, season, matchday, fixtures, startDate, endDate);
+        // window.selectAllFixtures = () => this.apiManager.selectAllFixtures();
+        // window.deselectAllFixtures = () => this.apiManager.deselectAllFixtures();
+        // window.importSelectedFixtures = () => this.apiManager.importSelectedFixtures();
+        // window.importFixturesToCurrentGameweek = (fixtures) => this.apiManager.importFixturesToCurrentGameweek(fixtures);
         
-        // Utilities-related functions (newly added)
-        window.formatDeadlineDate = (date) => this.utilitiesManager.formatDeadlineDate(date);
-        window.getOrdinalSuffix = (day) => this.utilitiesManager.getOrdinalSuffix(day);
-        window.getDeadlineDateForGameweek = (gameweek) => this.utilitiesManager.getDeadlineDateForGameweek(gameweek);
-        window.getUserEdition = (userData) => this.utilitiesManager.getUserEdition(userData);
-        window.getUserRegisteredEditions = (userData) => this.utilitiesManager.getUserRegisteredEditions(userData);
-        window.getActiveGameweek = () => this.utilitiesManager.getActiveGameweek();
-        window.setActiveGameweek = (gameweek) => this.utilitiesManager.setActiveGameweek(gameweek);
-        window.setActiveEdition = (edition) => this.utilitiesManager.setActiveEdition(edition);
-        window.getTeamStatusSimple = (teamName, userData, currentGameWeek, userId) => this.utilitiesManager.getTeamStatusSimple(teamName, userData, currentGameWeek, userId);
-        window.getTeamStatus = (teamName, userData, currentGameWeek, userId) => this.utilitiesManager.getTeamStatus(teamName, userData, currentGameWeek, userId);
-        window.getStatusDisplay = (status) => this.utilitiesManager.getStatusDisplay(status);
-        window.getMockFixtures = (league, gameweek) => this.utilitiesManager.getMockFixtures(league, gameweek);
-        window.getMockScores = (existingFixtures) => this.utilitiesManager.getMockScores(existingFixtures);
-        window.getMockRounds = () => this.utilitiesManager.getMockRounds();
-        window.getMockMatchdays = () => this.utilitiesManager.getMockMatchdays();
-        window.calculateTeamNameSimilarity = (name1, name2) => this.utilitiesManager.calculateTeamNameSimilarity(name1, name2);
-        window.normalizeTeamName = (teamName) => this.utilitiesManager.normalizeTeamName(teamName);
-        window.groupFixturesByDate = (fixtures) => this.utilitiesManager.groupFixturesByDate(fixtures);
-        window.showRegistrationClosed = (message) => this.utilitiesManager.showRegistrationClosed(message);
-        window.showRegistrationCountdown = (endDate) => this.utilitiesManager.showRegistrationCountdown(endDate);
-        window.showNextRegistrationCountdown = (startDate) => this.utilitiesManager.showNextRegistrationCountdown(startDate);
-        window.hideRegistrationCountdowns = () => this.utilitiesManager.hideRegistrationCountdowns();
-        window.showRegisterButton = (show) => this.utilitiesManager.showRegisterButton(show);
-        window.resetAsItStandsInitialization = () => this.utilitiesManager.resetAsItStandsInitialization();
-        window.diagnoseAsItStandsElements = () => this.utilitiesManager.diagnoseAsItStandsElements();
-        window.testAsItStandsManually = () => this.utilitiesManager.testAsItStandsManually();
-        window.checkPickStillValid = (pick, fixtures) => this.utilitiesManager.checkPickStillValid(pick, fixtures);
+        // Utilities-related functions - REMOVED: Now handled by UtilitiesManager directly
+        // window.formatDeadlineDate = (date) => this.utilitiesManager.formatDeadlineDate(date);
+        // window.getOrdinalSuffix = (day) => this.utilitiesManager.getOrdinalSuffix(day);
+        // window.getDeadlineDateForGameweek = (gameweek) => this.utilitiesManager.getDeadlineDateForGameweek(gameweek);
+        // window.getUserEdition = (userData) => this.utilitiesManager.getUserEdition(userData);
+        // window.getUserRegisteredEditions = (userData) => this.utilitiesManager.getUserRegisteredEditions(userData);
+        // window.getActiveGameweek = () => this.utilitiesManager.getActiveGameweek();
+        // window.setActiveGameweek = (gameweek) => this.utilitiesManager.setActiveGameweek(gameweek);
+        // window.setActiveEdition = (edition) => this.utilitiesManager.setActiveEdition(edition);
+        // window.getTeamStatusSimple = (teamName, userData, currentGameWeek, userId) => this.utilitiesManager.getTeamStatusSimple(teamName, userData, currentGameWeek, userId);
+        // window.getTeamStatus = (teamName, userData, currentGameWeek, userId) => this.utilitiesManager.getTeamStatus(teamName, userData, currentGameWeek, userId);
+        // window.getStatusDisplay = (status) => this.utilitiesManager.getStatusDisplay(status);
+        // window.getMockFixtures = (league, gameweek) => this.utilitiesManager.getMockFixtures(league, gameweek);
+        // window.getMockScores = (existingFixtures) => this.utilitiesManager.getMockScores(existingFixtures);
+        // window.getMockRounds = () => this.utilitiesManager.getMockRounds();
+        // window.getMockMatchdays = () => this.utilitiesManager.getMockMatchdays();
+        // window.calculateTeamNameSimilarity = (name1, name2) => this.utilitiesManager.calculateTeamNameSimilarity(name1, name2);
+        // window.normalizeTeamName = (teamName) => this.utilitiesManager.normalizeTeamName(teamName);
+        // window.groupFixturesByDate = (fixtures) => this.utilitiesManager.groupFixturesByDate(fixtures);
+        // window.showRegistrationClosed = (message) => this.utilitiesManager.showRegistrationClosed(message);
+        // window.showRegistrationCountdown = (endDate) => this.utilitiesManager.showRegistrationCountdown(endDate);
+        // window.showNextRegistrationCountdown = (startDate) => this.utilitiesManager.showNextRegistrationCountdown(startDate);
+        // window.hideRegistrationCountdowns = () => this.utilitiesManager.hideRegistrationCountdowns();
+        // window.showRegisterButton = (show) => this.utilitiesManager.showRegisterButton(show);
+        // window.resetAsItStandsInitialization = () => this.utilitiesManager.resetAsItStandsInitialization();
+        // window.diagnoseAsItStandsElements = () => this.utilitiesManager.diagnoseAsItStandsElements();
+        // window.testAsItStandsManually = () => this.utilitiesManager.testAsItStandsManually();
+        // window.checkPickStillValid = (pick, fixtures) => this.utilitiesManager.checkPickStillValid(pick, fixtures);
         
-        // Auth-related functions
-        window.initializeAuthListener = () => this.authManager.initializeAuthListener();
-        window.startAdminTokenRefresh = (user) => this.authManager.startAdminTokenRefresh(user);
-        window.stopAdminTokenRefresh = () => this.authManager.stopAdminTokenRefresh();
-        window.checkAdminStatusFromStorage = () => this.authManager.checkAdminStatusFromStorage();
-        window.initializeAdminPage = () => this.authManager.initializeAdminPage();
-        window.showAdminLoginForm = () => this.authManager.showAdminLoginForm();
-        window.loadAdminPanelSettings = () => this.authManager.loadAdminPanelSettings();
-        window.showSettingsError = (message) => this.authManager.showSettingsError(message);
-        window.startAdminSessionMonitoring = () => this.authManager.startAdminSessionMonitoring();
-        window.stopAdminSessionMonitoring = () => this.authManager.stopAdminSessionMonitoring();
-        window.showSessionTimeoutWarning = () => this.authManager.showSessionTimeoutWarning();
-        window.extendAdminSession = () => this.authManager.extendAdminSession();
-        window.handleAdminSessionTimeout = () => this.authManager.handleAdminSessionTimeout();
-        window.initializeAdminPageVisibilityHandling = () => this.authManager.initializeAdminPageVisibilityHandling();
-        window.initializeAdminLoginHandlers = () => this.authManager.initializeAdminLoginHandlers();
-        window.handleAdminLogin = (e) => this.authManager.handleAdminLogin(e);
-        window.handleAdminLogout = () => this.authManager.handleAdminLogout();
+        // Auth-related functions - REMOVED: Now handled by AuthManager directly
+        // window.initializeAuthListener = () => this.authManager.initializeAuthListener();
+        // window.startAdminTokenRefresh = (user) => this.authManager.startAdminTokenRefresh(user);
+        // window.stopAdminTokenRefresh = () => this.authManager.stopAdminTokenRefresh();
+        // window.checkAdminStatusFromStorage = () => this.authManager.checkAdminStatusFromStorage();
+        // window.initializeAdminPage = () => this.authManager.initializeAdminPage();
+        // window.showAdminLoginForm = () => this.authManager.showAdminLoginForm();
+        // window.loadAdminPanelSettings = () => this.authManager.loadAdminPanelSettings();
+        // window.showSettingsError = (message) => this.authManager.showSettingsError(message);
+        // window.startAdminSessionMonitoring = () => this.authManager.startAdminSessionMonitoring();
+        // window.stopAdminSessionMonitoring = () => this.authManager.stopAdminSessionMonitoring();
+        // window.showSessionTimeoutWarning = () => this.authManager.showSessionTimeoutWarning();
+        // window.extendAdminSession = () => this.authManager.extendAdminSession();
+        // window.handleAdminSessionTimeout = () => this.authManager.handleAdminSessionTimeout();
+        // window.initializeAdminPageVisibilityHandling = () => this.authManager.initializeAdminPageVisibilityHandling();
+        // window.initializeAdminLoginHandlers = () => this.authManager.initializeAdminLoginHandlers();
+        // window.handleAdminLogin = (e) => this.authManager.handleAdminLogin(e);
+        // window.handleAdminLogout = () => this.authManager.handleAdminLogout();
         
-        // Registration-related functions
-        window.updateRegistrationPageEdition = () => this.registrationManager.updateRegistrationPageEdition();
-        window.updateEditionDisplay = () => this.registrationManager.updateEditionDisplay();
-        window.getUserEdition = (userData) => this.registrationManager.getUserEdition(userData);
-        window.getUserRegisteredEditions = (userData) => this.registrationManager.getUserRegisteredEditions(userData);
-        window.saveEditionPreference = (edition, userId) => this.registrationManager.saveEditionPreference(edition, userId);
-        window.updateUserDefaultEdition = (userId, edition) => this.registrationManager.updateUserDefaultEdition(userId, edition);
-        window.saveUserDefaultEdition = (userId) => this.registrationManager.saveUserDefaultEdition(userId);
-        window.loadCurrentEditionForRegistration = () => this.registrationManager.loadCurrentEditionForRegistration();
-        window.checkRegistrationWindow = (edition) => this.registrationManager.checkRegistrationWindow(edition);
-        window.showRegistrationClosed = (message) => this.registrationManager.showRegistrationClosed(message);
-        window.initializeRegistrationManagement = () => this.registrationManager.initializeRegistrationManagement();
-        window.loadRegistrationSettings = () => this.registrationManager.loadRegistrationSettings();
-        window.loadEditionRegistrationSettings = () => this.registrationManager.loadEditionRegistrationSettings();
-        window.loadAllEditionsOverview = () => this.registrationManager.loadAllEditionsOverview();
-        window.saveRegistrationSettings = () => this.registrationManager.saveRegistrationSettings();
-        window.refreshRegistrationStats = () => this.registrationManager.refreshRegistrationStats();
-        window.updateRegistrationList = () => this.registrationManager.updateRegistrationList();
-        window.viewUserDetails = (userId) => this.registrationManager.viewUserDetails(userId);
-        window.generateRegistrationHistory = (registrations) => this.registrationManager.generateRegistrationHistory(registrations);
-        window.showModal = (content) => this.registrationManager.showModal(content);
-        window.closeUserDetailsModal = () => this.registrationManager.closeUserDetailsModal();
+        // Registration-related functions - REMOVED: Now handled by RegistrationManager directly
+        // window.updateRegistrationPageEdition = () => this.registrationManager.updateRegistrationPageEdition();
+        // window.updateEditionDisplay = () => this.registrationManager.updateEditionDisplay();
+        // window.getUserEdition = (userData) => this.registrationManager.getUserEdition(userData);
+        // window.getUserRegisteredEditions = (userData) => this.registrationManager.getUserRegisteredEditions(userData);
+        // window.saveEditionPreference = (edition, userId) => this.registrationManager.saveEditionPreference(edition, userId);
+        // window.updateUserDefaultEdition = (userId, edition) => this.registrationManager.updateUserDefaultEdition(userId, edition);
+        // window.saveUserDefaultEdition = (userId) => this.registrationManager.saveUserDefaultEdition(userId);
+        // window.loadCurrentEditionForRegistration = () => this.registrationManager.loadCurrentEditionForRegistration();
+        // window.checkRegistrationWindow = (edition) => this.registrationManager.checkRegistrationWindow(edition);
+        // window.showRegistrationClosed = (message) => this.registrationManager.showRegistrationClosed(message);
+        // window.initializeRegistrationManagement = () => this.registrationManager.initializeRegistrationManagement();
+        // window.loadRegistrationSettings = () => this.registrationManager.loadRegistrationSettings();
+        // window.loadEditionRegistrationSettings = () => this.registrationManager.loadEditionRegistrationSettings();
+        // window.loadAllEditionsOverview = () => this.registrationManager.loadAllEditionsOverview();
+        // window.saveRegistrationSettings = () => this.registrationManager.saveRegistrationSettings();
+        // window.refreshRegistrationStats = () => this.registrationManager.refreshRegistrationStats();
+        // window.updateRegistrationList = () => this.registrationManager.updateRegistrationList();
+        // window.viewUserDetails = (userId) => this.registrationManager.viewUserDetails(userId);
+        // window.generateRegistrationHistory = (registrations) => this.registrationManager.generateRegistrationHistory(registrations);
+        // window.showModal = (content) => this.registrationManager.showModal(content);
+        // window.closeUserDetailsModal = () => this.registrationManager.closeUserDetailsModal();
         
-        // Fixture management functions
-        window.saveFixtures = () => this.fixturesManager.saveFixtures();
-        window.checkFixtures = () => this.fixturesManager.checkFixtures();
-        window.editFixtures = () => this.fixturesManager.editFixtures();
-        window.switchToViewMode = () => this.fixturesManager.switchToViewMode();
-        window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
-        window.addFixtureRow = () => this.fixturesManager.addFixtureRow();
-        window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
-        window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
+        // Fixture management functions - REMOVED: Now handled by FixturesManager event listeners
+        // window.saveFixtures = () => this.fixturesManager.saveFixtures();
+        // window.checkFixtures = () => this.fixturesManager.checkFixtures();
+        // window.editFixtures = () => this.fixturesManager.editFixtures();
+        // window.switchToViewMode = () => this.fixturesManager.switchToViewMode();
+        // window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
+        // window.addFixtureRow = () => this.fixturesManager.addFixtureRow();
+        // window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
+        // window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
         
         console.log('🔧 Global functions set up for backward compatibility');
     }
@@ -446,11 +446,11 @@ class App {
         window.apiManager = this.apiManager;
         window.utilitiesManager = this.utilitiesManager;
         
-        // Expose specific admin functions
-        window.initializeAdminLoginHandlers = () => this.authManager.initializeAdminLoginHandlers();
-        window.handleAdminLogin = (e) => this.authManager.handleAdminLogin(e);
-        window.handleAdminLogout = () => this.authManager.handleAdminLogout();
-        window.extendAdminSession = () => this.authManager.extendAdminSession();
+        // Expose specific admin functions - REMOVED: Now handled by AuthManager directly
+        // window.initializeAdminLoginHandlers = () => this.authManager.initializeAdminLoginHandlers();
+        // window.handleAdminLogin = (e) => this.authManager.handleAdminLogin(e);
+        // window.handleAdminLogout = () => this.authManager.handleAdminLogout();
+        // window.extendAdminSession = () => this.authManager.extendAdminSession();
         
         console.log('🔧 Exposing admin functions globally...');
         console.log('Available global functions:', {
@@ -486,8 +486,8 @@ class App {
                 if (this.authManager && this.authManager.currentUser) {
                     console.log('🔧 User authenticated, initializing dashboard...');
                     // Initialize dashboard for authenticated user
-                    if (typeof window.renderDashboard === 'function') {
-                        await window.renderDashboard(this.authManager.currentUser);
+                    if (this.uiManager && typeof this.uiManager.renderDashboard === 'function') {
+                        await this.uiManager.renderDashboard(this.authManager.currentUser);
                     }
                 } else {
                     console.log('🔧 No authenticated user, redirecting to login...');
