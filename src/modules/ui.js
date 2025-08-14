@@ -26,6 +26,10 @@ class UIManager {
         this.initializeTestimonialModal();
         this.initializeRegistrationWindowDisplay();
         this.initializeVidiprinter();
+        
+        // Initialize tab functionality
+        this.initializeMobileTabs();
+        this.initializeDesktopTabs();
     }
 
     // Set up event listeners for UI functionality

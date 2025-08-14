@@ -1042,7 +1042,10 @@ class AdminManagementManager {
             if (b.lives !== a.lives) {
                 return b.lives - a.lives;
             }
-            return a.firstName.localeCompare(b.firstName);
+            // Handle undefined firstName values safely
+            const aName = (a.firstName || '') + ' ' + (a.surname || '');
+            const bName = (b.firstName || '') + ' ' + (b.surname || '');
+            return aName.localeCompare(bName);
         });
         
         return standings;

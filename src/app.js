@@ -38,67 +38,23 @@ class App {
         this.initialized = false;
     }
 
-    // Initialize the application
+    // Initialize the app
     async initialize() {
         try {
             console.log('🚀 Initializing LOS App...');
             
-            // Wait for Firebase to be available
-            await this.waitForFirebase();
+            // Initialize Firebase references
+            this.initializeFirebaseReferences();
             
             // Initialize managers
-            this.authManager = new AuthManager();
-            this.registrationManager = new RegistrationManager(this.db, this.auth);
-            this.fixturesManager = new FixturesManager(this.db);
-            this.scoresManager = new ScoresManager(this.db);
-            this.uiManager = new UIManager(this.db);
-            this.gameLogicManager = new GameLogicManager(this.db);
-            this.mobileNavigationManager = new MobileNavigationManager(this.db);
-            this.adminManagementManager = new AdminManagementManager(this.db);
-            this.databaseManager = new DatabaseManager(); // Initialize Database Manager
-            this.apiManager = new ApiManager(); // Initialize API Manager
-            this.utilitiesManager = new UtilitiesManager(); // Initialize Utilities Manager
-            
-            // Initialize auth manager
-            await this.authManager.initialize(this.db, this.auth);
-            
-            // Initialize fixtures manager
-            this.fixturesManager.initializeFixtureManagement();
-            
-            // Initialize scores manager
-            this.scoresManager.initializeScoresManagement();
-            
-            // Initialize UI manager
-            this.uiManager.initializeUIManagement();
-            
-            // Initialize game logic manager
-            this.gameLogicManager.initializeGameLogicManagement();
-            
-            // Initialize mobile navigation manager
-            this.mobileNavigationManager.initializeMobileNavigationManagement();
-            
-            // Initialize admin management manager
-            this.adminManagementManager.initializeAdminManagement();
-            
-            // Initialize database manager
-            this.databaseManager.initializeDatabaseManager();
-            
-            // Initialize API manager
-            this.apiManager.initializeApiManager();
-            
-            // Initialize utilities manager
-            this.utilitiesManager.initializeUtilitiesManager();
-            
-            // Set up global references for backward compatibility
-            this.setupGlobalReferences();
+            await this.initializeManagers();
             
             // Initialize page-specific functionality
-            this.initializePageSpecificFeatures();
+            await this.initializePageSpecificFeatures();
             
             // Expose admin functions globally for admin.html
-            this.exposeAdminFunctions();
+            this.exposeAdminFunctionsGlobally();
             
-            this.initialized = true;
             console.log('✅ LOS App initialized successfully!');
             
         } catch (error) {
@@ -469,7 +425,7 @@ class App {
     }
 
     // Initialize page-specific features
-    initializePageSpecificFeatures() {
+    async initializePageSpecificFeatures() {
         // Check current page and initialize appropriate features
         const currentPage = this.getCurrentPage();
         
@@ -481,6 +437,19 @@ class App {
             case 'dashboard':
                 console.log('🔧 Initializing dashboard features...');
                 // Dashboard-specific initialization
+                if (this.authManager && this.authManager.currentUser) {
+                    console.log('🔧 User authenticated, initializing dashboard...');
+                    // Initialize dashboard for authenticated user
+                    if (typeof window.renderDashboard === 'function') {
+                        await window.renderDashboard(this.authManager.currentUser);
+                    }
+                } else {
+                    console.log('🔧 No authenticated user, redirecting to login...');
+                    // Redirect to login if not authenticated
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 1000);
+                }
                 break;
             case 'register':
                 console.log('🔧 Initializing registration page features...');
