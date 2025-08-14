@@ -48,7 +48,7 @@ class App {
             
             // Initialize managers
             this.authManager = new AuthManager();
-            this.registrationManager = new RegistrationManager(this.db);
+            this.registrationManager = new RegistrationManager(this.db, this.auth);
             this.fixturesManager = new FixturesManager(this.db);
             this.scoresManager = new ScoresManager(this.db);
             this.uiManager = new UIManager(this.db);
@@ -488,6 +488,9 @@ class App {
             case 'register':
                 console.log('🔧 Initializing registration page features...');
                 // Registration-specific initialization
+                if (this.registrationManager) {
+                    this.registrationManager.initializeRegistrationPage();
+                }
                 break;
             default:
                 console.log('🔧 Initializing general page features...');

@@ -2,8 +2,9 @@
 // Handles user registration, edition management, and registration settings
 
 class RegistrationManager {
-    constructor(db) {
+    constructor(db, auth) {
         this.db = db;
+        this.auth = auth;
         this.currentActiveEdition = 1;
         this.currentEditionName = "Edition 1";
         this.registrationManagementInitialized = false;
@@ -30,9 +31,501 @@ class RegistrationManager {
             refreshStatsBtn.addEventListener('click', this.refreshRegistrationStats.bind(this));
         }
 
+        // Initialize registration page functionality
+        this.initializeRegistrationPage();
+
         // Load current settings
         this.loadRegistrationSettings();
         this.refreshRegistrationStats();
+    }
+
+    // Initialize registration page functionality
+    initializeRegistrationPage() {
+        console.log('🔧 Initializing registration page functionality...');
+        console.log('🔍 Current page URL:', window.location.href);
+        console.log('🔍 Document ready state:', document.readyState);
+        
+        // Initialize age verification buttons
+        console.log('🔧 Step 1: Initializing age verification...');
+        this.initializeAgeVerification();
+        
+        // Initialize form submission handlers
+        console.log('🔧 Step 2: Initializing form handlers...');
+        this.initializeFormHandlers();
+        
+        // Initialize edition selection change handler
+        console.log('🔧 Step 3: Initializing edition selection...');
+        this.initializeEditionSelection();
+        
+        // Initialize form toggle handlers
+        console.log('🔧 Step 4: Initializing form toggles...');
+        this.initializeFormToggles();
+        
+        // Load current edition and update displays
+        console.log('🔧 Step 5: Loading current edition...');
+        this.loadCurrentEditionForRegistration();
+        
+        // Check registration window status
+        console.log('🔧 Step 6: Checking registration window...');
+        this.checkRegistrationWindow();
+        
+        console.log('✅ Registration page initialization completed');
+    }
+
+    // Initialize age verification buttons
+    initializeAgeVerification() {
+        console.log('🔍 Initializing age verification buttons...');
+        
+        const ageYesBtn = document.getElementById('age-yes-btn');
+        const ageNoBtn = document.getElementById('age-no-btn');
+        const ageVerifiedInput = document.getElementById('register-age-verified');
+
+        console.log('🔍 Age verification elements found:', {
+            ageYesBtn: !!ageYesBtn,
+            ageNoBtn: !!ageNoBtn,
+            ageVerifiedInput: !!ageVerifiedInput
+        });
+
+        if (ageYesBtn && ageNoBtn && ageVerifiedInput) {
+            console.log('✅ All age verification elements found, adding event listeners...');
+            
+            ageYesBtn.addEventListener('click', () => {
+                console.log('✅ Age Yes button clicked');
+                // Remove selected class from both buttons
+                ageYesBtn.classList.remove('selected');
+                ageNoBtn.classList.remove('selected');
+                
+                // Add selected class to yes button
+                ageYesBtn.classList.add('selected');
+                
+                // Set the hidden input value
+                ageVerifiedInput.value = 'yes';
+                
+                console.log('Age verification: Yes selected');
+            });
+
+            ageNoBtn.addEventListener('click', () => {
+                console.log('✅ Age No button clicked');
+                // Remove selected class from both buttons
+                ageYesBtn.classList.remove('selected');
+                ageNoBtn.classList.remove('selected');
+                
+                // Add selected class to no button
+                ageNoBtn.classList.add('selected');
+                
+                // Set the hidden input value
+                ageVerifiedInput.value = 'no';
+                
+                console.log('Age verification: No selected');
+            });
+            
+            console.log('✅ Age verification event listeners added successfully');
+        } else {
+            console.error('❌ Some age verification elements not found:', {
+                ageYesBtn: !!ageYesBtn,
+                ageNoBtn: !!ageNoBtn,
+                ageVerifiedInput: !!ageVerifiedInput
+            });
+        }
+    }
+
+    // Initialize form submission handlers
+    initializeFormHandlers() {
+        const registerForm = document.getElementById('register-form');
+        const reRegisterForm = document.getElementById('re-register-form');
+
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => this.handleRegistrationSubmit(e));
+        }
+
+        if (reRegisterForm) {
+            reRegisterForm.addEventListener('submit', (e) => this.handleReRegistrationSubmit(e));
+        }
+    }
+
+    // Initialize edition selection change handler
+    initializeEditionSelection() {
+        const editionSelection = document.getElementById('edition-selection');
+        if (editionSelection) {
+            editionSelection.addEventListener('change', () => {
+                this.updateEditionDisplay();
+            });
+        }
+    }
+
+    // Initialize form toggle handlers
+    initializeFormToggles() {
+        const showReRegister = document.getElementById('show-re-register');
+        const showNewRegister = document.getElementById('show-new-register');
+        const registerForm = document.getElementById('register-form');
+        const reRegisterForm = document.getElementById('re-register-form');
+
+        if (showReRegister && showNewRegister && registerForm && reRegisterForm) {
+            showReRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                registerForm.style.display = 'none';
+                reRegisterForm.style.display = 'block';
+                showReRegister.style.display = 'none';
+                showNewRegister.style.display = 'inline';
+            });
+
+            showNewRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                reRegisterForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                showNewRegister.style.display = 'none';
+                showReRegister.style.display = 'inline';
+            });
+        }
+    }
+
+    // Handle main registration form submission
+    async handleRegistrationSubmit(e) {
+        e.preventDefault();
+        console.log('Handling registration form submission...');
+
+        // Get form data
+        const formData = {
+            firstName: document.getElementById('register-firstname').value.trim(),
+            surname: document.getElementById('register-surname').value.trim(),
+            ageVerified: document.getElementById('register-age-verified').value,
+            email: document.getElementById('register-email').value.trim(),
+            mobile: document.getElementById('register-mobile').value.trim(),
+            password: document.getElementById('register-password').value,
+            confirmPassword: document.getElementById('register-confirm-password').value,
+            paymentMethod: document.getElementById('register-payment').value,
+            emailConsent: document.getElementById('register-email-consent').checked,
+            whatsappConsent: document.getElementById('register-whatsapp-consent').checked,
+            termsAccepted: document.getElementById('register-terms').checked,
+            edition: document.getElementById('edition-selection').value
+        };
+
+        // Validate form data
+        const validationResult = this.validateRegistrationForm(formData);
+        if (!validationResult.isValid) {
+            this.showRegistrationError(validationResult.message);
+            return;
+        }
+
+        try {
+            // Create user account
+            const userCredential = await this.auth.createUserWithEmailAndPassword(
+                formData.email, 
+                formData.password
+            );
+
+            const user = userCredential.user;
+            console.log('User account created:', user.uid);
+
+            // Save user data to Firestore
+            await this.saveUserRegistrationData(user.uid, formData);
+
+            // Show success message
+            this.showRegistrationSuccess('Registration successful! You can now log in.');
+
+            // Clear form
+            this.clearRegistrationForm();
+
+        } catch (error) {
+            console.error('Registration error:', error);
+            this.showRegistrationError(this.getRegistrationErrorMessage(error));
+        }
+    }
+
+    // Handle re-registration form submission
+    async handleReRegistrationSubmit(e) {
+        e.preventDefault();
+        console.log('Handling re-registration form submission...');
+
+        // Get form data
+        const formData = {
+            email: document.getElementById('re-register-email').value.trim(),
+            password: document.getElementById('re-register-password').value,
+            paymentMethod: document.getElementById('re-register-payment').value,
+            emailConsent: document.getElementById('re-register-email-consent').checked,
+            whatsappConsent: document.getElementById('re-register-whatsapp-consent').checked,
+            termsAccepted: document.getElementById('re-register-terms').checked,
+            edition: document.getElementById('edition-selection').value
+        };
+
+        // Validate form data
+        const validationResult = this.validateReRegistrationForm(formData);
+        if (!validationResult.isValid) {
+            this.showReRegistrationError(validationResult.message);
+            return;
+        }
+
+        try {
+            // Sign in existing user
+            const userCredential = await this.auth.signInWithEmailAndPassword(
+                formData.email, 
+                formData.password
+            );
+
+            const user = userCredential.user;
+            console.log('User signed in for re-registration:', user.uid);
+
+            // Update user registration data
+            await this.updateUserRegistrationData(user.uid, formData);
+
+            // Show success message
+            this.showReRegistrationSuccess('Re-registration successful! Welcome back.');
+
+            // Clear form
+            this.clearReRegistrationForm();
+
+        } catch (error) {
+            console.error('Re-registration error:', error);
+            this.showReRegistrationError(this.getRegistrationErrorMessage(error));
+        }
+    }
+
+    // Validate registration form data
+    validateRegistrationForm(formData) {
+        if (!formData.firstName) {
+            return { isValid: false, message: 'First name is required' };
+        }
+        if (!formData.surname) {
+            return { isValid: false, message: 'Surname is required' };
+        }
+        if (!formData.ageVerified) {
+            return { isValid: false, message: 'Please verify your age' };
+        }
+        if (formData.ageVerified === 'no') {
+            return { isValid: false, message: 'You must be 16 or older to register' };
+        }
+        if (!formData.email) {
+            return { isValid: false, message: 'Email address is required' };
+        }
+        if (!formData.mobile) {
+            return { isValid: false, message: 'Mobile number is required' };
+        }
+        if (!formData.password) {
+            return { isValid: false, message: 'Password is required' };
+        }
+        if (formData.password.length < 6) {
+            return { isValid: false, message: 'Password must be at least 6 characters' };
+        }
+        if (formData.password !== formData.confirmPassword) {
+            return { isValid: false, message: 'Passwords do not match' };
+        }
+        if (!formData.paymentMethod) {
+            return { isValid: false, message: 'Please select a payment method' };
+        }
+        if (!formData.emailConsent) {
+            return { isValid: false, message: 'Email consent is required' };
+        }
+        if (!formData.termsAccepted) {
+            return { isValid: false, message: 'You must accept the terms and conditions' };
+        }
+        if (!formData.edition) {
+            return { isValid: false, message: 'Please select an edition' };
+        }
+
+        return { isValid: true };
+    }
+
+    // Validate re-registration form data
+    validateReRegistrationForm(formData) {
+        if (!formData.email) {
+            return { isValid: false, message: 'Email address is required' };
+        }
+        if (!formData.password) {
+            return { isValid: false, message: 'Password is required' };
+        }
+        if (!formData.paymentMethod) {
+            return { isValid: false, message: 'Please select a payment method' };
+        }
+        if (!formData.emailConsent) {
+            return { isValid: false, message: 'Email consent is required' };
+        }
+        if (!formData.termsAccepted) {
+            return { isValid: false, message: 'You must accept the terms and conditions' };
+        }
+        if (!formData.edition) {
+            return { isValid: false, message: 'Please select an edition' };
+        }
+
+        return { isValid: true };
+    }
+
+    // Show registration error message
+    showRegistrationError(message) {
+        const errorElement = document.getElementById('error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Show registration success message
+    showRegistrationSuccess(message) {
+        // Create a temporary success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.textContent = message;
+        successDiv.style.cssText = `
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: bold;
+        `;
+
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.parentNode.insertBefore(successDiv, registerForm.nextSibling);
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+    }
+
+    // Show re-registration error message
+    showReRegistrationError(message) {
+        const errorElement = document.getElementById('re-register-error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Show re-registration success message
+    showReRegistrationSuccess(message) {
+        // Create a temporary success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.textContent = message;
+        successDiv.style.cssText = `
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: bold;
+        `;
+
+        const reRegisterForm = document.getElementById('re-register-form');
+        if (reRegisterForm) {
+            reRegisterForm.parentNode.insertBefore(successDiv, reRegisterForm.nextSibling);
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+    }
+
+    // Clear registration form
+    clearRegistrationForm() {
+        const form = document.getElementById('register-form');
+        if (form) {
+            form.reset();
+            // Clear age verification selection
+            const ageYesBtn = document.getElementById('age-yes-btn');
+            const ageNoBtn = document.getElementById('age-no-btn');
+            const ageVerifiedInput = document.getElementById('register-age-verified');
+            
+            if (ageYesBtn) ageYesBtn.classList.remove('selected');
+            if (ageNoBtn) ageNoBtn.classList.remove('selected');
+            if (ageVerifiedInput) ageVerifiedInput.value = '';
+        }
+    }
+
+    // Clear re-registration form
+    clearReRegistrationForm() {
+        const form = document.getElementById('re-register-form');
+        if (form) {
+            form.reset();
+        }
+    }
+
+    // Get user-friendly error message
+    getRegistrationErrorMessage(error) {
+        if (error.code === 'auth/email-already-in-use') {
+            return 'An account with this email already exists. Please use the re-registration form instead.';
+        } else if (error.code === 'auth/weak-password') {
+            return 'Password is too weak. Please choose a stronger password.';
+        } else if (error.code === 'auth/invalid-email') {
+            return 'Please enter a valid email address.';
+        } else if (error.code === 'auth/user-not-found') {
+            return 'No account found with this email. Please use the main registration form instead.';
+        } else if (error.code === 'auth/wrong-password') {
+            return 'Incorrect password. Please try again.';
+        } else {
+            return 'An error occurred during registration. Please try again.';
+        }
+    }
+
+    // Save user registration data to Firestore
+    async saveUserRegistrationData(userId, formData) {
+        const editionKey = `edition${formData.edition}`;
+        const editionName = formData.edition === 'test' ? 'Test Weeks' : `Edition ${formData.edition}`;
+
+        const userData = {
+            uid: userId,
+            firstName: formData.firstName,
+            surname: formData.surname,
+            email: formData.email,
+            mobile: formData.mobile,
+            paymentMethod: formData.paymentMethod,
+            emailConsent: formData.emailConsent,
+            whatsappConsent: formData.whatsappConsent,
+            termsAccepted: formData.termsAccepted,
+            status: 'active',
+            lives: 3, // Start with 3 lives
+            preferredEdition: formData.edition,
+            registrations: {
+                [editionKey]: {
+                    edition: formData.edition,
+                    editionName: editionName,
+                    registrationDate: new Date(),
+                    paymentMethod: formData.paymentMethod,
+                    emailConsent: formData.emailConsent,
+                    whatsappConsent: formData.whatsappConsent,
+                    termsAccepted: formData.termsAccepted
+                }
+            },
+            createdAt: new Date(),
+            lastUpdated: new Date()
+        };
+
+        await this.db.collection('users').doc(userId).set(userData);
+        console.log('User registration data saved to Firestore');
+    }
+
+    // Update user registration data for re-registration
+    async updateUserRegistrationData(userId, formData) {
+        const editionKey = `edition${formData.edition}`;
+        const editionName = formData.edition === 'test' ? 'Test Weeks' : `Edition ${formData.edition}`;
+
+        const updateData = {
+            paymentMethod: formData.paymentMethod,
+            emailConsent: formData.emailConsent,
+            whatsappConsent: formData.whatsappConsent,
+            termsAccepted: formData.termsAccepted,
+            preferredEdition: formData.edition,
+            lastUpdated: new Date,
+            [`registrations.${editionKey}`]: {
+                edition: formData.edition,
+                editionName: editionName,
+                registrationDate: new Date(),
+                paymentMethod: formData.paymentMethod,
+                emailConsent: formData.emailConsent,
+                whatsappConsent: formData.whatsappConsent,
+                termsAccepted: formData.termsAccepted
+            }
+        };
+
+        await this.db.collection('users').doc(userId).update(updateData);
+        console.log('User re-registration data updated in Firestore');
     }
 
     // Load registration settings
