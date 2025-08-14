@@ -138,10 +138,24 @@ class AdminManagementManager {
         const picksTableBody = document.querySelector('#admin-picks-body');
         
         // Set default values - ensure no empty values
-        const activeEdition = settings.active_edition || 'edition1';
+        const activeEdition = settings.active_edition || '1';
         const activeGameweek = settings.active_gameweek || '1';
         
-        if (picksEditionSelect) picksEditionSelect.value = activeEdition;
+        console.log('Settings loaded for picks:', { activeEdition, activeGameweek, settings });
+        
+        // Convert the active edition to the picks selector format
+        let picksEditionValue;
+        if (activeEdition === 'test') {
+            picksEditionValue = 'editiontest';
+        } else if (activeEdition.startsWith('edition')) {
+            picksEditionValue = activeEdition;
+        } else {
+            picksEditionValue = `edition${activeEdition}`;
+        }
+        
+        console.log('Picks edition value set to:', picksEditionValue);
+        
+        if (picksEditionSelect) picksEditionSelect.value = picksEditionValue;
         if (picksGameweekSelect) picksGameweekSelect.value = activeGameweek;
         
         // Function to render picks table
@@ -182,7 +196,7 @@ class AdminManagementManager {
                     if (!isRegisteredForEdition) return; // Skip users not registered for this edition
                     
                     registeredUsersCount++;
-                    console.log('Processing user:', userData.displayName, 'for edition:', selectedEdition);
+                    console.log('Processing user:', userData.firstName, userData.surname, 'for edition:', selectedEdition);
                     
                     // Picks are stored using both edition-prefixed format (e.g., edition1_gw1) and simple format (e.g., gw1)
                     // For the test edition, we need to handle both "editiontest" and "test" formats
@@ -195,8 +209,13 @@ class AdminManagementManager {
                         editionGameweekKey = `edition${selectedEdition}_${gwKey}`;
                     }
                     
+                    console.log('Looking for picks with key:', editionGameweekKey, 'and fallback key:', gwKey);
+                    console.log('User picks object:', userData.picks);
+                    
                     const playerPick = userData.picks && (userData.picks[editionGameweekKey] || userData.picks[gwKey]) ? 
                         (userData.picks[editionGameweekKey] || userData.picks[gwKey]) : 'No Pick Made';
+                    
+                    console.log('Player pick found:', playerPick);
                     
                     const row = document.createElement('tr');
                     const badge = playerPick !== 'No Pick Made' ? this.getTeamBadge(playerPick) : null;
@@ -210,8 +229,11 @@ class AdminManagementManager {
                         statusClass = 'pick-made';
                     }
                     
+                    // Use firstName and surname instead of displayName
+                    const userName = `${userData.firstName || ''} ${userData.surname || ''}`.trim();
+                    
                     row.innerHTML = `
-                        <td>${userData.displayName}</td>
+                        <td>${userName}</td>
                         <td>${badgeHtml}${playerPick}</td>
                         <td><span class="pick-status ${statusClass}">${statusText}</span></td>
                     `;
@@ -238,8 +260,8 @@ class AdminManagementManager {
         if (picksGameweekSelect) picksGameweekSelect.addEventListener('change', renderPicksTable);
         if (refreshPicksBtn) refreshPicksBtn.addEventListener('click', renderPicksTable);
         
-        // Initial render
-        renderPicksTable();
+        // Initial render - use the class method
+        this.renderPicksTable();
 
         // Initialize fixture management
         if (!this.fixtureManagementInitialized) {
