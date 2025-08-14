@@ -107,8 +107,8 @@ export class AdminManager {
         saveSettingsBtn.removeAttribute('disabled');
         
         // Remove any existing event listeners and re-attach
-        saveSettingsBtn.removeEventListener('click', () => this.scheduling.saveCompetitionSettings());
-        saveSettingsBtn.addEventListener('click', () => this.scheduling.saveCompetitionSettings());
+        saveSettingsBtn.removeEventListener('click', (e) => this.scheduling.saveCompetitionSettings(e));
+        saveSettingsBtn.addEventListener('click', (e) => this.scheduling.saveCompetitionSettings(e));
         
         console.log('✅ Save Settings button is ready and enabled');
         console.log('Button disabled state:', saveSettingsBtn.disabled);
