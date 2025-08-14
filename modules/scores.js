@@ -8,7 +8,6 @@ class ScoresManager {
         this.processedGameweeks = new Set();
         this.autoUpdateInterval = null;
         this.realTimeUpdateInterval = null;
-        this.isLoadingScores = false; // Flag to prevent multiple simultaneous loads
     }
 
     // Initialize scores management
@@ -109,12 +108,6 @@ class ScoresManager {
 
     // Load scores for a specific gameweek
     loadScoresForGameweek() {
-        // Prevent multiple simultaneous loads
-        if (this.isLoadingScores) {
-            console.log('Scores already loading, skipping duplicate call');
-            return;
-        }
-        
         const scoreGameweekSelect = document.querySelector('#score-gameweek-select');
         const container = document.querySelector('#scores-container');
         
@@ -132,20 +125,7 @@ class ScoresManager {
         
         console.log(`loadScoresForGameweek called - gameweek: ${gameweek}, currentActiveEdition: ${window.currentActiveEdition}`);
         
-        this.isLoadingScores = true;
-        
-        // Clear existing scores more thoroughly
-        container.innerHTML = '';
-        container.textContent = '';
-        
-        // Add a small delay to ensure DOM is cleared before loading new content
-        setTimeout(() => {
-            this.loadScoresContent(gameweek, container);
-        }, 10);
-    }
-    
-    // Separate function to load the actual scores content
-    loadScoresContent(gameweek, container) {
+        container.innerHTML = ''; // Clear existing scores
         
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
         const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
@@ -185,22 +165,14 @@ class ScoresManager {
                 updatedFixtures.forEach((fixture, index) => {
                     this.addScoreRow(fixture, index);
                 });
-                
-                console.log(`✅ Scores loaded successfully for ${updatedFixtures.length} fixtures`);
             } else {
                 // No fixtures found for this edition and gameweek - don't fall back to old structure
                 console.log(`No fixtures found for Edition ${window.currentActiveEdition} Game Week ${gameweek} - not falling back to old structure`);
                 container.innerHTML = `<p>No fixtures found for Edition ${window.currentActiveEdition} Game Week ${gameweek}. Please add fixtures first.</p>`;
             }
-            
-            // Reset loading flag
-            this.isLoadingScores = false;
         }).catch(error => {
             console.error('Error loading scores from new structure:', error);
             container.innerHTML = `<p>Error loading fixtures for Edition ${window.currentActiveEdition} Game Week ${gameweek}. Please try again.</p>`;
-            
-            // Reset loading flag on error too
-            this.isLoadingScores = false;
         });
     }
 
@@ -222,16 +194,12 @@ class ScoresManager {
         const hasCurrentScores = fixture.homeScore !== null && fixture.homeScore !== undefined && fixture.awayScore !== null && fixture.awayScore !== undefined;
         const showCurrentScore = !isCompleted && hasCurrentScores;
         
-        // Show full-time scores only if match is completed and we have scores
-        const showFullTimeScore = isCompleted && hasFullTimeScores;
-        
         // Debug logging
         console.log(`Fixture ${index}: ${fixture.homeTeam} vs ${fixture.awayTeam}`, {
             homeScore: fixture.homeScore,
             awayScore: fixture.awayScore,
             hasCurrentScores,
             showCurrentScore,
-            showFullTimeScore,
             isCompleted,
             status: fixture.status
         });
@@ -239,10 +207,8 @@ class ScoresManager {
         // Additional debug for HTML generation
         if (showCurrentScore) {
             console.log(`Fixture ${index}: Current score section should be visible`);
-        } else if (showFullTimeScore) {
-            console.log(`Fixture ${index}: Full-time score section should be visible`);
         } else {
-            console.log(`Fixture ${index}: No score section visible - isCompleted: ${isCompleted}, hasCurrentScores: ${hasCurrentScores}, hasFullTimeScores: ${hasFullTimeScores}`);
+            console.log(`Fixture ${index}: Current score section hidden - isCompleted: ${isCompleted}, hasCurrentScores: ${hasCurrentScores}`);
         }
         
         const currentScoreHtml = showCurrentScore ? `
@@ -263,7 +229,7 @@ class ScoresManager {
                     </div>
                     ` : '';
         
-        const fullTimeHtml = showFullTimeScore ? `
+        const fullTimeHtml = (hasFullTimeScores || !isCompleted) ? `
                     <div class="full-time-scores">
                         <label>Full Time:</label>
                         <input type="number" class="home-score" placeholder="Home" value="${fixture.homeScore !== null && fixture.homeScore !== undefined ? fixture.homeScore : ''}" min="0">
@@ -621,395 +587,14 @@ class ScoresManager {
 
     // Import scores from Football WebPages API
     async importScoresFromFootballWebPages(gameweek) {
-        console.log(`📥 Importing scores from Football WebPages for gameweek ${gameweek}`);
+        console.log(`Importing scores from Football WebPages for gameweek ${gameweek}`);
         
         try {
-            // Check if API configuration is available
-            if (!window.apiManager || !window.apiManager.footballWebPagesConfig) {
-                console.error('❌ API configuration not available');
-                alert('API configuration not available. Please check the API settings.');
-                return;
-            }
-            
-            // Get the current edition and gameweek
-            const edition = window.currentActiveEdition || 'edition1';
-            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${edition}_${gameweekKey}`;
-            
-            console.log(`📥 Importing scores for ${editionGameweekKey}`);
-            
-            // First, get the fixtures for this gameweek from the database
-            const fixturesDoc = await window.db.collection('fixtures').doc(editionGameweekKey).get();
-            
-            if (!fixturesDoc.exists) {
-                console.error('❌ No fixtures found for this gameweek');
-                alert('No fixtures found for this gameweek. Please import fixtures first.');
-                return;
-            }
-            
-            const fixturesData = fixturesDoc.data();
-            const fixtures = fixturesData.fixtures || [];
-            
-            if (fixtures.length === 0) {
-                console.error('❌ No fixtures in database for this gameweek');
-                alert('No fixtures found in database for this gameweek. Please import fixtures first.');
-                return;
-            }
-            
-            console.log(`📥 Found ${fixtures.length} fixtures in database for gameweek ${gameweek}`);
-            
-            // Get the league and season from the API settings
-            const league = document.querySelector('#football-webpages-league')?.value || '5';
-            const season = document.querySelector('#football-webpages-season')?.value || '2025-26';
-            
-            console.log(`📥 Fetching scores for league ${league}, season ${season}`);
-            
-            // Fetch fixtures from the API to get current scores
-            const apiResponse = await fetch(`https://football-web-pages1.p.rapidapi.com/fixtures-results.json?comp=${league}&round=0&team=0`, {
-                method: 'GET',
-                headers: {
-                    'X-RapidAPI-Key': window.apiManager.footballWebPagesConfig.RAPIDAPI_KEY,
-                    'X-RapidAPI-Host': window.apiManager.footballWebPagesConfig.RAPIDAPI_HOST
-                }
-            });
-            
-            if (!apiResponse.ok) {
-                throw new Error(`HTTP ${apiResponse.status}: ${apiResponse.statusText}`);
-            }
-            
-            const apiData = await apiResponse.json();
-                         console.log('📥 API response received:', apiData);
-             
-             // Debug: Log the first fixture structure to understand the data format
-             if (apiData['fixtures-results'] && apiData['fixtures-results'].matches && apiData['fixtures-results'].matches.length > 0) {
-                 console.log('🔍 First fixture structure:', JSON.stringify(apiData['fixtures-results'].matches[0], null, 2));
-             }
-             
-             // Also log the overall API response structure for debugging
-             console.log('🔍 API Response keys:', Object.keys(apiData));
-             if (apiData['fixtures-results']) {
-                 console.log('🔍 Fixtures-results keys:', Object.keys(apiData['fixtures-results']));
-             }
-            
-            // Extract fixtures from API response
-            let apiFixtures = [];
-            if (apiData['fixtures-results']) {
-                const fixturesData = apiData['fixtures-results'];
-                
-                if (Array.isArray(fixturesData)) {
-                    apiFixtures = fixturesData;
-                } else if (fixturesData.fixtures && Array.isArray(fixturesData.fixtures)) {
-                    apiFixtures = fixturesData.fixtures;
-                } else if (fixturesData.matches && Array.isArray(fixturesData.matches)) {
-                    apiFixtures = fixturesData.matches;
-                } else {
-                    // Try to find any array in the response
-                    const keys = Object.keys(fixturesData);
-                    for (const key of keys) {
-                        if (Array.isArray(fixturesData[key])) {
-                            apiFixtures = fixturesData[key];
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            console.log(`📥 Found ${apiFixtures.length} fixtures in API response`);
-            
-            if (apiFixtures.length === 0) {
-                console.error('❌ No fixtures found in API response');
-                alert('No fixtures found in API response. Please check the API settings and try again.');
-                return;
-            }
-            
-            // Update scores for each fixture in our database
-            let updatedCount = 0;
-            const updatedFixtures = fixtures.map(fixture => {
-                                 // Find matching fixture in API response with flexible matching
-                 const apiFixture = apiFixtures.find(apiFixture => {
-                     const apiHomeTeam = apiFixture['home-team']?.name || apiFixture.homeTeam || apiFixture.home || 'TBD';
-                     const apiAwayTeam = apiFixture['away-team']?.name || apiFixture.awayTeam || apiFixture.away || 'TBD';
-                     
-                     // Try exact match first
-                     if (apiHomeTeam === fixture.homeTeam && apiAwayTeam === fixture.awayTeam) {
-                         return true;
-                     }
-                     
-                     // Try case-insensitive match
-                     if (apiHomeTeam.toLowerCase() === fixture.homeTeam.toLowerCase() && 
-                         apiAwayTeam.toLowerCase() === fixture.awayTeam.toLowerCase()) {
-                         return true;
-                     }
-                     
-                     // Try partial match (in case of slight name differences)
-                     if (apiHomeTeam.toLowerCase().includes(fixture.homeTeam.toLowerCase()) && 
-                         apiAwayTeam.toLowerCase().includes(fixture.awayTeam.toLowerCase())) {
-                         return true;
-                     }
-                     
-                     return false;
-                 });
-                
-                                 if (apiFixture) {
-                     const apiHomeTeam = apiFixture['home-team']?.name || apiFixture.homeTeam || apiFixture.home || 'TBD';
-                     const apiAwayTeam = apiFixture['away-team']?.name || apiFixture.awayTeam || apiFixture.away || 'TBD';
-                     console.log(`📥 Found matching fixture: ${fixture.homeTeam} vs ${fixture.awayTeam} (API: ${apiHomeTeam} vs ${apiAwayTeam})`);
-                    
-                                         // Extract scores from API fixture with improved logic
-                     let homeScore = null;
-                     let awayScore = null;
-                     let homeScoreHT = null;
-                     let awayScoreHT = null;
-                     
-                     // Debug the API fixture structure
-                     console.log(`🔍 API fixture structure for ${fixture.homeTeam} vs ${fixture.awayTeam}:`, apiFixture);
-                     
-                     // Try multiple score extraction methods with comprehensive debugging
-                     console.log(`🔍 Full API fixture object:`, JSON.stringify(apiFixture, null, 2));
-                     
-                     // Method 1: Direct score properties from home-team/away-team objects
-                     if (apiFixture['home-team'] && apiFixture['away-team']) {
-                         homeScore = apiFixture['home-team'].score ?? apiFixture['home-team'].goals ?? apiFixture['home-team'].result;
-                         awayScore = apiFixture['away-team'].score ?? apiFixture['away-team'].goals ?? apiFixture['away-team'].result;
-                         
-                         console.log(`🔍 Method 1 - home-team object:`, apiFixture['home-team']);
-                         console.log(`🔍 Method 1 - away-team object:`, apiFixture['away-team']);
-                         console.log(`🔍 Method 1 - extracted scores: ${homeScore} - ${awayScore}`);
-                     }
-                     
-                     // Method 2: Alternative score properties
-                     if ((homeScore === null || homeScore === undefined) && (awayScore === null || awayScore === undefined)) {
-                         homeScore = apiFixture.homeScore ?? apiFixture.homeGoals ?? apiFixture.score1 ?? apiFixture.home_result;
-                         awayScore = apiFixture.awayScore ?? apiFixture.awayGoals ?? apiFixture.score2 ?? apiFixture.away_result;
-                         
-                         console.log(`🔍 Method 2 - extracted scores: ${homeScore} - ${awayScore}`);
-                     }
-                     
-                     // Method 3: Split score strings (most common format)
-                     if ((homeScore === null || homeScore === undefined) && (awayScore === null || awayScore === undefined)) {
-                         // Try full-time score first
-                         if (apiFixture.ft_score && apiFixture.ft_score.includes('-')) {
-                             const ftParts = apiFixture.ft_score.split('-');
-                             homeScore = parseInt(ftParts[0].trim());
-                             awayScore = parseInt(ftParts[1].trim());
-                             console.log(`🔍 Method 3a - ft_score: ${apiFixture.ft_score} -> FT: ${homeScore}-${awayScore}`);
-                         }
-                         
-                         // Try general score field
-                         if ((homeScore === null || homeScore === undefined) && (awayScore === null || awayScore === undefined) && apiFixture.score && apiFixture.score.includes('-')) {
-                             const scoreParts = apiFixture.score.split('-');
-                             homeScore = parseInt(scoreParts[0].trim());
-                             awayScore = parseInt(scoreParts[1].trim());
-                             console.log(`🔍 Method 3b - score: ${apiFixture.score} -> Score: ${homeScore}-${awayScore}`);
-                         }
-                         
-                         // Try result field
-                         if ((homeScore === null || homeScore === undefined) && (awayScore === null || awayScore === undefined) && apiFixture.result && apiFixture.result.includes('-')) {
-                             const resultParts = apiFixture.result.split('-');
-                             homeScore = parseInt(resultParts[0].trim());
-                             awayScore = parseInt(resultParts[1].trim());
-                             console.log(`🔍 Method 3c - result: ${apiFixture.result} -> Result: ${homeScore}-${awayScore}`);
-                         }
-                     }
-                     
-                     // Method 4: Check for individual goal properties
-                     if ((homeScore === null || homeScore === undefined) && (awayScore === null || awayScore === undefined)) {
-                         homeScore = apiFixture.homeGoals ?? apiFixture.goals1 ?? apiFixture.home_goals;
-                         awayScore = apiFixture.awayGoals ?? apiFixture.goals2 ?? apiFixture.away_goals;
-                         
-                         console.log(`🔍 Method 4 - extracted scores: ${homeScore} - ${awayScore}`);
-                     }
-                     
-                     // Method 5: Check for any numeric score-like properties
-                     if ((homeScore === null || homeScore === undefined) && (awayScore === null || awayScore === undefined)) {
-                         // Look for any property that might contain scores
-                         const possibleScoreProps = ['score', 'result', 'goals', 'ft_score', 'ht_score', 'final_score'];
-                         for (const prop of possibleScoreProps) {
-                             if (apiFixture[prop] && typeof apiFixture[prop] === 'string' && apiFixture[prop].includes('-')) {
-                                 const parts = apiFixture[prop].split('-');
-                                 if (parts.length === 2 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
-                                     homeScore = parseInt(parts[0].trim());
-                                     awayScore = parseInt(parts[1].trim());
-                                     console.log(`🔍 Method 5 - ${prop}: ${apiFixture[prop]} -> Score: ${homeScore}-${awayScore}`);
-                                     break;
-                                 }
-                             }
-                         }
-                     }
-                     
-                     // Extract half-time scores
-                     // Method 1: Check home-team and away-team objects for half-time-score
-                     if (apiFixture['home-team'] && apiFixture['away-team']) {
-                         homeScoreHT = apiFixture['home-team']['half-time-score'] ?? apiFixture['home-team']['ht_score'] ?? apiFixture['home-team']['half_time_score'];
-                         awayScoreHT = apiFixture['away-team']['half-time-score'] ?? apiFixture['away-team']['ht_score'] ?? apiFixture['away-team']['half_time_score'];
-                         
-                         console.log(`🔍 Method 1 - home-team half-time-score:`, apiFixture['home-team']['half-time-score']);
-                         console.log(`🔍 Method 1 - away-team half-time-score:`, apiFixture['away-team']['half-time-score']);
-                         console.log(`🔍 Method 1 - extracted HT scores: ${homeScoreHT} - ${awayScoreHT}`);
-                     }
-                     
-                     // Method 2: Check top-level properties
-                     if ((homeScoreHT === null || homeScoreHT === undefined) && (awayScoreHT === null || awayScoreHT === undefined)) {
-                         if (apiFixture.ht_score && apiFixture.ht_score.includes('-')) {
-                             const htParts = apiFixture.ht_score.split('-');
-                             homeScoreHT = parseInt(htParts[0].trim());
-                             awayScoreHT = parseInt(htParts[1].trim());
-                             console.log(`🔍 Method 2 - ht_score: ${apiFixture.ht_score} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                         } else if (apiFixture.half_time_score && apiFixture.half_time_score.includes('-')) {
-                             const htParts = apiFixture.half_time_score.split('-');
-                             homeScoreHT = parseInt(htParts[0].trim());
-                             awayScoreHT = parseInt(htParts[1].trim());
-                             console.log(`🔍 Method 2 - half_time_score: ${apiFixture.half_time_score} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                         } else if (apiFixture.ht_result && apiFixture.ht_result.includes('-')) {
-                             const htParts = apiFixture.ht_result.split('-');
-                             homeScoreHT = parseInt(htParts[0].trim());
-                             awayScoreHT = parseInt(htParts[1].trim());
-                             console.log(`🔍 Method 2 - ht_result: ${apiFixture.ht_result} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                         }
-                     }
-                     
-                     // Method 3: Check for halfTimeScore properties (from netlify function)
-                     if ((homeScoreHT === null || homeScoreHT === undefined) && (awayScoreHT === null || awayScoreHT === undefined)) {
-                         if (apiFixture.halfTimeScore && apiFixture.halfTimeScore.includes('-')) {
-                             const htParts = apiFixture.halfTimeScore.split('-');
-                             homeScoreHT = parseInt(htParts[0].trim());
-                             awayScoreHT = parseInt(htParts[1].trim());
-                             console.log(`🔍 Method 3 - halfTimeScore: ${apiFixture.halfTimeScore} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                         }
-                     }
-                     
-                     // Method 4: Check for halfTime properties (from netlify function)
-                     if ((homeScoreHT === null || homeScoreHT === undefined) && (awayScoreHT === null || awayScoreHT === undefined)) {
-                         if (apiFixture.halfTime && apiFixture.halfTime.includes('-')) {
-                             const htParts = apiFixture.halfTime.split('-');
-                             homeScoreHT = parseInt(htParts[0].trim());
-                             awayScoreHT = parseInt(htParts[1].trim());
-                             console.log(`🔍 Method 4 - halfTime: ${apiFixture.halfTime} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                         }
-                     }
-                     
-                     // Method 5: Check for ht properties (from netlify function)
-                     if ((homeScoreHT === null || homeScoreHT === undefined) && (awayScoreHT === null || awayScoreHT === undefined)) {
-                         if (apiFixture.ht && apiFixture.ht.includes('-')) {
-                             const htParts = apiFixture.ht.split('-');
-                             homeScoreHT = parseInt(htParts[0].trim());
-                             awayScoreHT = parseInt(htParts[1].trim());
-                             console.log(`🔍 Method 5 - ht: ${apiFixture.ht} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                         }
-                     }
-                     
-                     // Method 6: Check for any property containing 'half' or 'ht' that might have scores
-                     if ((homeScoreHT === null || homeScoreHT === undefined) && (awayScoreHT === null || awayScoreHT === undefined)) {
-                         const possibleHTProps = ['halfTimeScore', 'halfTime', 'ht', 'ht_score', 'half_time_score', 'ht_result', 'halfTimeResult'];
-                         for (const prop of possibleHTProps) {
-                             if (apiFixture[prop] && typeof apiFixture[prop] === 'string' && apiFixture[prop].includes('-')) {
-                                 const parts = apiFixture[prop].split('-');
-                                 if (parts.length === 2 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
-                                     homeScoreHT = parseInt(parts[0].trim());
-                                     awayScoreHT = parseInt(parts[1].trim());
-                                     console.log(`🔍 Method 6 - ${prop}: ${apiFixture[prop]} -> HT: ${homeScoreHT}-${awayScoreHT}`);
-                                     break;
-                                 }
-                             }
-                         }
-                     }
-                     
-                     // Convert to numbers and handle invalid values
-                     homeScore = homeScore !== null && homeScore !== undefined && homeScore !== '' ? parseInt(homeScore) : null;
-                     awayScore = awayScore !== null && awayScore !== undefined && awayScore !== '' ? parseInt(awayScore) : null;
-                     homeScoreHT = homeScoreHT !== null && homeScoreHT !== undefined && homeScoreHT !== '' ? parseInt(homeScoreHT) : null;
-                     awayScoreHT = awayScoreHT !== null && awayScoreHT !== undefined && awayScoreHT !== '' ? parseInt(awayScoreHT) : null;
-                     
-                     console.log(`🔍 Final extracted scores - Home: ${homeScore}, Away: ${awayScore}, HT Home: ${homeScoreHT}, HT Away: ${awayScoreHT}`);
-                     
-                     // Debug: Log all available properties if half-time scores are still missing
-                     if (homeScoreHT === null && awayScoreHT === null) {
-                         console.log(`🔍 No half-time scores found for ${fixture.homeTeam} vs ${fixture.awayTeam}`);
-                         console.log('🔍 Available API fixture properties:', Object.keys(apiFixture));
-                         
-                         // Log specific half-time related properties
-                         const htProps = ['halfTimeScore', 'halfTime', 'ht', 'ht_score', 'half_time_score', 'ht_result', 'halfTimeResult'];
-                         htProps.forEach(prop => {
-                             if (apiFixture[prop] !== undefined) {
-                                 console.log(`🔍 ${prop}:`, apiFixture[prop]);
-                             }
-                         });
-                         
-                         // Log home-team and away-team objects if they exist
-                         if (apiFixture['home-team']) {
-                             console.log('🔍 home-team object properties:', Object.keys(apiFixture['home-team']));
-                             console.log('🔍 home-team object:', apiFixture['home-team']);
-                         }
-                         if (apiFixture['away-team']) {
-                             console.log('🔍 away-team object properties:', Object.keys(apiFixture['away-team']));
-                             console.log('🔍 away-team object:', apiFixture['away-team']);
-                         }
-                     }
-                    
-                                         // Extract status from API fixture and update based on scores
-                     let status = apiFixture.status?.full || apiFixture.status?.short || fixture.status || 'NS';
-                     
-                     // If we have full-time scores, automatically set status to FT
-                     if (homeScore !== null && awayScore !== null) {
-                         status = 'FT';
-                         console.log(`📥 Full-time scores detected - setting status to FT for ${fixture.homeTeam} vs ${fixture.awayTeam}`);
-                     }
-                     
-                     console.log(`📥 Updating scores: ${fixture.homeTeam} ${homeScore} - ${awayScore} ${fixture.awayTeam} (Status: ${status})`);
-                     console.log(`📥 Half-time scores: ${fixture.homeTeam} ${homeScoreHT} - ${awayScoreHT} ${fixture.awayTeam}`);
-                     
-                     updatedCount++;
-                     
-                     return {
-                         ...fixture,
-                         homeScore: homeScore,
-                         awayScore: awayScore,
-                         homeScoreHT: homeScoreHT,
-                         awayScoreHT: awayScoreHT,
-                         status: status,
-                         completed: (homeScore !== null && awayScore !== null), // Also set completed flag
-                         lastUpdated: new Date()
-                     };
-                } else {
-                    console.log(`⚠️ No matching fixture found in API for: ${fixture.homeTeam} vs ${fixture.awayTeam}`);
-                    return fixture;
-                }
-            });
-            
-            // Save updated fixtures back to database
-            await window.db.collection('fixtures').doc(editionGameweekKey).update({
-                fixtures: updatedFixtures,
-                lastUpdated: new Date(),
-                scoresImportedFrom: 'Football Web Pages API'
-            });
-            
-            console.log(`✅ Successfully updated ${updatedCount} out of ${fixtures.length} fixtures with scores from API`);
-            
-            // Show success message
-            alert(`Successfully imported scores for ${updatedCount} out of ${fixtures.length} fixtures from Football Web Pages API!`);
-            
-            // Refresh the scores display
-            if (typeof window.loadScoresForGameweek === 'function') {
-                window.loadScoresForGameweek();
-            }
-            
-            // Update status message if available
-            const statusElement = document.querySelector('#import-status');
-            if (statusElement) {
-                statusElement.textContent = `Successfully imported scores for ${updatedCount} fixtures from Football Web Pages API`;
-                statusElement.className = 'status-message success';
-            }
-            
+            // This would implement the Football WebPages API integration
+            // For now, just log the attempt
+            console.log('Football WebPages API integration not yet implemented');
         } catch (error) {
-            console.error('❌ Error importing scores from Football WebPages:', error);
-            alert('Error importing scores from Football WebPages: ' + error.message);
-            
-            // Update status message if available
-            const statusElement = document.querySelector('#import-status');
-            if (statusElement) {
-                statusElement.textContent = 'Error importing scores: ' + error.message;
-                statusElement.className = 'status-message error';
-            }
+            console.error('Error importing scores from Football WebPages:', error);
         }
     }
 
@@ -1441,43 +1026,6 @@ class ScoresManager {
         this.stopAutoScoreUpdates();
         this.stopRealTimeScoreUpdates();
         this.processedGameweeks.clear();
-    }
-    
-    // Test API function for debugging (exposed globally)
-    async testFootballWebPagesAPI() {
-        console.log('🧪 Testing Football Web Pages API...');
-        try {
-            if (!window.apiManager || !window.apiManager.footballWebPagesConfig) {
-                console.error('❌ API configuration not available');
-                return;
-            }
-            
-            const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results.json?comp=5', {
-                method: 'GET',
-                headers: {
-                    'X-RapidAPI-Key': window.apiManager.footballWebPagesConfig.RAPIDAPI_KEY,
-                    'X-RapidAPI-Host': window.apiManager.footballWebPagesConfig.RAPIDAPI_HOST
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            console.log('🧪 API Response Structure:', data);
-            
-            if (data['fixtures-results'] && data['fixtures-results'].matches) {
-                console.log('🧪 Found matches:', data['fixtures-results'].matches.length);
-                if (data['fixtures-results'].matches.length > 0) {
-                    console.log('🧪 First match:', data['fixtures-results'].matches[0]);
-                }
-            }
-            
-            return data;
-        } catch (error) {
-            console.error('❌ Error testing API:', error);
-        }
     }
 }
 

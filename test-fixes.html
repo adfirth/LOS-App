@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fixes - LOS App</title>
+</head>
+<body>
+    <h1>Testing LOS App Fixes</h1>
+    <p>Check the console for any errors or success messages.</p>
+    
+    <div id="test-results">
+        <h2>Test Results:</h2>
+        <ul id="results-list">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <!-- Load scripts in correct order -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="teams-config.js"></script>
+    <script src="football-webpages-config.js"></script>
+    <script type="module" src="src/app.js"></script>
+
+    <script>
+        // Test function to check if everything loaded correctly
+        function testApp() {
+            const results = [];
+            
+            // Test 1: Check if Firebase loaded
+            if (typeof firebase !== 'undefined') {
+                results.push('✅ Firebase loaded successfully');
+            } else {
+                results.push('❌ Firebase failed to load');
+            }
+            
+            // Test 2: Check if config loaded
+            if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+                results.push('✅ Football Web Pages config loaded successfully');
+            } else {
+                results.push('❌ Football Web Pages config failed to load');
+            }
+            
+            // Test 3: Check if app loaded
+            if (window.app) {
+                results.push('✅ App loaded successfully');
+                
+                // Test 4: Check if API manager loaded
+                if (window.app.apiManager) {
+                    results.push('✅ API Manager loaded successfully');
+                    
+                    // Test 5: Check if API manager has required methods
+                    if (typeof window.app.apiManager.initializeApiManager === 'function') {
+                        results.push('✅ API Manager has initializeApiManager method');
+                    } else {
+                        results.push('❌ API Manager missing initializeApiManager method');
+                    }
+                } else {
+                    results.push('❌ API Manager failed to load');
+                }
+            } else {
+                results.push('❌ App failed to load');
+            }
+            
+            // Display results
+            const resultsList = document.getElementById('results-list');
+            resultsList.innerHTML = results.map(result => `<li>${result}</li>`).join('');
+        }
+        
+        // Wait for everything to load, then test
+        setTimeout(testApp, 3000);
+    </script>
+</body>
+</html>

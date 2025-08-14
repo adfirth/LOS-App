@@ -1,6 +1,8 @@
 // Main Application Entry Point
 // This file orchestrates the application and imports modular components
 
+console.log('🔍 src/app.js file is being loaded and parsed...');
+
 import AuthManager from './modules/auth.js';
 import RegistrationManager from './modules/registration.js';
 import FixturesManager from './modules/fixtures.js';
@@ -12,6 +14,8 @@ import AdminManagementManager from './modules/adminManagement.js';
 import DatabaseManager from './modules/database.js'; // New Database Module import
 import ApiManager from './modules/api.js'; // New API Module import
 import UtilitiesManager from './modules/utilities.js'; // New Utilities Module import
+
+console.log('🔍 Imports completed, about to define App class...');
 
 // Global application state
 class App {
@@ -42,57 +46,60 @@ class App {
             // Wait for Firebase to be available
             await this.waitForFirebase();
             
-                                                                   // Initialize managers
-                        this.authManager = new AuthManager();
-                        this.registrationManager = new RegistrationManager(this.db);
-                        this.fixturesManager = new FixturesManager(this.db);
-                        this.scoresManager = new ScoresManager(this.db);
-                        this.uiManager = new UIManager(this.db);
-                        this.gameLogicManager = new GameLogicManager(this.db);
-                        this.mobileNavigationManager = new MobileNavigationManager(this.db);
-                        this.adminManagementManager = new AdminManagementManager(this.db);
-                        this.databaseManager = new DatabaseManager(); // Initialize Database Manager
-                        this.apiManager = new ApiManager(); // Initialize API Manager
-                        this.utilitiesManager = new UtilitiesManager(); // Initialize Utilities Manager
-                        
-                        // Initialize auth manager
-                        await this.authManager.initialize(this.db, this.auth);
-                        
-                        // Initialize registration manager
-                        this.registrationManager.initializeRegistrationManagement();
-                        
-                        // Initialize fixtures manager
-                        this.fixturesManager.initializeFixtureManagement();
-                        
-                        // Initialize scores manager
-                        this.scoresManager.initializeScoresManagement();
-                        
-                        // Initialize UI manager
-                        this.uiManager.initializeUIManagement();
-                        
-                        // Initialize game logic manager
-                        this.gameLogicManager.initializeGameLogicManagement();
-                        
-                        // Initialize mobile navigation manager
-                        this.mobileNavigationManager.initializeMobileNavigationManagement();
-                        
-                        // Initialize admin management manager
-                        this.adminManagementManager.initializeAdminManagement();
-                        
-                        // Initialize database manager
-                        this.databaseManager.initializeDatabaseManager();
-                        
-                        // Initialize API manager
-                        this.apiManager.initializeApiManager();
-                        
-                        // Initialize utilities manager
-                        this.utilitiesManager.initializeUtilitiesManager();
+            // Initialize managers
+            this.authManager = new AuthManager();
+            this.registrationManager = new RegistrationManager(this.db);
+            this.fixturesManager = new FixturesManager(this.db);
+            this.scoresManager = new ScoresManager(this.db);
+            this.uiManager = new UIManager(this.db);
+            this.gameLogicManager = new GameLogicManager(this.db);
+            this.mobileNavigationManager = new MobileNavigationManager(this.db);
+            this.adminManagementManager = new AdminManagementManager(this.db);
+            this.databaseManager = new DatabaseManager(); // Initialize Database Manager
+            this.apiManager = new ApiManager(); // Initialize API Manager
+            this.utilitiesManager = new UtilitiesManager(); // Initialize Utilities Manager
+            
+            // Initialize auth manager
+            await this.authManager.initialize(this.db, this.auth);
+            
+            // Initialize registration manager
+            this.registrationManager.initializeRegistrationManagement();
+            
+            // Initialize fixtures manager
+            this.fixturesManager.initializeFixtureManagement();
+            
+            // Initialize scores manager
+            this.scoresManager.initializeScoresManagement();
+            
+            // Initialize UI manager
+            this.uiManager.initializeUIManagement();
+            
+            // Initialize game logic manager
+            this.gameLogicManager.initializeGameLogicManagement();
+            
+            // Initialize mobile navigation manager
+            this.mobileNavigationManager.initializeMobileNavigationManagement();
+            
+            // Initialize admin management manager
+            this.adminManagementManager.initializeAdminManagement();
+            
+            // Initialize database manager
+            this.databaseManager.initializeDatabaseManager();
+            
+            // Initialize API manager
+            this.apiManager.initializeApiManager();
+            
+            // Initialize utilities manager
+            this.utilitiesManager.initializeUtilitiesManager();
             
             // Set up global references for backward compatibility
             this.setupGlobalReferences();
             
             // Initialize page-specific functionality
             this.initializePageSpecificFeatures();
+            
+            // Expose admin functions globally for admin.html
+            this.exposeAdminFunctions();
             
             this.initialized = true;
             console.log('✅ LOS App initialized successfully!');
@@ -120,20 +127,20 @@ class App {
         });
     }
 
-                               // Set up global references for backward compatibility
-                setupGlobalReferences() {
-                    // Global managers
-                    window.authManager = this.authManager;
-                    window.registrationManager = this.registrationManager;
-                    window.fixturesManager = this.fixturesManager;
-                    window.scoresManager = this.scoresManager;
-                    window.uiManager = this.uiManager;
-                    window.gameLogicManager = this.gameLogicManager;
-                    window.mobileNavigationManager = this.mobileNavigationManager;
-                                window.adminManagementManager = this.adminManagementManager;
-            window.databaseManager = this.databaseManager; // Expose Database Manager
-            window.apiManager = this.apiManager; // Expose API Manager
-            window.utilitiesManager = this.utilitiesManager; // Expose Utilities Manager
+    // Set up global references for backward compatibility
+    setupGlobalReferences() {
+        // Global managers
+        window.authManager = this.authManager;
+        window.registrationManager = this.registrationManager;
+        window.fixturesManager = this.fixturesManager;
+        window.scoresManager = this.scoresManager;
+        window.uiManager = this.uiManager;
+        window.gameLogicManager = this.gameLogicManager;
+        window.mobileNavigationManager = this.mobileNavigationManager;
+        window.adminManagementManager = this.adminManagementManager;
+        window.databaseManager = this.databaseManager; // Expose Database Manager
+        window.apiManager = this.apiManager; // Expose API Manager
+        window.utilitiesManager = this.utilitiesManager; // Expose Utilities Manager
         
         // Global app instance
         window.app = this;
@@ -156,7 +163,11 @@ class App {
         window.removeFixtureRow = (button) => this.fixturesManager.removeFixtureRow(button);
         window.saveFixtures = () => this.fixturesManager.saveFixtures();
         window.checkFixtures = () => this.fixturesManager.checkFixtures();
+        window.editFixtures = () => this.fixturesManager.editFixtures();
+        window.switchToViewMode = () => this.fixturesManager.switchToViewMode();
         window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
+        window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
+        window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
         window.loadFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadFixturesForDeadline(gameweek, userData, userId);
         window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
         window.switchToFixturesTab = () => this.fixturesManager.switchToFixturesTab();
@@ -181,6 +192,7 @@ class App {
                window.stopRealTimeScoreUpdates = () => this.scoresManager.stopRealTimeScoreUpdates();
                window.importScoresFromFootballWebPages = (gameweek) => this.scoresManager.importScoresFromFootballWebPages(gameweek);
                window.importScoresFromFile = (file, gameweek) => this.scoresManager.importScoresFromFile(file, gameweek);
+               window.testFootballWebPagesAPI = () => this.scoresManager.testFootballWebPagesAPI();
                
                        // UI-related functions (newly added)
         window.showModal = (content) => this.uiManager.showModal(content);
@@ -399,7 +411,64 @@ class App {
         window.showModal = (content) => this.registrationManager.showModal(content);
         window.closeUserDetailsModal = () => this.registrationManager.closeUserDetailsModal();
         
+        // Fixture management functions
+        window.saveFixtures = () => this.fixturesManager.saveFixtures();
+        window.checkFixtures = () => this.fixturesManager.checkFixtures();
+        window.editFixtures = () => this.fixturesManager.editFixtures();
+        window.switchToViewMode = () => this.fixturesManager.switchToViewMode();
+        window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
+        window.addFixtureRow = () => this.fixturesManager.addFixtureRow();
+        window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
+        window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
+        
         console.log('🔧 Global functions set up for backward compatibility');
+    }
+
+    // Expose admin functions globally for admin.html
+    exposeAdminFunctions() {
+        console.log('🔧 Exposing admin functions globally...');
+        
+        // Expose the main admin initialization function
+        window.initializeAdminPage = () => {
+            console.log('🔧 Global initializeAdminPage called');
+            if (this.adminManagementManager) {
+                this.adminManagementManager.initializeAdminPage();
+            } else {
+                console.error('Admin management manager not available');
+            }
+        };
+
+        // Expose other admin functions that admin.html might need
+        window.initializeAdminLoginHandlers = () => {
+            console.log('🔧 Global initializeAdminLoginHandlers called');
+            if (this.authManager) {
+                this.authManager.initializeAdminLoginHandlers();
+            } else {
+                console.error('Auth manager not available');
+            }
+        };
+
+        // Expose the app instance globally for debugging
+        window.app = this;
+        
+        // Expose additional admin functions that might be needed
+        if (this.adminManagementManager) {
+            // Expose methods that are referenced in admin.html
+            window.showPlayerManagement = (type) => this.adminManagementManager.showPlayerManagement(type);
+            window.closePlayerManagement = () => this.adminManagementManager.closePlayerManagement();
+            window.closePlayerEdit = () => this.adminManagementManager.closePlayerEdit();
+            window.searchPlayers = () => this.adminManagementManager.searchPlayers();
+            window.filterPlayers = () => this.adminManagementManager.filterPlayers();
+            window.checkOrphanedAccounts = () => this.adminManagementManager.checkOrphanedAccounts();
+            window.showFirebaseAuthDeletionInstructions = () => this.adminManagementManager.showFirebaseAuthDeletionInstructions();
+        }
+        
+        console.log('✅ Admin functions exposed globally');
+        console.log('Available global functions:', {
+            initializeAdminPage: typeof window.initializeAdminPage,
+            initializeAdminLoginHandlers: typeof window.initializeAdminLoginHandlers,
+            app: typeof window.app
+        });
     }
 
     // Initialize page-specific features
@@ -437,38 +506,40 @@ class App {
         return 'general';
     }
 
-               // Cleanup method
-           cleanup() {
-               if (this.fixturesManager) {
-                   this.fixturesManager.cleanup();
-               }
-               if (this.scoresManager) {
-                   this.scoresManager.cleanup();
-               }
-               if (this.uiManager) {
-                   this.uiManager.cleanup();
-               }
-               if (this.gameLogicManager) {
-                   this.gameLogicManager.cleanup();
-               }
-                               if (this.mobileNavigationManager) {
-                    this.mobileNavigationManager.cleanup();
-                }
-                if (this.adminManagementManager) {
-                    this.adminManagementManager.cleanup();
-                }
-                if (this.databaseManager) {
-                    this.databaseManager.cleanup();
-                }
-                if (this.apiManager) {
-                    this.apiManager.cleanup();
-                }
-                if (this.utilitiesManager) {
-                    this.utilitiesManager.cleanup();
-                }
-                console.log('🧹 App cleanup completed');
-           }
+    // Cleanup method
+    cleanup() {
+        if (this.fixturesManager) {
+            this.fixturesManager.cleanup();
+        }
+        if (this.scoresManager) {
+            this.scoresManager.cleanup();
+        }
+        if (this.uiManager) {
+            this.uiManager.cleanup();
+        }
+        if (this.gameLogicManager) {
+            this.gameLogicManager.cleanup();
+        }
+        if (this.mobileNavigationManager) {
+            this.mobileNavigationManager.cleanup();
+        }
+        if (this.adminManagementManager) {
+            this.adminManagementManager.cleanup();
+        }
+        if (this.databaseManager) {
+            this.databaseManager.cleanup();
+        }
+        if (this.apiManager) {
+            this.apiManager.cleanup();
+        }
+        if (this.utilitiesManager) {
+            this.utilitiesManager.cleanup();
+        }
+        console.log('🧹 App cleanup completed');
+    }
 }
+
+console.log('🔍 App class defined, about to set up DOMContentLoaded listener...');
 
 // Create and initialize the app when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
@@ -479,18 +550,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Export for use in other modules
 export default App;
 
-// Ensure the app initializes when the bundle loads
-if (typeof window !== 'undefined') {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM ready, initializing app from bundle...');
-            window.app = new App();
-            window.app.initialize().catch(console.error);
-        });
-    } else {
-        console.log('DOM already ready, initializing app from bundle...');
-        window.app = new App();
-        window.app.initialize().catch(console.error);
-    }
-}
+// Also expose App class globally for admin.html
+window.App = App;

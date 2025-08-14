@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Module Imports - LOS App</title>
+</head>
+<body>
+    <h1>Testing Module Imports</h1>
+    <p>Check the console for any import errors or success messages.</p>
+    
+    <div id="test-results">
+        <h2>Test Results:</h2>
+        <ul id="results-list">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        // Test importing modules directly
+        console.log('🔍 Testing module imports...');
+        
+        try {
+            console.log('📁 Attempting to import AuthManager...');
+            const { default: AuthManager } = await import('./src/modules/auth.js');
+            console.log('✅ AuthManager imported successfully:', AuthManager);
+            
+            console.log('📁 Attempting to import ApiManager...');
+            const { default: ApiManager } = await import('./src/modules/api.js');
+            console.log('✅ ApiManager imported successfully:', ApiManager);
+            
+            console.log('📁 Attempting to import DatabaseManager...');
+            const { default: DatabaseManager } = await import('./src/modules/database.js');
+            console.log('✅ DatabaseManager imported successfully:', DatabaseManager);
+            
+            // Test creating instances
+            console.log('🔧 Testing instance creation...');
+            const authManager = new AuthManager();
+            const apiManager = new ApiManager();
+            const dbManager = new DatabaseManager();
+            
+            console.log('✅ All managers created successfully');
+            
+            // Update results
+            document.getElementById('results-list').innerHTML = `
+                <li>✅ AuthManager imported and instantiated</li>
+                <li>✅ ApiManager imported and instantiated</li>
+                <li>✅ DatabaseManager imported and instantiated</li>
+                <li>✅ All modules working correctly</li>
+            `;
+            
+        } catch (error) {
+            console.error('❌ Error importing modules:', error);
+            document.getElementById('results-list').innerHTML = `
+                <li>❌ Error: ${error.message}</li>
+                <li>❌ Stack: ${error.stack}</li>
+            `;
+        }
+    </script>
+</body>
+</html>

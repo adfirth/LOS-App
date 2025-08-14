@@ -116,34 +116,11 @@ class FixturesManager {
         if (saveApiSettingsBtn) {
             saveApiSettingsBtn.addEventListener('click', () => this.saveFootballWebPagesSettings());
         }
-        
-        // Add event listener for Edit Fixtures button
-        const editFixturesBtn = document.querySelector('#edit-fixtures-btn');
-        if (editFixturesBtn) {
-            editFixturesBtn.addEventListener('click', () => this.editFixtures());
-        }
-        
-        // Add event listener for View Fixtures button
-        const viewFixturesBtn = document.querySelector('#view-fixtures-btn');
-        if (viewFixturesBtn) {
-            viewFixturesBtn.addEventListener('click', () => this.switchToViewMode());
-        }
     }
 
     // Initialize fixture management tools
     initializeFixtureManagementTools() {
-        // Add event listeners for fixture management tools
-        const reallocateFixturesBtn = document.querySelector('#reallocate-fixtures-btn');
-        const deleteAllFixturesBtn = document.querySelector('#delete-all-fixtures-btn');
-        
-        if (reallocateFixturesBtn) {
-            reallocateFixturesBtn.addEventListener('click', () => this.reallocateFixtures());
-        }
-        
-        if (deleteAllFixturesBtn) {
-            deleteAllFixturesBtn.addEventListener('click', () => this.deleteAllFixtures());
-        }
-        
+        // Add any additional fixture management tool initialization here
         console.log('Fixture management tools initialized');
     }
 
@@ -230,21 +207,14 @@ class FixturesManager {
             fixtureRows.forEach(row => {
                 const homeTeam = row.querySelector('.home-team').value.trim();
                 const awayTeam = row.querySelector('.away-team').value.trim();
-                const dateTimeInput = row.querySelector('.fixture-date').value;
+                const date = row.querySelector('.fixture-date').value;
                 const venue = row.querySelector('.venue').value.trim();
 
-                if (homeTeam && awayTeam && dateTimeInput) {
-                    // Parse the datetime-local input to get date and kick-off time
-                    const dateTime = new Date(dateTimeInput);
-                    const date = dateTime.toISOString().split('T')[0]; // YYYY-MM-DD format
-                    const kickOffTime = dateTime.toTimeString().split(' ')[0]; // HH:MM:SS format
-                    
+                if (homeTeam && awayTeam && date) {
                     fixtures.push({
                         homeTeam,
                         awayTeam,
                         date,
-                        kickOffTime,
-                        dateTime: dateTimeInput, // Keep the full datetime for editing
                         venue: venue || 'TBD',
                         status: 'NS'
                     });
@@ -267,12 +237,6 @@ class FixturesManager {
             });
 
             alert(`Saved ${fixtures.length} fixtures for gameweek ${gameweek}`);
-            
-            // After saving, show the Current Fixtures table and switch to view mode
-            const fixturesTableContainer = document.querySelector('#fixtures-table-container');
-            if (fixturesTableContainer) {
-                fixturesTableContainer.style.display = 'block';
-            }
             this.loadFixturesForGameweek();
 
         } catch (error) {
@@ -315,344 +279,10 @@ class FixturesManager {
                 alert('All fixtures look good! No duplicate teams found.');
             }
 
-            // Enhanced validation: Check fixtures against API for current date alignment
-            await this.validateFixturesAgainstAPI(fixtures, gameweek);
-
         } catch (error) {
             console.error('Error checking fixtures:', error);
             alert('Error checking fixtures: ' + error.message);
         }
-    }
-
-    // Reallocate fixtures between game weeks
-    async reallocateFixtures() {
-        try {
-            const sourceGameweek = document.querySelector('#source-gameweek').value;
-            const targetGameweek = document.querySelector('#target-gameweek').value;
-            
-            if (sourceGameweek === targetGameweek) {
-                alert('Source and target game weeks must be different');
-                return;
-            }
-            
-            if (!confirm(`Are you sure you want to move all fixtures from Game Week ${sourceGameweek} to Game Week ${targetGameweek}? This will overwrite any existing fixtures in the target game week.`)) {
-                return;
-            }
-            
-            // Get source fixtures
-            const sourceGameweekKey = sourceGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${sourceGameweek}`;
-            const sourceEditionGameweekKey = `edition${window.currentActiveEdition}_${sourceGameweekKey}`;
-            const sourceDoc = await this.db.collection('fixtures').doc(sourceEditionGameweekKey).get();
-            
-            if (!sourceDoc.exists) {
-                alert(`No fixtures found for Game Week ${sourceGameweek}`);
-                return;
-            }
-            
-            const sourceFixtures = sourceDoc.data().fixtures || [];
-            if (sourceFixtures.length === 0) {
-                alert(`No fixtures found for Game Week ${sourceGameweek}`);
-                return;
-            }
-            
-            // Save to target game week
-            const targetGameweekKey = targetGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${targetGameweek}`;
-            const targetEditionGameweekKey = `edition${window.currentActiveEdition}_${targetGameweekKey}`;
-            
-            await this.db.collection('fixtures').doc(targetEditionGameweekKey).set({
-                fixtures: sourceFixtures,
-                gameweek: targetGameweek,
-                edition: window.currentActiveEdition,
-                lastUpdated: new Date()
-            });
-            
-            // Delete source fixtures
-            await this.db.collection('fixtures').doc(sourceEditionGameweekKey).delete();
-            
-            alert(`Successfully moved ${sourceFixtures.length} fixtures from Game Week ${sourceGameweek} to Game Week ${targetGameweek}`);
-            
-            // Refresh the display for the current gameweek
-            this.loadFixturesForGameweek();
-            
-            // Update status display
-            const statusElement = document.querySelector('#reallocate-status');
-            if (statusElement) {
-                statusElement.textContent = `✅ Successfully moved ${sourceFixtures.length} fixtures from Game Week ${sourceGameweek} to Game Week ${targetGameweek}`;
-                statusElement.style.color = '#28a745';
-                setTimeout(() => {
-                    statusElement.textContent = '';
-                }, 5000);
-            }
-            
-        } catch (error) {
-            console.error('Error reallocating fixtures:', error);
-            alert('Error reallocating fixtures: ' + error.message);
-            
-            // Update status display
-            const statusElement = document.querySelector('#reallocate-status');
-            if (statusElement) {
-                statusElement.textContent = `❌ Error: ${error.message}`;
-                statusElement.style.color = '#dc3545';
-            }
-        }
-    }
-
-    // Delete all fixtures from a game week
-    async deleteAllFixtures() {
-        try {
-            const gameweek = document.querySelector('#delete-gameweek').value;
-            
-            if (!confirm(`Are you sure you want to delete ALL fixtures from Game Week ${gameweek}? This action cannot be undone.`)) {
-                return;
-            }
-            
-            // Use the same format as the main app.js file
-            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
-            
-            await this.db.collection('fixtures').doc(editionGameweekKey).delete();
-            
-            alert(`Successfully deleted all fixtures from Game Week ${gameweek}`);
-            
-            // Clear the display and show empty state
-            this.displayFixtures([]);
-            
-            // Update status display
-            const statusElement = document.querySelector('#delete-status');
-            if (statusElement) {
-                statusElement.textContent = `✅ Successfully deleted all fixtures from Game Week ${gameweek}`;
-                statusElement.style.color = '#28a745';
-                setTimeout(() => {
-                    statusElement.textContent = '';
-                }, 5000);
-            }
-            
-        } catch (error) {
-            console.error('Error deleting fixtures:', error);
-            alert('Error deleting fixtures: ' + error.message);
-            
-            // Update status display
-            const statusElement = document.querySelector('#delete-status');
-            if (statusElement) {
-                statusElement.textContent = `❌ Error: ${error.message}`;
-                statusElement.style.color = '#dc3545';
-            }
-        }
-    }
-
-    // Validate fixtures against API for current date alignment
-    async validateFixturesAgainstAPI(fixtures, gameweek) {
-        try {
-            console.log('🔍 Validating fixtures against API for current date alignment...');
-            
-            // Get current date
-            const currentDate = new Date();
-            const currentDateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-            
-            console.log(`📅 Current date: ${currentDateString}`);
-            console.log(`🎯 Checking ${fixtures.length} fixtures for Game Week ${gameweek}`);
-            
-            // Extract unique dates from fixtures
-            const fixtureDates = [...new Set(fixtures.map(f => f.date))];
-            console.log(`📅 Fixture dates found: ${fixtureDates.join(', ')}`);
-            
-            // Check if any fixtures are scheduled for today or recent dates
-            const today = new Date(currentDateString);
-            const recentFixtures = fixtures.filter(fixture => {
-                if (!fixture.date) return false;
-                const fixtureDate = new Date(fixture.date);
-                const diffTime = Math.abs(today - fixtureDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays <= 7; // Check fixtures within 7 days
-            });
-            
-            if (recentFixtures.length > 0) {
-                console.log(`🎯 Found ${recentFixtures.length} recent fixtures within 7 days:`);
-                recentFixtures.forEach(f => {
-                    const fixtureDate = new Date(f.date);
-                    const diffTime = Math.abs(today - fixtureDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    console.log(`  - ${f.homeTeam} vs ${f.awayTeam} on ${f.date} (${diffDays} days ${diffDays === 0 ? 'from now' : diffDays > 0 ? 'ago' : 'from now'})`);
-                });
-                
-                // Check if we should validate against API
-                const shouldValidateAPI = recentFixtures.some(f => {
-                    const fixtureDate = new Date(f.date);
-                    const diffTime = Math.abs(today - fixtureDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    return diffDays <= 3; // Only validate fixtures within 3 days
-                });
-                
-                if (shouldValidateAPI) {
-                    console.log('🔍 Recent fixtures found - validating against API...');
-                    await this.validateRecentFixturesAgainstAPI(recentFixtures);
-                } else {
-                    console.log('📅 Fixtures are recent but not close enough to warrant API validation');
-                }
-            } else {
-                console.log('📅 No recent fixtures found - all fixtures are more than 7 days away');
-            }
-            
-            // Show validation summary
-            this.showFixtureValidationSummary(fixtures, recentFixtures);
-            
-        } catch (error) {
-            console.error('❌ Error validating fixtures against API:', error);
-        }
-    }
-
-    // Validate recent fixtures against API
-    async validateRecentFixturesAgainstAPI(recentFixtures) {
-        try {
-            console.log('🔍 Fetching API data to validate recent fixtures...');
-            
-            // Get the first recent fixture to determine the date range
-            const firstFixture = recentFixtures[0];
-            const fixtureDate = new Date(firstFixture.date);
-            
-            // Format date for API (YYYY-MM-DD)
-            const apiDate = fixtureDate.toISOString().split('T')[0];
-            
-            // Check if we have API configuration
-            if (!window.footballWebPagesConfig || !window.footballWebPagesConfig.RAPIDAPI_KEY) {
-                console.log('⚠️ No API configuration found - skipping API validation');
-                return;
-            }
-            
-            // Fetch fixtures from API for this date
-            const apiUrl = `https://football-web-pages1.p.rapidapi.com/fixtures-results.json?from=${apiDate}&to=${apiDate}&comp=5&season=2025-2026`;
-            
-            console.log(`🔍 Fetching API data for ${apiDate}: ${apiUrl}`);
-            
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'X-RapidAPI-Key': window.footballWebPagesConfig.RAPIDAPI_KEY,
-                    'X-RapidAPI-Host': window.footballWebPagesConfig.RAPIDAPI_HOST
-                }
-            });
-            
-            if (response.ok) {
-                const apiData = await response.json();
-                console.log('✅ API data fetched successfully:', apiData);
-                
-                // Validate fixtures against API data
-                this.validateFixturesWithAPIData(recentFixtures, apiData);
-            } else {
-                console.log(`⚠️ API request failed: ${response.status} ${response.statusText}`);
-            }
-            
-        } catch (error) {
-            console.error('❌ Error fetching API data for validation:', error);
-        }
-    }
-
-    // Validate fixtures with API data
-    validateFixturesWithAPIData(fixtures, apiData) {
-        try {
-            console.log('🔍 Validating fixtures against API data...');
-            
-            // Extract fixtures from API response
-            let apiFixtures = [];
-            if (apiData['fixtures-results']) {
-                const fixturesData = apiData['fixtures-results'];
-                if (fixturesData.matches && Array.isArray(fixturesData.matches)) {
-                    apiFixtures = fixturesData.matches;
-                }
-            }
-            
-            console.log(`📅 Found ${apiFixtures.length} fixtures in API response`);
-            
-            // Check each fixture against API data
-            fixtures.forEach(fixture => {
-                const fixtureDate = new Date(fixture.date);
-                const apiDate = fixtureDate.toISOString().split('T')[0];
-                
-                // Find matching API fixture
-                const matchingAPIFixture = apiFixtures.find(apiFixture => {
-                    const apiFixtureDate = apiFixture.date;
-                    if (!apiFixtureDate) return false;
-                    
-                    // Check if dates match
-                    const apiDateObj = new Date(apiFixtureDate);
-                    const fixtureDateObj = new Date(fixture.date);
-                    
-                    return apiDateObj.toDateString() === fixtureDateObj.toDateString();
-                });
-                
-                if (matchingAPIFixture) {
-                    console.log(`✅ Fixture validated: ${fixture.homeTeam} vs ${fixture.awayTeam} on ${fixture.date}`);
-                    console.log(`  - API data: ${matchingAPIFixture['home-team']?.name || 'N/A'} vs ${matchingAPIFixture['away-team']?.name || 'N/A'}`);
-                } else {
-                    console.log(`⚠️ Fixture not found in API: ${fixture.homeTeam} vs ${fixture.awayTeam} on ${fixture.date}`);
-                }
-            });
-            
-        } catch (error) {
-            console.error('❌ Error validating fixtures with API data:', error);
-        }
-    }
-
-    // Show fixture validation summary
-    showFixtureValidationSummary(fixtures, recentFixtures) {
-        const validationResults = document.querySelector('#fixture-validation-results');
-        const validationStatus = document.querySelector('#validation-status');
-        const validationDetails = document.querySelector('#validation-details');
-        
-        if (!validationResults || !validationStatus || !validationDetails) {
-            console.log('Validation results elements not found');
-            return;
-        }
-        
-        const totalFixtures = fixtures.length;
-        const recentCount = recentFixtures.length;
-        const currentDate = new Date().toISOString().split('T')[0];
-        
-        let statusHtml = `<h4>🔍 Fixture Validation Complete</h4>`;
-        statusHtml += `<p><strong>Total Fixtures:</strong> ${totalFixtures}</p>`;
-        statusHtml += `<p><strong>Recent Fixtures (within 7 days):</strong> ${recentCount}</p>`;
-        statusHtml += `<p><strong>Current Date:</strong> ${currentDate}</p>`;
-        
-        if (recentCount > 0) {
-            statusHtml += `<p><strong>Recent Fixtures:</strong></p>`;
-            statusHtml += `<ul>`;
-            recentFixtures.forEach(fixture => {
-                const fixtureDate = new Date(fixture.date);
-                const today = new Date();
-                const diffTime = Math.abs(today - fixtureDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                let timeDescription;
-                if (diffDays === 0) {
-                    timeDescription = 'Today';
-                } else if (diffDays === 1) {
-                    timeDescription = 'Yesterday';
-                } else if (diffDays > 0) {
-                    timeDescription = `${diffDays} days ago`;
-                } else {
-                    timeDescription = `${Math.abs(diffDays)} days from now`;
-                }
-                
-                statusHtml += `<li>${fixture.homeTeam} vs ${fixture.awayTeam} on ${fixture.date} (${timeDescription})</li>`;
-            });
-            statusHtml += `</ul>`;
-        }
-        
-        validationStatus.innerHTML = statusHtml;
-        validationStatus.className = 'validation-status success';
-        
-        // Show additional details
-        validationDetails.innerHTML = `
-            <h5>Validation Details:</h5>
-            <ul>
-                <li>✅ Basic fixture validation completed</li>
-                <li>🔍 API validation attempted for recent fixtures</li>
-                <li>📅 Date alignment checked against current date</li>
-                <li>🎯 Recent fixtures highlighted for attention</li>
-            </ul>
-        `;
-        
-        validationResults.style.display = 'block';
     }
 
     // Load fixtures for gameweek
@@ -690,27 +320,6 @@ class FixturesManager {
         
         if (fixtures.length === 0) {
             this.addFixtureRow();
-            // Clear the table display when no fixtures
-            const fixturesTableContainer = document.querySelector('#fixtures-table-container');
-            if (fixturesTableContainer) {
-                fixturesTableContainer.innerHTML = '<p>No fixtures found for this gameweek</p>';
-            }
-            return;
-        }
-
-        // Only show the table format for viewing, not the input forms
-        this.displayFixturesTable(fixtures);
-    }
-
-    // Display fixtures in edit mode (input forms)
-    displayFixturesForEditing(fixtures) {
-        const fixturesContainer = document.querySelector('#fixtures-container');
-        if (!fixturesContainer) return;
-
-        fixturesContainer.innerHTML = '';
-        
-        if (fixtures.length === 0) {
-            this.addFixtureRow();
             return;
         }
 
@@ -719,201 +328,10 @@ class FixturesManager {
         });
     }
 
-    // Edit fixtures - switch to edit mode
-    async editFixtures() {
-        try {
-            const gameweek = document.querySelector('#gameweek-select').value;
-            if (!gameweek) {
-                alert('Please select a gameweek first');
-                return;
-            }
-
-            // Hide the Current Fixtures table when switching to edit mode
-            const fixturesTableContainer = document.querySelector('#fixtures-table-container');
-            if (fixturesTableContainer) {
-                fixturesTableContainer.style.display = 'none';
-            }
-
-            // Load fixtures for editing
-            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
-            
-            const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
-            if (doc.exists) {
-                const fixtures = doc.data().fixtures || [];
-                this.displayFixturesForEditing(fixtures);
-            } else {
-                // No fixtures exist, show empty edit form
-                this.displayFixturesForEditing([]);
-            }
-        } catch (error) {
-            console.error('Error loading fixtures for editing:', error);
-            alert('Error loading fixtures for editing: ' + error.message);
-        }
-    }
-
-    // Switch back to view mode
-    switchToViewMode() {
-        // Show the Current Fixtures table when switching back to view mode
-        const fixturesTableContainer = document.querySelector('#fixtures-table-container');
-        if (fixturesTableContainer) {
-            fixturesTableContainer.style.display = 'block';
-        }
-        this.loadFixturesForGameweek();
-    }
-
-    // Display fixtures in a table format for admin viewing
-    displayFixturesTable(fixtures) {
-        const fixturesTableContainer = document.querySelector('#fixtures-table-container');
-        if (!fixturesTableContainer) return;
-
-        if (fixtures.length === 0) {
-            fixturesTableContainer.innerHTML = '<p>No fixtures found for this gameweek</p>';
-            return;
-        }
-
-        let tableHTML = `
-            <h4>Current Fixtures</h4>
-            <table class="league-table">
-                <thead>
-                    <tr>
-                        <th>Home Team</th>
-                        <th>Away Team</th>
-                        <th>Date</th>
-                        <th>Kick-Off Time</th>
-                        <th>Venue</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        fixtures.forEach(fixture => {
-            // Format the date and time properly
-            let dateDisplay = 'TBD';
-            let timeDisplay = 'TBD';
-            
-            if (fixture.date) {
-                try {
-                    const dateObj = new Date(fixture.date);
-                    if (!isNaN(dateObj.getTime())) {
-                        dateDisplay = dateObj.toLocaleDateString('en-GB', {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        });
-                    }
-                } catch (e) {
-                    console.warn('Invalid date format:', fixture.date);
-                }
-            }
-            
-            // Prioritize kickOffTime over dateTime for time display
-            if (fixture.kickOffTime && fixture.kickOffTime !== 'TBD') {
-                try {
-                    // Parse the time string (HH:MM:SS or HH:MM)
-                    const timeParts = fixture.kickOffTime.split(':');
-                    if (timeParts.length >= 2) {
-                        const hours = timeParts[0];
-                        const minutes = timeParts[1];
-                        timeDisplay = `${hours}:${minutes}`;
-                        console.log(`Time display from kickOffTime: ${timeDisplay} (from ${fixture.kickOffTime})`);
-                    }
-                } catch (e) {
-                    console.warn('Invalid time format:', fixture.kickOffTime);
-                }
-            } else if (fixture.time && fixture.time !== 'TBD') {
-                // Handle 'time' field from API imports
-                try {
-                    const timeParts = fixture.time.split(':');
-                    if (timeParts.length >= 2) {
-                        const hours = timeParts[0];
-                        const minutes = timeParts[1];
-                        timeDisplay = `${hours}:${minutes}`;
-                        console.log(`Time display from time field: ${timeDisplay} (from ${fixture.time})`);
-                    }
-                } catch (e) {
-                    console.warn('Invalid time format:', fixture.time);
-                }
-            } else if (fixture.dateTime) {
-                try {
-                    const dateTimeObj = new Date(fixture.dateTime);
-                    if (!isNaN(dateTimeObj.getTime())) {
-                        timeDisplay = dateTimeObj.toLocaleTimeString('en-GB', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false
-                        });
-                        console.log(`Time display from dateTime: ${timeDisplay} (from ${fixture.dateTime})`);
-                    }
-                } catch (e) {
-                    console.warn('Invalid datetime format:', fixture.dateTime);
-                }
-            }
-            
-            // Debug logging
-            console.log(`Fixture ${fixture.homeTeam} vs ${fixture.awayTeam}:`, {
-                date: fixture.date,
-                kickOffTime: fixture.kickOffTime,
-                time: fixture.time,
-                dateTime: fixture.dateTime,
-                finalTimeDisplay: timeDisplay
-            });
-
-            tableHTML += `
-                <tr>
-                    <td>${fixture.homeTeam || 'TBD'}</td>
-                    <td>${fixture.awayTeam || 'TBD'}</td>
-                    <td>${dateDisplay}</td>
-                    <td>${timeDisplay}</td>
-                    <td>${fixture.venue || 'TBD'}</td>
-                    <td>${fixture.status || 'NS'}</td>
-                </tr>
-            `;
-        });
-
-        tableHTML += `
-                </tbody>
-            </table>
-        `;
-
-        fixturesTableContainer.innerHTML = tableHTML;
-    }
-
     // Add fixture row with data
     addFixtureRowWithData(fixture) {
         const fixturesContainer = document.querySelector('#fixtures-container');
         if (!fixturesContainer) return;
-
-        // Reconstruct the datetime-local value from date and kickOffTime
-        let datetimeValue = '';
-        if (fixture.date && (fixture.kickOffTime || fixture.time)) {
-            try {
-                // Use kickOffTime first, fallback to time field
-                const timeValue = fixture.kickOffTime && fixture.kickOffTime !== 'TBD' ? fixture.kickOffTime : fixture.time;
-                
-                // Combine date and time into ISO format for datetime-local input
-                const dateTime = new Date(`${fixture.date}T${timeValue}`);
-                if (!isNaN(dateTime.getTime())) {
-                    // Format as YYYY-MM-DDTHH:MM for datetime-local input
-                    const year = dateTime.getFullYear();
-                    const month = String(dateTime.getMonth() + 1).padStart(2, '0');
-                    const day = String(dateTime.getDate()).padStart(2, '0');
-                    const hours = String(dateTime.getHours()).padStart(2, '0');
-                    const minutes = String(dateTime.getMinutes()).padStart(2, '0');
-                    datetimeValue = `${year}-${month}-${day}T${hours}:${minutes}`;
-                    console.log(`Reconstructed datetime for editing: ${datetimeValue} from date: ${fixture.date}, time: ${timeValue}`);
-                }
-            } catch (e) {
-                console.warn('Error reconstructing datetime:', e);
-                // Fallback to original dateTime if available
-                datetimeValue = fixture.dateTime || '';
-            }
-        } else if (fixture.dateTime) {
-            // Use original dateTime if available
-            datetimeValue = fixture.dateTime;
-        }
 
         const fixtureRow = document.createElement('div');
         fixtureRow.className = 'fixture-row';
@@ -921,7 +339,7 @@ class FixturesManager {
             <div class="fixture-inputs">
                 <input type="text" class="home-team" value="${fixture.homeTeam || ''}" placeholder="Home Team">
                 <input type="text" class="away-team" value="${fixture.awayTeam || ''}" placeholder="Away Team">
-                <input type="datetime-local" class="fixture-date" value="${datetimeValue}">
+                <input type="datetime-local" class="fixture-date" value="${fixture.date || ''}">
                 <input type="text" class="venue" value="${fixture.venue || ''}" placeholder="Venue">
                 <button type="button" class="remove-fixture-btn" onclick="this.parentElement.parentElement.remove()">Remove</button>
             </div>
@@ -1003,67 +421,21 @@ class FixturesManager {
     // Save scores
     async saveScores() {
         try {
-            if (!window.currentActiveEdition) {
-                alert('No active edition selected. Please select an edition first.');
-                return;
-            }
-            
             const gameweek = document.querySelector('#score-gameweek-select').value;
-            if (!gameweek) {
-                alert('No gameweek selected. Please select a gameweek first.');
-                return;
-            }
-            
             // Use the same format as the main app.js file
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
             const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
-            const scoresContainer = document.querySelector('#scores-container');
-            if (!scoresContainer) {
-                alert('Scores container not found. Please ensure you are on the correct page.');
-                return;
-            }
-            
             const scoreRows = document.querySelectorAll('.score-row');
-            if (scoreRows.length === 0) {
-                alert('No score rows found. Please load fixtures first.');
-                return;
-            }
-            
             const fixtures = [];
 
             scoreRows.forEach(row => {
-                const teamNamesElement = row.querySelector('.team-names');
-                const dateElement = row.querySelector('.fixture-date');
-                
-                if (!teamNamesElement || !dateElement) {
-                    console.warn('Missing required elements in score row:', row);
-                    return; // Skip this row
-                }
-                
-                const teamNames = teamNamesElement.textContent;
-                if (!teamNames) {
-                    console.warn('Team names element has no text content:', teamNamesElement);
-                    return; // Skip this row
-                }
-                
+                const teamNames = row.querySelector('.team-names').textContent;
                 const [homeTeam, awayTeam] = teamNames.split(' vs ');
-                if (!homeTeam || !awayTeam) {
-                    console.warn('Invalid team names format:', teamNames);
-                    return; // Skip this row
-                }
-                
                 const homeScore = parseInt(row.querySelector('.home-score').value) || 0;
                 const awayScore = parseInt(row.querySelector('.away-score').value) || 0;
                 const status = row.querySelector('.fixture-status').value;
-                
-                // Handle both input and span elements for fixture-date
-                let date;
-                if (dateElement.tagName === 'INPUT') {
-                    date = dateElement.value;
-                } else {
-                    date = dateElement.textContent;
-                }
+                const date = row.querySelector('.fixture-date').textContent;
 
                 fixtures.push({
                     homeTeam: homeTeam.trim(),
@@ -1071,7 +443,7 @@ class FixturesManager {
                     homeScore,
                     awayScore,
                     status,
-                    date: date && date !== 'TBD' ? new Date(date).toISOString() : null
+                    date: date !== 'TBD' ? new Date(date).toISOString() : null
                 });
             });
 
@@ -1091,12 +463,6 @@ class FixturesManager {
 
         } catch (error) {
             console.error('Error saving scores:', error);
-            console.error('Error details:', {
-                message: error.message,
-                stack: error.stack,
-                scoreRowsCount: document.querySelectorAll('.score-row').length,
-                scoresContainer: !!document.querySelector('#scores-container')
-            });
             alert('Error saving scores: ' + error.message);
         }
     }

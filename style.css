@@ -3178,6 +3178,46 @@ a:hover {
     font-weight: bold;
 }
 
+.vidiprinter-entry.correction {
+    background: rgba(255, 165, 0, 0.1);
+    border-left-color: #ffa500;
+    color: #ffa500;
+    font-style: italic;
+}
+
+.vidiprinter-entry .emoji {
+    font-size: 1.1em;
+}
+
+.vidiprinter-entry.goal .emoji,
+.enhanced-vidiprinter-entry.goal .emoji {
+    filter: grayscale(100%);
+}
+
+.vidiprinter-entry {
+    display: grid;
+    grid-template-columns: 140px 25px 60px 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.vidiprinter-entry .timestamp {
+    grid-column: 1;
+}
+
+.vidiprinter-entry .emoji {
+    grid-column: 2;
+    text-align: center;
+}
+
+.vidiprinter-entry .type {
+    grid-column: 3;
+}
+
+.vidiprinter-entry .text {
+    grid-column: 4;
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -6660,7 +6700,7 @@ a:hover {
 }
 
 .enhanced-vidiprinter-feed {
-    color: white;
+    color: #333;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
     line-height: 1.4;
@@ -6684,9 +6724,34 @@ a:hover {
 }
 
 .enhanced-vidiprinter-entry {
+    display: grid;
+    grid-template-columns: 140px 25px 60px 1fr;
+    gap: 8px;
+    align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     animation: slideIn 0.3s ease-out;
+}
+
+.enhanced-vidiprinter-entry .emoji {
+    font-size: 1.1em;
+}
+
+.enhanced-vidiprinter-entry .timestamp {
+    grid-column: 1;
+}
+
+.enhanced-vidiprinter-entry .emoji {
+    grid-column: 2;
+    text-align: center;
+}
+
+.enhanced-vidiprinter-entry .type {
+    grid-column: 3;
+}
+
+.enhanced-vidiprinter-entry .text {
+    grid-column: 4;
 }
 
 .enhanced-vidiprinter-entry:last-child {
@@ -6696,6 +6761,10 @@ a:hover {
 .enhanced-vidiprinter-entry.goal {
     color: #ffd700;
     font-weight: bold;
+}
+
+.enhanced-vidiprinter-entry.goal .emoji {
+    font-size: 1.1em;
 }
 
 .enhanced-vidiprinter-entry.card {
@@ -6720,8 +6789,13 @@ a:hover {
     font-style: italic;
 }
 
+.enhanced-vidiprinter-entry.correction {
+    color: #ffa500;
+    font-style: italic;
+}
+
 .enhanced-vidiprinter-timestamp {
-    color: #888;
+    color: #666;
     font-size: 0.8em;
     margin-right: 10px;
 }
@@ -6735,12 +6809,12 @@ a:hover {
     justify-content: space-around;
     margin-top: 15px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .enhanced-vidiprinter-stat {
     text-align: center;
-    color: #ccc;
+    color: #666;
 }
 
 .enhanced-vidiprinter-stat .stat-value {

@@ -72,7 +72,18 @@
             <section class="admin-content">
                 <h1 style="text-align: center; margin-bottom: 2rem; color: #333;">Admin Panel</h1>
                 <div id="active-edition-display" style="text-align: center; margin-bottom: 1rem; padding: 10px; background-color: #f0f8ff; border: 2px solid #007bff; border-radius: 8px; display: inline-block; margin-left: auto; margin-right: auto;">
-                    <strong>Active Edition: <span id="current-edition-display">Edition 1</span></strong>
+                    <strong>Active Edition: </strong>
+                    <select id="quick-edition-selector" style="margin-left: 8px; padding: 4px 8px; border: 1px solid #007bff; border-radius: 4px; background-color: white; font-weight: bold; cursor: pointer;">
+                        <option value="1">Edition 1</option>
+                        <option value="2">Edition 2</option>
+                        <option value="3">Edition 3</option>
+                        <option value="4">Edition 4</option>
+                        <option value="test">Test Weeks</option>
+                    </select>
+                    <button id="quick-save-edition-btn" style="margin-left: 8px; padding: 4px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <div id="quick-edition-status" style="margin-top: 8px; font-size: 0.9em; color: #007bff;"></div>
                 </div>
                 <p style="text-align: center; margin-bottom: 2rem;">Use the tabs below to manage the competition.</p>
                 
@@ -87,14 +98,17 @@
                     <button class="admin-tab" data-tab="fixtures">
                         <i class="fas fa-calendar-alt"></i> Fixtures
                     </button>
+                    <button class="admin-tab" data-tab="picks">
+                        <i class="fas fa-users"></i> Player Picks
+                    </button>
+                    <button class="admin-tab" data-tab="vidiprinter">
+                        <i class="fas fa-tv"></i> Vidiprinter
+                    </button>
                     <button class="admin-tab" data-tab="scores">
                         <i class="fas fa-chart-line"></i> Scores
                     </button>
-                                            <button class="admin-tab" data-tab="vidiprinter">
-                            <i class="fas fa-tv"></i> Vidiprinter
-                        </button>
-                    <button class="admin-tab" data-tab="picks">
-                        <i class="fas fa-users"></i> Player Picks
+                    <button class="admin-tab" data-tab="as-it-stands">
+                        <i class="fas fa-trophy"></i> As It Stands
                     </button>
                     <button class="admin-tab" id="admin-logout-btn" style="margin-left: auto;">
                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -132,6 +146,28 @@
                                 </select>
                                 <button id="save-settings-btn" class="cta-button">Save Settings</button>
                                 <p id="settings-status" class="status-message"></p>
+                                
+                                <!-- API Suspension Settings -->
+                                <div style="margin-top: 2rem; padding: 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
+                                    <h4 style="color: #495057; margin-bottom: 1rem;">🚫 API Pull Suspension</h4>
+                                    <p style="color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem;">
+                                        Temporarily suspend automatic API pulls to reduce server load. 
+                                        This will stop automatic vidiprinter updates and other scheduled API calls.
+                                    </p>
+                                    <div class="form-group">
+                                        <label for="api-suspension-enabled">
+                                            <input type="checkbox" id="api-suspension-enabled">
+                                            Suspend Automatic API Pulls
+                                        </label>
+                                        <small style="display: block; color: #6c757d; margin-top: 0.5rem;">
+                                            When enabled, all automatic API calls will be paused. Manual API calls will still work.
+                                        </small>
+                                    </div>
+                                    <button id="save-api-suspension-btn" class="cta-button" style="background-color: #dc3545; border-color: #dc3545;">
+                                        <i class="fas fa-pause"></i> Save API Suspension Settings
+                                    </button>
+                                    <p id="api-suspension-status" class="status-message"></p>
+                                </div>
                                 
                                 <!-- Test Edition Reset Button -->
                                 <div style="margin-top: 2rem; padding: 1rem; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
@@ -414,9 +450,16 @@
                                         <!-- Fixture rows will be added here -->
                                     </div>
                                     
+                                    <!-- Fixtures Table Display -->
+                                    <div id="fixtures-table-container" style="margin-top: 2rem;">
+                                        <!-- Fixtures table will be displayed here -->
+                                    </div>
+                                    
                                     <button id="add-fixture-btn" class="cta-button">Add Another Fixture</button>
                                     <button id="save-fixtures-btn" class="cta-button">Save Fixtures</button>
                                     <button id="check-fixtures-btn" class="cta-button">Check Fixtures</button>
+                                    <button id="edit-fixtures-btn" class="cta-button">Edit Fixtures</button>
+                                    <button id="view-fixtures-btn" class="cta-button">View Fixtures</button>
                                 </div>
                                 
                                 <!-- Fixture Validation Results -->
@@ -568,7 +611,7 @@
                                         <button id="import-selected-fixtures-btn" class="cta-button">Import Selected Fixtures</button>
                                     </div>
                                 </div>
-                                
+
                                 <div id="football-webpages-status" class="football-webpages-status"></div>
                             </div>
                         </div>
@@ -602,6 +645,7 @@
                                                                             <button id="import-football-webpages-scores-btn" class="cta-button">Import from Football Web Pages</button>
                                     <button id="refresh-scores-btn" class="cta-button">Refresh Display</button>
                                         <input type="file" id="scores-file-input" accept=".json" style="display: none;">
+                                        <div id="import-status" class="status-message"></div>
                                     </div>
                                     
                                     <!-- Football Web Pages API Configuration -->
@@ -856,6 +900,194 @@
                                     </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <!-- As It Stands Tab -->
+                    <div id="as-it-stands-tab" class="tab-pane">
+                        <div class="admin-section">
+                            <h3>As It Stands - Competition Standings</h3>
+                            
+                            <!-- Standings Controls -->
+                            <div class="standings-controls">
+                                <div class="control-group">
+                                    <label for="standings-edition-select">Edition:</label>
+                                    <select id="standings-edition-select">
+                                        <option value="1">Edition 1</option>
+                                        <option value="2">Edition 2</option>
+                                        <option value="3">Edition 3</option>
+                                        <option value="4">Edition 4</option>
+                                        <option value="test">Test Weeks</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label for="standings-gameweek-select">Game Week:</label>
+                                    <select id="standings-gameweek-select">
+                                        <option value="1">Game Week 1</option>
+                                        <option value="2">Game Week 2</option>
+                                        <option value="3">Game Week 3</option>
+                                        <option value="4">Game Week 4</option>
+                                        <option value="5">Game Week 5</option>
+                                        <option value="6">Game Week 6</option>
+                                        <option value="7">Game Week 7</option>
+                                        <option value="8">Game Week 8</option>
+                                        <option value="9">Game Week 9</option>
+                                        <option value="10">Game Week 10</option>
+                                        <option value="tiebreak">Tiebreak Round</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label for="standings-view-select">View:</label>
+                                    <select id="standings-view-select">
+                                        <option value="current">Current Standings</option>
+                                        <option value="all-players">All Players</option>
+                                        <option value="eliminated">Eliminated Players</option>
+                                        <option value="survivors">Survivors Only</option>
+                                    </select>
+                                </div>
+                                <button id="refresh-standings-btn" class="cta-button">
+                                    <i class="fas fa-sync-alt"></i> Refresh Standings
+                                </button>
+                                <button id="export-standings-btn" class="cta-button">
+                                    <i class="fas fa-download"></i> Export CSV
+                                </button>
+                            </div>
+
+                            <!-- Standings Summary -->
+                            <div class="standings-summary">
+                                <div class="summary-stats">
+                                    <div class="stat-card">
+                                        <h5>Total Players</h5>
+                                        <p id="total-players-count">0</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <h5>Survivors</h5>
+                                        <p id="survivors-count">0</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <h5>Eliminated</h5>
+                                        <p id="eliminated-count">0</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <h5>Average Lives</h5>
+                                        <p id="average-lives">0.0</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Standings Table -->
+                            <div class="standings-table-container">
+                                <h4 id="standings-title">Current Standings - Edition 1, Game Week 1</h4>
+                                <div class="table-container">
+                                    <table class="league-table" id="standings-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Position</th>
+                                                <th>Player Name</th>
+                                                <th>Email</th>
+                                                <th>Lives Remaining</th>
+                                                                        <th>Picked Team</th>
+                        <th>Result</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="standings-body">
+                                            <tr>
+                                                <td colspan="8" style="text-align: center; padding: 2rem;">
+                                                    <i class="fas fa-trophy" style="font-size: 2rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                                                    <p>Select an edition and game week to view standings</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Manual Adjustments Section -->
+                            <div class="manual-adjustments-section" style="margin-top: 2rem; padding: 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
+                                <h4 style="color: #495057; margin-bottom: 1rem;">
+                                    <i class="fas fa-edit"></i> Manual Standings Adjustments
+                                </h4>
+                                <p style="color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem;">
+                                    Use this section to manually adjust player lives or status in case of errors or special circumstances.
+                                </p>
+                                
+                                <div class="adjustment-controls">
+                                    <div class="form-group">
+                                        <label for="adjustment-player-select">Select Player:</label>
+                                        <select id="adjustment-player-select">
+                                            <option value="">Select a player...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="adjustment-lives">Lives Remaining:</label>
+                                        <input type="number" id="adjustment-lives" min="0" max="2" value="2">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="adjustment-reason">Reason for Adjustment:</label>
+                                        <textarea id="adjustment-reason" rows="2" placeholder="Enter reason for manual adjustment..."></textarea>
+                                    </div>
+                                    <button id="apply-adjustment-btn" class="cta-button" style="background-color: #28a745; border-color: #28a745;">
+                                        <i class="fas fa-check"></i> Apply Adjustment
+                                    </button>
+                                </div>
+                                <p id="adjustment-status" class="status-message"></p>
+                            </div>
+
+                            <!-- Standings History -->
+                            <div class="standings-history-section" style="margin-top: 2rem; padding: 1rem; background-color: #e9ecef; border: 1px solid #ced4da; border-radius: 8px;">
+                                <h4 style="color: #495057; margin-bottom: 1rem;">
+                                    <i class="fas fa-history"></i> Standings History
+                                </h4>
+                                <p style="color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem;">
+                                    View historical standings data and track changes over time.
+                                </p>
+                                
+                                <div class="history-controls">
+                                    <div class="form-group">
+                                        <label for="history-edition-select">Edition:</label>
+                                        <select id="history-edition-select">
+                                            <option value="1">Edition 1</option>
+                                            <option value="2">Edition 2</option>
+                                            <option value="3">Edition 3</option>
+                                            <option value="4">Edition 4</option>
+                                            <option value="test">Test Weeks</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="history-gameweek-select">Game Week:</label>
+                                        <select id="history-gameweek-select">
+                                            <option value="all">All Game Weeks</option>
+                                            <option value="1">Game Week 1</option>
+                                            <option value="2">Game Week 2</option>
+                                            <option value="3">Game Week 3</option>
+                                            <option value="4">Game Week 4</option>
+                                            <option value="5">Game Week 5</option>
+                                            <option value="6">Game Week 6</option>
+                                            <option value="7">Game Week 7</option>
+                                            <option value="8">Game Week 8</option>
+                                            <option value="9">Game Week 9</option>
+                                            <option value="10">Game Week 10</option>
+                                            <option value="tiebreak">Tiebreak Round</option>
+                                        </select>
+                                    </div>
+                                    <button id="load-history-btn" class="cta-button">
+                                        <i class="fas fa-search"></i> Load History
+                                    </button>
+                                    <button id="export-history-btn" class="cta-button">
+                                        <i class="fas fa-download"></i> Export History
+                                    </button>
+                                </div>
+                                
+                                <div id="history-display" class="history-display" style="display: none;">
+                                    <h5>Historical Data</h5>
+                                    <div id="history-content">
+                                        <!-- Historical data will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </section>
@@ -880,61 +1112,36 @@
             if (typeof firebase !== 'undefined' && window.auth && window.db) {
                 console.log('Firebase is ready, loading bundled app');
                 const script = document.createElement('script');
-                script.src = 'dist/app.bundle.js';
+                script.type = 'module';
+                script.src = 'src/app.js';
                 script.onload = function() {
                     console.log('Bundled app loaded successfully');
                     
-                    // Debug: Check what's available in global scope
-                    console.log('Debug: Checking global scope...');
-                    console.log('window.initializeAdminPage:', typeof window.initializeAdminPage);
-                    console.log('window.app:', typeof window.app);
-                    console.log('Available window properties:', Object.keys(window).filter(key => key.includes('Admin') || key.includes('admin')));
-                    
-                    // Additional debugging for bundled app
-                    console.log('Debug: Checking bundled app state...');
-                    console.log('window.app type:', typeof window.app);
-                    if (window.app) {
-                        console.log('window.app properties:', Object.keys(window.app));
-                        console.log('window.app.authManager:', window.app.authManager);
-                        if (window.app.authManager) {
-                            console.log('window.app.authManager.initializeAdminPage:', typeof window.app.authManager.initializeAdminPage);
-                        }
-                    }
-                    
-                    // Check for any global functions that might have been exposed
-                    const globalFunctions = Object.keys(window).filter(key => 
-                        typeof window[key] === 'function' && 
-                        (key.includes('Admin') || key.includes('admin') || key.includes('initialize'))
-                    );
-                    console.log('Debug: Global functions found:', globalFunctions);
-                    
-                    // Wait for all functions to be available, then initialize admin page
-                    function waitForAdminFunctions() {
-                        if (typeof window.initializeAdminPage === 'function') {
-                            console.log('Initializing admin page...');
-                            window.initializeAdminPage();
-                        } else {
-                            console.log('Waiting for admin functions to be available...');
-                            console.log('Current window.initializeAdminPage:', typeof window.initializeAdminPage);
-                            
-                            // Fallback: Try to initialize directly if the bundled app has loaded
-                            if (window.app && window.app.authManager) {
-                                console.log('Fallback: Found app.authManager, initializing directly...');
-                                try {
-                                    window.app.authManager.initializeAdminPage();
-                                    return;
-                                } catch (error) {
-                                    console.error('Fallback initialization failed:', error);
+                    // Since DOMContentLoaded has already fired, we need to initialize the app manually
+                    // Wait a moment for the script to fully parse and expose the App class
+                    setTimeout(() => {
+                        if (window.App) {
+                            console.log('App class found, initializing manually...');
+                            window.app = new window.App();
+                            window.app.initialize().then(() => {
+                                console.log('App initialized successfully, admin functions should now be available');
+                                
+                                // Check if admin functions are now available
+                                if (window.initializeAdminPage && typeof window.initializeAdminPage === 'function') {
+                                    console.log('Admin functions found, initializing...');
+                                    window.initializeAdminPage();
+                                } else {
+                                    console.error('Admin functions still not available after app initialization');
+                                    console.log('Available window properties:', Object.keys(window).filter(key => key.includes('Admin') || key.includes('admin')));
                                 }
-                            }
-                            
-                            // If still not available, wait and retry
-                            setTimeout(waitForAdminFunctions, 100);
+                            }).catch(error => {
+                                console.error('Error initializing app:', error);
+                            });
+                        } else {
+                            console.error('App class not found in global scope');
+                            console.log('Available window properties:', Object.keys(window).filter(key => key.includes('App') || key.includes('app')));
                         }
-                    }
-                    
-                    // Start waiting for admin functions
-                    setTimeout(waitForAdminFunctions, 500);
+                    }, 100);
                 };
                 script.onerror = function() {
                     console.error('Failed to load bundled app');
@@ -1023,6 +1230,28 @@
                 } else {
                     console.log('initializeVidiprinter function not available yet');
                 }
+            }
+            
+            // Load standings if As It Stands tab was clicked
+            if (tabName === 'as-it-stands') {
+                console.log('As It Stands tab clicked - loading standings...');
+                console.log('🔍 adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                console.log('🔍 adminManagementManager object:', window.adminManagementManager);
+                if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadStandings) {
+                    console.log('✅ Calling loadStandings...');
+                    window.adminManagementManager.loadStandings();
+                } else {
+                    console.log('❌ adminManagementManager.loadStandings not available yet');
+                    console.log('🔍 Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
+                }
+            }
+            
+            // Set default gameweek selection for all tabs
+            if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.setDefaultSelection) {
+                console.log('🔧 Setting default selection for tab:', tabName);
+                setTimeout(() => {
+                    window.adminManagementManager.setDefaultSelection();
+                }, 100); // Small delay to ensure DOM elements are ready
             }
             
             // Ensure Save Settings button is enabled when settings tab is clicked

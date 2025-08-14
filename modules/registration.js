@@ -217,8 +217,7 @@ class RegistrationManager {
             let previousEditionsRegistrations = 0;
             let activePlayers = 0;
 
-            const currentEdition = window.currentActiveEdition || this.currentActiveEdition;
-            console.log('refreshRegistrationStats - currentEdition:', currentEdition, 'window.currentActiveEdition:', window.currentActiveEdition, 'this.currentActiveEdition:', this.currentActiveEdition);
+            const currentEdition = this.currentActiveEdition;
 
             let archivedUsers = 0;
             let activeUsers = 0;
@@ -238,11 +237,8 @@ class RegistrationManager {
 
                 if (userData.registrations) {
                     // Only count current edition registrations for active users
-                    const editionKey = `edition${currentEdition}`;
-                    console.log(`Checking user ${userData.firstName} ${userData.surname} for edition key: ${editionKey}, has registration: ${!!userData.registrations[editionKey]}, status: ${userData.status}`);
-                    if (userData.registrations[editionKey] && userData.status !== 'archived') {
+                    if (userData.registrations[`edition${currentEdition}`] && userData.status !== 'archived') {
                         currentEditionRegistrations++;
-                        console.log(`✅ Counted user ${userData.firstName} ${userData.surname} for edition ${currentEdition}`);
                     }
 
                     // Count registrations from previous editions (excluding archived users)
@@ -290,55 +286,38 @@ class RegistrationManager {
     // Update registration list
     async updateRegistrationList() {
         try {
-            const currentEdition = window.currentActiveEdition || this.currentActiveEdition;
-            console.log('updateRegistrationList - filtering for edition:', currentEdition);
-            console.log('updateRegistrationList - window.currentActiveEdition:', window.currentActiveEdition);
-            console.log('updateRegistrationList - this.currentActiveEdition:', this.currentActiveEdition);
-            
-            const usersSnapshot = await this.db.collection('users').orderBy('firstName').limit(50).get();
+            const usersSnapshot = await this.db.collection('users').orderBy('firstName').limit(20).get();
             const tbody = document.querySelector('#registration-list-body');
 
             if (!tbody) return;
 
             tbody.innerHTML = '';
 
-            let displayedCount = 0;
-            const editionKey = `edition${currentEdition}`;
-
             usersSnapshot.forEach(doc => {
                 const userData = doc.data();
-                
-                console.log(`Checking user: ${userData.firstName} ${userData.surname}`);
-                console.log(`  - Has registrations: ${!!userData.registrations}`);
-                console.log(`  - Looking for edition key: ${editionKey}`);
-                console.log(`  - Available editions:`, userData.registrations ? Object.keys(userData.registrations) : 'none');
-                console.log(`  - Has ${editionKey}: ${!!(userData.registrations && userData.registrations[editionKey])}`);
-                console.log(`  - Status: ${userData.status}`);
-                
-                // Only show users registered for the current edition
-                if (!userData.registrations || !userData.registrations[editionKey] || userData.status === 'archived') {
-                    console.log(`  ❌ Skipping user ${userData.firstName} ${userData.surname} - not registered for ${editionKey}`);
-                    return; // Skip this user
-                }
-                
-                console.log(`  ✅ Including user ${userData.firstName} ${userData.surname} for ${editionKey}`);
-
                 const row = document.createElement('tr');
-                displayedCount++;
 
                 const name = `${userData.firstName || ''} ${userData.surname || ''}`.trim();
                 const email = userData.email || '';
                 const paymentMethod = userData.paymentMethod || 'Not specified';
 
-                // Get registration info for current edition
-                const currentEditionReg = userData.registrations[editionKey];
-                const editionName = currentEdition === 'test' ? 'Test Weeks' : `Edition ${currentEdition}`;
-                const registrationDate = currentEditionReg.registrationDate ? currentEditionReg.registrationDate.toDate().toLocaleDateString() : 'N/A';
+                // Get latest registration
+                let latestEdition = 'None';
+                let registrationDate = 'N/A';
+
+                if (userData.registrations) {
+                    const editions = Object.keys(userData.registrations);
+                    if (editions.length > 0) {
+                        const latest = editions.sort().pop();
+                        latestEdition = latest.replace('edition', 'Edition ');
+                        registrationDate = userData.registrations[latest].registrationDate.toDate().toLocaleDateString();
+                    }
+                }
 
                 row.innerHTML = `
                     <td>${name}</td>
                     <td>${email}</td>
-                    <td>${editionName}</td>
+                    <td>${latestEdition}</td>
                     <td>${registrationDate}</td>
                     <td>${paymentMethod}</td>
                     <td>
@@ -348,8 +327,6 @@ class RegistrationManager {
 
                 tbody.appendChild(row);
             });
-
-            console.log(`updateRegistrationList - displayed ${displayedCount} users for edition ${currentEdition}`);
 
         } catch (error) {
             console.error('Error updating registration list:', error);
@@ -768,10 +745,6 @@ class RegistrationManager {
     setCurrentActiveEdition(edition) {
         this.currentActiveEdition = edition;
         this.currentEditionName = edition === 'test' ? 'Test Weeks' : `Edition ${edition}`;
-        // Also update the global value to keep everything in sync
-        if (window.currentActiveEdition !== edition) {
-            window.currentActiveEdition = edition;
-        }
     }
 }
 
