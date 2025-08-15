@@ -98,7 +98,40 @@ export class Scheduling {
                 console.log('🔄 Quick save edition button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
-                this.saveQuickEditionChange();
+                
+                // Show immediate feedback
+                const originalText = freshButton.textContent;
+                freshButton.textContent = 'Saving...';
+                freshButton.disabled = true;
+                
+                // Call the save method
+                this.saveQuickEditionChange().then(() => {
+                    // Show success feedback
+                    freshButton.textContent = 'Saved!';
+                    freshButton.style.backgroundColor = '#28a745';
+                    freshButton.style.color = 'white';
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        freshButton.textContent = originalText;
+                        freshButton.style.backgroundColor = '';
+                        freshButton.style.color = '';
+                        freshButton.disabled = false;
+                    }, 2000);
+                }).catch((error) => {
+                    // Show error feedback
+                    freshButton.textContent = 'Error!';
+                    freshButton.style.backgroundColor = '#dc3545';
+                    freshButton.style.color = 'white';
+                    
+                    // Reset button after 3 seconds
+                    setTimeout(() => {
+                        freshButton.textContent = originalText;
+                        freshButton.style.backgroundColor = '';
+                        freshButton.style.color = '';
+                        freshButton.disabled = false;
+                    }, 3000);
+                });
             });
             
             // Also try mousedown and mouseup events
@@ -508,11 +541,19 @@ export class Scheduling {
             quickEditionSelector.value = edition;
         }
         
+        // Update the Active Settings dropdown to sync with the edition
+        const activeSettingsDropdown = document.querySelector('#current-edition');
+        if (activeSettingsDropdown) {
+            activeSettingsDropdown.value = edition;
+        }
+        
         // Update any other edition-related displays
         const editionElements = document.querySelectorAll('[data-edition-display]');
         editionElements.forEach(element => {
             element.textContent = `Edition ${edition}`;
         });
+        
+        console.log(`✅ Synced Active Settings dropdown with edition: ${edition}`);
     }
 
     // Refresh other displays
@@ -632,6 +673,9 @@ export class Scheduling {
         // Set up individual field change handlers
         this.setupSettingsFieldHandlers();
         
+        // Set up Active Settings dropdown sync
+        this.setupActiveSettingsSync();
+        
         console.log('✅ Competition settings UI setup complete');
     }
 
@@ -658,6 +702,43 @@ export class Scheduling {
         const endDateInput = document.querySelector('#registration-end-date');
         if (endDateInput) {
             endDateInput.addEventListener('change', () => this.handleDateChange());
+        }
+    }
+    
+    // Setup Active Settings dropdown synchronization
+    setupActiveSettingsSync() {
+        console.log('🔧 Setting up Active Settings dropdown sync...');
+        
+        const activeSettingsDropdown = document.querySelector('#current-edition');
+        if (activeSettingsDropdown) {
+            activeSettingsDropdown.addEventListener('change', (e) => {
+                const newEdition = e.target.value;
+                console.log(`🔄 Active Settings dropdown changed to: ${newEdition}`);
+                
+                // Update the quick edition selector to match
+                const quickEditionSelector = document.querySelector('#quick-edition-selector');
+                if (quickEditionSelector) {
+                    quickEditionSelector.value = newEdition;
+                }
+                
+                // Update local state
+                this.currentActiveEdition = newEdition;
+                
+                // Update global state
+                if (window.currentActiveEdition !== undefined) {
+                    window.currentActiveEdition = newEdition;
+                }
+                
+                if (window.app) {
+                    window.app.currentActiveEdition = newEdition;
+                }
+                
+                console.log(`✅ Synced quick edition selector with Active Settings: ${newEdition}`);
+            });
+            
+            console.log('✅ Active Settings dropdown sync setup complete');
+        } else {
+            console.log('⚠️ Active Settings dropdown not found for sync setup');
         }
     }
 
