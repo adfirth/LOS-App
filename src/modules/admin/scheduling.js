@@ -48,9 +48,28 @@ export class Scheduling {
         
         const gameweekSelector = document.querySelector('#active-gameweek-select');
         if (!gameweekSelector) {
-            console.log('Active gameweek selector not found');
+            console.log('❌ Active gameweek selector not found - checking for alternatives...');
+            
+            // Try alternative selectors
+            const alternativeSelectors = [
+                '#active-gameweek-select',
+                '#gameweek-select',
+                'select[id*="gameweek"]',
+                'select[id*="week"]'
+            ];
+            
+            for (const selector of alternativeSelectors) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    console.log(`✅ Found alternative selector: ${selector}`);
+                    break;
+                }
+            }
+            
             return;
         }
+        
+        console.log('✅ Found active gameweek selector:', gameweekSelector);
         
         // Load available gameweeks
         this.loadAvailableGameweeks();
@@ -68,10 +87,16 @@ export class Scheduling {
     async loadAvailableGameweeks() {
         try {
             const gameweekSelector = document.querySelector('#active-gameweek-select');
-            if (!gameweekSelector) return;
+            if (!gameweekSelector) {
+                console.log('❌ Gameweek selector not found in loadAvailableGameweeks');
+                return;
+            }
+            
+            console.log('🔧 Loading gameweeks into selector:', gameweekSelector);
             
             // Clear existing options
             gameweekSelector.innerHTML = '';
+            console.log('✅ Cleared existing options');
             
             // Add gameweek options (1-10)
             for (let i = 1; i <= 10; i++) {
@@ -79,9 +104,11 @@ export class Scheduling {
                 option.value = i.toString();
                 option.textContent = `Week ${i}`;
                 gameweekSelector.appendChild(option);
+                console.log(`✅ Added option: Week ${i}`);
             }
             
-            console.log('✅ Loaded 10 gameweek options');
+            console.log(`✅ Loaded ${gameweekSelector.options.length} gameweek options`);
+            console.log('🔍 Final selector HTML:', gameweekSelector.innerHTML);
             
         } catch (error) {
             console.error('❌ Error loading gameweeks:', error);
@@ -206,6 +233,33 @@ export class Scheduling {
                     editions,
                     lastUpdated: new Date()
                 });
+            } else {
+                // Check if we need to add missing editions
+                const requiredEditions = [
+                    { id: 1, name: 'Edition 1', active: true },
+                    { id: 2, name: 'Edition 2', active: false },
+                    { id: 3, name: 'Edition 3', active: false },
+                    { id: 4, name: 'Edition 4', active: false },
+                    { id: 'test', name: 'Test Weeks', active: false }
+                ];
+                
+                let needsUpdate = false;
+                requiredEditions.forEach(required => {
+                    const exists = editions.find(e => e.id === required.id);
+                    if (!exists) {
+                        editions.push(required);
+                        needsUpdate = true;
+                    }
+                });
+                
+                if (needsUpdate) {
+                    // Save updated editions
+                    await this.db.collection('settings').doc('editions').set({
+                        editions,
+                        lastUpdated: new Date()
+                    });
+                    console.log('✅ Added missing editions to database');
+                }
             }
             
             // Populate selector
