@@ -149,6 +149,22 @@ export class AdminManager {
             const picksSnapshot = await picksQuery.get();
             console.log(`✅ Found ${picksSnapshot.size} picks`);
             
+            // Debug: Log all pick data to see what we're getting
+            console.log('🔍 All picks data:');
+            picksSnapshot.forEach((doc, index) => {
+                const pickData = doc.data();
+                console.log(`Pick ${index + 1}:`, {
+                    userId: pickData.userId,
+                    userFirstName: pickData.userFirstName,
+                    userSurname: pickData.userSurname,
+                    teamPicked: pickData.teamPicked,
+                    gameweek: pickData.gameweek,
+                    edition: pickData.edition,
+                    isActive: pickData.isActive,
+                    docId: doc.id
+                });
+            });
+            
             // Update stats
             this.updatePlayerPicksV2Stats(picksSnapshot);
             
@@ -180,6 +196,24 @@ export class AdminManager {
         const picks = picksSnapshot.docs.map(doc => doc.data());
         const uniquePlayers = new Set(picks.map(pick => pick.userId)).size;
         const uniqueTeams = new Set(picks.map(pick => pick.teamPicked)).size;
+        
+        // Debug: Log detailed statistics
+        console.log('📊 Statistics breakdown:');
+        console.log('Total picks:', picksSnapshot.size);
+        console.log('Unique players:', uniquePlayers);
+        console.log('Unique teams:', uniqueTeams);
+        
+        // Show player breakdown
+        const playerBreakdown = {};
+        picks.forEach(pick => {
+            const playerKey = `${pick.userFirstName} ${pick.userSurname}`;
+            if (!playerBreakdown[playerKey]) {
+                playerBreakdown[playerKey] = [];
+            }
+            playerBreakdown[playerKey].push(pick.teamPicked);
+        });
+        
+        console.log('Player breakdown:', playerBreakdown);
         
         totalCount.textContent = picksSnapshot.size;
         playersCount.textContent = uniquePlayers;
