@@ -487,29 +487,16 @@ export class AdminManager {
             allUsersQuery.forEach(doc => {
                 const userData = doc.data();
                 
-                if (userData.status === 'active') {
+                // Check if user is active (has no status field or status is 'active')
+                const isActive = !userData.status || userData.status === 'active';
+                
+                if (isActive) {
                     totalActive++;
                     
-                    // Check if user is registered for current edition
-                    if (userData.editions && Array.isArray(userData.editions) && userData.editions.includes(currentEdition)) {
+                    // Check if user is registered for current edition using the registrations object
+                    if (userData.registrations && userData.registrations[`edition${currentEdition}`]) {
                         currentEditionCount++;
-                    }
-                    
-                    // Also check for testWeeks if current edition is 'test'
-                    if (currentEdition === 'test') {
-                        // Debug: Log the testWeeks field for each user
-                        console.log(`🔍 User ${userData.name || userData.email}: testWeeks =`, userData.testWeeks, `(type: ${typeof userData.testWeeks})`);
-                        
-                        // Check multiple possible formats for testWeeks
-                        if (userData.testWeeks === true || 
-                            userData.testWeeks === 'true' || 
-                            userData.testWeeks === 1 || 
-                            userData.testWeeks === '1' ||
-                            userData.testWeeks === 'yes' ||
-                            userData.testWeeks === 'Yes') {
-                            currentEditionCount++;
-                            console.log(`✅ User ${userData.name || userData.email} counted for Test Weeks`);
-                        }
+                        console.log(`✅ User ${userData.displayName || userData.firstName} counted for Edition ${currentEdition}`);
                     }
                 } else if (userData.status === 'archived') {
                     archivedCount++;
