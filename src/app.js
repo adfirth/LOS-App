@@ -150,6 +150,7 @@ class App {
         window.databaseManager = this.databaseManager; // Expose Database Manager
         window.apiManager = this.apiManager; // Expose API Manager
         window.utilitiesManager = this.utilitiesManager; // Expose Utilities Manager
+        window.adminManagementManager = this.adminManagementManager; // Expose Admin Management Manager
         
         // Global app instance
         window.app = this;

@@ -1264,6 +1264,28 @@
                 }
             }
             
+            // Load registration data if Registration tab was clicked
+            if (tabName === 'registration') {
+                console.log('📝 Registration tab clicked - loading registration data...');
+                console.log('🔍 adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadRegistrationData) {
+                    console.log('✅ Calling loadRegistrationData...');
+                    window.adminManagementManager.loadRegistrationData();
+                } else {
+                    console.log('❌ adminManagementManager.loadRegistrationData not available yet');
+                    // Try to trigger the refresh registration stats button click as fallback
+                    setTimeout(() => {
+                        const refreshStatsBtn = document.querySelector('#refresh-registration-stats');
+                        if (refreshStatsBtn) {
+                            console.log('🔄 Triggering refresh registration stats button click as fallback...');
+                            refreshStatsBtn.click();
+                        } else {
+                            console.log('❌ Refresh registration stats button not found');
+                        }
+                    }, 500);
+                }
+            }
+            
             // Set default gameweek selection for all tabs
             if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.setDefaultSelection) {
                 console.log('ðŸ”§ Setting default selection for tab:', tabName);

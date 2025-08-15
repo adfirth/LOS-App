@@ -441,6 +441,76 @@ export class AdminManager {
         console.log('Building dashboard content...');
     }
 
+    // Load registration data for the registration tab
+    async loadRegistrationData() {
+        try {
+            console.log('🔧 Loading registration data...');
+            
+            // Load registration settings
+            if (this.registrationManager) {
+                await this.registrationManager.loadRegistrationSettings();
+            }
+            
+            // Load registration statistics
+            await this.loadRegistrationStatistics();
+            
+            console.log('✅ Registration data loaded successfully');
+            
+        } catch (error) {
+            console.error('❌ Error loading registration data:', error);
+        }
+    }
+
+    // Load registration statistics
+    async loadRegistrationStatistics() {
+        try {
+            console.log('🔧 Loading registration statistics...');
+            
+            // Get total active registrations (excluding archived)
+            const activeUsersQuery = await this.db.collection('users').where('status', '==', 'active').get();
+            const totalActive = activeUsersQuery.size;
+            
+            // Get current edition registrations
+            const currentEdition = this.getCurrentActiveEdition();
+            const currentEditionUsersQuery = await this.db.collection('users')
+                .where('status', '==', 'active')
+                .where('editions', 'array-contains', currentEdition)
+                .get();
+            const currentEditionCount = currentEditionUsersQuery.size;
+            
+            // Get archived users count
+            const archivedUsersQuery = await this.db.collection('users').where('status', '==', 'archived').get();
+            const archivedCount = archivedUsersQuery.size;
+            
+            // Update the UI
+            const totalRegistrationsElement = document.querySelector('#total-registrations');
+            const currentEditionElement = document.querySelector('#current-edition-registrations');
+            const archivedElement = document.querySelector('#archived-players-count');
+            
+            if (totalRegistrationsElement) {
+                totalRegistrationsElement.textContent = totalActive;
+            }
+            if (currentEditionElement) {
+                currentEditionElement.textContent = currentEditionCount;
+            }
+            if (archivedElement) {
+                archivedElement.textContent = archivedCount;
+            }
+            
+            console.log(`✅ Registration statistics loaded: ${totalActive} active, ${currentEditionCount} current edition, ${archivedCount} archived`);
+            
+        } catch (error) {
+            console.error('❌ Error loading registration statistics:', error);
+        }
+    }
+
+    // Get current active edition
+    getCurrentActiveEdition() {
+        // This should get the current active edition from settings
+        // For now, return a default value
+        return 1;
+    }
+
     // Setup admin tabs
     setupAdminTabs() {
         console.log('🔧 Setting up admin tabs...');
