@@ -74,12 +74,43 @@ export class Scheduling {
             });
             
             // Set up save button event listener - use direct approach without cloning
-            quickSaveEditionBtn.addEventListener('click', (e) => {
+            console.log('🔧 Setting up save button event listener...');
+            console.log('🔍 Save button element:', quickSaveEditionBtn);
+            console.log('🔍 Save button properties:', {
+                disabled: quickSaveEditionBtn.disabled,
+                style: quickSaveEditionBtn.style.cssText,
+                className: quickSaveEditionBtn.className,
+                type: quickSaveEditionBtn.type,
+                onclick: quickSaveEditionBtn.onclick,
+                onmousedown: quickSaveEditionBtn.onmousedown,
+                onmouseup: quickSaveEditionBtn.onmouseup
+            });
+            
+            // Remove any existing event listeners
+            const newButton = quickSaveEditionBtn.cloneNode(true);
+            quickSaveEditionBtn.parentNode.replaceChild(newButton, quickSaveEditionBtn);
+            
+            // Get the new button reference
+            const freshButton = document.querySelector('#quick-save-edition-btn');
+            console.log('🔍 Fresh button element:', freshButton);
+            
+            freshButton.addEventListener('click', (e) => {
                 console.log('🔄 Quick save edition button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
                 this.saveQuickEditionChange();
             });
+            
+            // Also try mousedown and mouseup events
+            freshButton.addEventListener('mousedown', (e) => {
+                console.log('🔄 Quick save edition button mousedown!');
+            });
+            
+            freshButton.addEventListener('mouseup', (e) => {
+                console.log('🔄 Quick save edition button mouseup!');
+            });
+            
+            console.log('✅ Save button event listeners attached');
             
             // Also allow saving by pressing Enter in the selector
             editionSelector.addEventListener('keypress', (e) => {
