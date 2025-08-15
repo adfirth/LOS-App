@@ -800,6 +800,8 @@ export class Scheduling {
             console.log(`  - className: ${selector.className}`);
             console.log(`  - tagName: ${selector.tagName}`);
             console.log(`  - type: ${selector.type}`);
+            console.log(`  - computed classes: ${selector.classList.toString()}`);
+            console.log(`  - parent element: ${selector.parentElement?.tagName} ${selector.parentElement?.className}`);
             
             if (selector.disabled || selector.style.pointerEvents === 'none' || selector.style.opacity === '0') {
                 console.log(`🔄 Selector became non-interactive (check ${checkCount}), re-enabling...`);
@@ -823,13 +825,21 @@ export class Scheduling {
             }
             
             // Check if selector is being styled as a button (which would cause visual locking)
-            const hasButtonLikeStyling = selector.style.borderRadius || 
-                                       selector.style.backgroundColor === 'var(--alty-yellow)' ||
+            const hasButtonLikeStyling = selector.style.backgroundColor === 'var(--alty-yellow)' ||
                                        selector.style.fontWeight === 'bold' ||
-                                       selector.style.textAlign === 'center';
+                                       selector.style.textAlign === 'center' ||
+                                       selector.style.borderRadius === '8px' ||
+                                       selector.style.borderRadius === '12px' ||
+                                       selector.style.borderRadius === '16px';
             
             if (hasButtonLikeStyling) {
                 console.log(`⚠️ Selector has button-like styling (check ${checkCount}), resetting to dropdown...`);
+                console.log(`🔍 Button-like properties detected:`, {
+                    backgroundColor: selector.style.backgroundColor,
+                    fontWeight: selector.style.fontWeight,
+                    textAlign: selector.style.textAlign,
+                    borderRadius: selector.style.borderRadius
+                });
                 // Reset to standard dropdown styling
                 selector.style.borderRadius = '4px';
                 selector.style.backgroundColor = 'white';
