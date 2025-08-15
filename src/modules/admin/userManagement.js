@@ -91,35 +91,50 @@ The user's data in Firestore will remain unless manually deleted.
         try {
             console.log('🔧 Loading players for management...');
             
-            let playersQuery;
-            
-            switch (this.currentPlayerManagementType) {
-                case 'total':
-                    playersQuery = this.db.collection('users').orderBy('displayName');
-                    break;
-                case 'active':
-                    playersQuery = this.db.collection('users').where('status', '==', 'active').orderBy('displayName');
-                    break;
-                case 'archived':
-                    playersQuery = this.db.collection('users').where('status', '==', 'archived').orderBy('displayName');
-                    break;
-                case 'test':
-                    playersQuery = this.db.collection('users').where('testWeeks', '==', true).orderBy('displayName');
-                    break;
-                default:
-                    playersQuery = this.db.collection('users').orderBy('displayName');
-            }
-            
-            const querySnapshot = await playersQuery.get();
+            // Get all users and filter in memory to avoid composite index requirements
+            const allUsersQuery = await this.db.collection('users').get();
             this.allPlayers = [];
             
-            querySnapshot.forEach(doc => {
+            // Get current edition for filtering
+            const currentEdition = this.getCurrentActiveEdition();
+            
+            allUsersQuery.forEach(doc => {
                 const playerData = doc.data();
-                this.allPlayers.push({
-                    id: doc.id,
-                    ...playerData
-                });
+                
+                let includePlayer = false;
+                
+                switch (this.currentPlayerManagementType) {
+                    case 'total':
+                        includePlayer = true;
+                        break;
+                    case 'active':
+                        includePlayer = !playerData.status || playerData.status === 'active';
+                        break;
+                    case 'archived':
+                        includePlayer = playerData.status === 'archived';
+                        break;
+                    case 'current':
+                        // Check if user is registered for current edition using the registrations object
+                        includePlayer = playerData.registrations && playerData.registrations[`edition${currentEdition}`];
+                        break;
+                    case 'test':
+                        // Check for Test Weeks registration
+                        includePlayer = playerData.registrations && playerData.registrations['editiontest'];
+                        break;
+                    default:
+                        includePlayer = true;
+                }
+                
+                if (includePlayer) {
+                    this.allPlayers.push({
+                        id: doc.id,
+                        ...playerData
+                    });
+                }
             });
+            
+            // Sort by display name
+            this.allPlayers.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
             
             console.log(`✅ Loaded ${this.allPlayers.length} players for ${this.currentPlayerManagementType} management`);
             this.displayPlayers(this.allPlayers);
@@ -128,6 +143,23 @@ The user's data in Firestore will remain unless manually deleted.
             console.error('❌ Error loading players for management:', error);
             alert('Error loading players: ' + error.message);
         }
+    }
+    
+    // Get current active edition
+    getCurrentActiveEdition() {
+        // Get the current active edition from the edition selector
+        const editionSelector = document.querySelector('#edition-selector');
+        if (editionSelector) {
+            return editionSelector.value;
+        }
+        
+        // Fallback to checking window.currentActiveEdition
+        if (window.currentActiveEdition) {
+            return window.currentActiveEdition;
+        }
+        
+        // Default fallback
+        return 1;
     }
 
     // Display players in the management interface
@@ -161,7 +193,12 @@ The user's data in Firestore will remain unless manually deleted.
         
         players.forEach(player => {
             const statusClass = player.status === 'active' ? 'active' : 'archived';
-            const testWeeksClass = player.testWeeks ? 'test-weeks' : '';
+            const isTestWeeks = player.registrations && player.registrations['editiontest'];
+            const testWeeksClass = isTestWeeks ? 'test-weeks' : '';
+            
+            // Get current edition registrations
+            const currentEdition = this.getCurrentActiveEdition();
+            const isCurrentEdition = player.registrations && player.registrations[`edition${currentEdition}`];
             
             playerListHtml += `
                 <div class="player-item ${statusClass} ${testWeeksClass}" data-player-id="${player.id}">
@@ -170,7 +207,8 @@ The user's data in Firestore will remain unless manually deleted.
                         <div class="player-email">${player.email || 'No email'}</div>
                         <div class="player-status">
                             <span class="status-badge ${statusClass}">${player.status || 'unknown'}</span>
-                            ${player.testWeeks ? '<span class="test-badge">Test Weeks</span>' : ''}
+                            ${isTestWeeks ? '<span class="test-badge">Test Weeks</span>' : ''}
+                            ${isCurrentEdition ? `<span class="current-badge">Edition ${currentEdition}</span>` : ''}
                         </div>
                     </div>
                     <div class="player-actions">
