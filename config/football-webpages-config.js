@@ -10,18 +10,37 @@ function getEnvVar(key, fallback) {
     if (typeof process !== 'undefined' && process.env) {
         return process.env[key] || fallback;
     }
-    // For browser environment, try to get from window object
-    if (typeof window !== 'undefined' && window[key]) {
-        return window[key];
+    
+    // For browser environment, check multiple possible sources
+    if (typeof window !== 'undefined') {
+        // Check if the environment variable is available in window object
+        if (window[key]) {
+            return window[key];
+        }
+        
+        // Check if there's a global environment variables object
+        if (window.ENV && window.ENV[key]) {
+            return window.ENV[key];
+        }
+        
+        // Check if there's a config object with the key
+        if (window.CONFIG && window.CONFIG[key]) {
+            return window.CONFIG[key];
+        }
     }
+    
     return fallback;
 }
+
+// For development/testing, you can set the API key directly here
+// Remove this in production and use environment variables
+const DEV_API_KEY = '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef';
 
 const FOOTBALL_WEBPAGES_CONFIG = {
     BASE_URL: 'https://football-web-pages1.p.rapidapi.com',
     // API key should be stored in environment variables
     // Get it from: https://rapidapi.com/football-web-pages1-football-web-pages-default/api/football-web-pages1
-    RAPIDAPI_KEY: getEnvVar('VITE_RAPIDAPI_KEY', 'YOUR_API_KEY_HERE'), // Use VITE_ prefixed environment variable
+    RAPIDAPI_KEY: getEnvVar('VITE_RAPIDAPI_KEY', DEV_API_KEY), // Use environment variable or fallback to dev key
     RAPIDAPI_HOST: 'football-web-pages1.p.rapidapi.com'
 };
 
@@ -51,6 +70,7 @@ if (typeof window !== 'undefined') {
     window.FOOTBALL_WEBPAGES_SEASON_IDS = FOOTBALL_WEBPAGES_SEASON_IDS;
     console.log('✅ Football Web Pages API configuration exposed to window object');
     console.log('🔑 API Key status:', FOOTBALL_WEBPAGES_CONFIG.RAPIDAPI_KEY === 'YOUR_API_KEY_HERE' ? '⚠️ Using fallback - set VITE_RAPIDAPI_KEY' : '✅ API key configured');
+    console.log('🔑 API Key value:', FOOTBALL_WEBPAGES_CONFIG.RAPIDAPI_KEY.substring(0, 10) + '...');
 }
 
 // Also expose as global variables for modules that expect them
