@@ -31,6 +31,8 @@ export class Scheduling {
         console.log('🔧 Setting up quick edition selector...');
         
         const editionSelector = document.querySelector('#quick-edition-selector');
+        const quickSaveEditionBtn = document.querySelector('#quick-save-edition-btn');
+        
         if (!editionSelector) {
             console.log('Quick edition selector not found');
             return;
@@ -51,11 +53,38 @@ export class Scheduling {
         // Load available editions
         this.loadAvailableEditions();
         
-        // Set up change handler
+        // Set up change handler for the selector
         newSelector.addEventListener('change', (e) => {
             console.log('🔄 Edition selector change event triggered');
             this.saveQuickEditionChange();
         });
+        
+        // Set up save button event listener
+        if (quickSaveEditionBtn) {
+            console.log('✅ Found quick save edition button:', quickSaveEditionBtn);
+            
+            // Remove any existing event listeners to prevent duplicates
+            const newSaveBtn = quickSaveEditionBtn.cloneNode(true);
+            quickSaveEditionBtn.parentNode.replaceChild(newSaveBtn, quickSaveEditionBtn);
+            
+            // Add event listener for the save button
+            newSaveBtn.addEventListener('click', () => {
+                console.log('🔄 Quick save edition button clicked');
+                this.saveQuickEditionChange();
+            });
+            
+            // Also allow saving by pressing Enter in the selector
+            newSelector.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log('🔄 Enter key pressed in edition selector');
+                    this.saveQuickEditionChange();
+                }
+            });
+            
+            console.log('✅ Quick save edition button event listener set up');
+        } else {
+            console.warn('❌ Quick save edition button not found');
+        }
         
         // Ensure the selector looks and behaves like a dropdown
         newSelector.style.appearance = 'auto';
