@@ -5,7 +5,7 @@
 export class AppState {
     constructor() {
         this.state = {
-            currentActiveEdition: 1,
+            currentActiveEdition: 'test',
             currentActiveGameweek: '1',
             user: null,
             isAuthenticated: false,

@@ -163,7 +163,7 @@
                                 
                                 <!-- Test Edition Reset Button -->
                                 <div style="margin-top: 2rem; padding: 1rem; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
-                                    <h4 style="color: #856404; margin-bottom: 1rem;">ðŸ”„ Test Edition Reset</h4>
+                                    <h4 style="color: #856404; margin-bottom: 1rem;">ðŸ"„ Test Edition Reset</h4>
                                     <p style="color: #856404; margin-bottom: 1rem; font-size: 0.9rem;">
                                         Use this button to reset all test edition players back to 2 lives. 
                                         This is useful after fixing bugs that caused incorrect life deductions.
@@ -878,6 +878,7 @@
                                     </select>
                                 </div>
                                 <button id="refresh-picks-btn" class="btn btn-primary">Refresh Picks</button>
+                                <button id="debug-picks-btn" class="btn btn-secondary" style="background-color: #6c757d; color: white;">Debug All Picks</button>
                             </div>
                             <h3 id="picks-title">Picks for Edition 1 - Game Week 1</h3>
                             <table class="league-table">
@@ -1229,36 +1230,36 @@
             // Load standings if As It Stands tab was clicked
             if (tabName === 'as-it-stands') {
                 console.log('As It Stands tab clicked - loading standings...');
-                console.log('ðŸ” adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
-                console.log('ðŸ” adminManagementManager object:', window.adminManagementManager);
+                console.log('ðŸ" adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                console.log('ðŸ" adminManagementManager object:', window.adminManagementManager);
                 if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadStandings) {
-                    console.log('âœ… Calling loadStandings...');
+                    console.log('âœ Calling loadStandings...');
                     window.adminManagementManager.loadStandings();
                 } else {
-                    console.log('âŒ adminManagementManager.loadStandings not available yet');
-                    console.log('ðŸ” Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
+                    console.log('â adminManagementManager.loadStandings not available yet');
+                    console.log('ðŸ" Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
                 }
             }
             
             // Load picks if Picks tab was clicked
             if (tabName === 'picks') {
-                console.log('ðŸŽ¯ Picks tab clicked - calling renderPicksTable...');
-                console.log('ðŸ” adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
-                console.log('ðŸ” adminManagementManager object:', window.adminManagementManager);
+                console.log('ðŸŽ Picks tab clicked - calling renderPicksTable...');
+                console.log('ðŸ" adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                console.log('ðŸ" adminManagementManager object:', window.adminManagementManager);
                 if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.renderPicksTable) {
-                    console.log('âœ… Calling renderPicksTable...');
+                    console.log('âœ Calling renderPicksTable...');
                     window.adminManagementManager.renderPicksTable();
                 } else {
-                    console.log('âŒ adminManagementManager.renderPicksTable not available yet');
-                    console.log('ðŸ” Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
+                    console.log('â adminManagementManager.renderPicksTable not available yet');
+                    console.log('ðŸ" Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
                     // Try to trigger the refresh picks button click as fallback
                     setTimeout(() => {
                         const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
                         if (refreshPicksBtn) {
-                            console.log('ðŸ”„ Triggering refresh picks button click as fallback...');
+                            console.log('ðŸ" Triggering refresh picks button click as fallback...');
                             refreshPicksBtn.click();
                         } else {
-                            console.log('âŒ Refresh picks button not found');
+                            console.log('â Refresh picks button not found');
                         }
                     }, 500);
                 }
@@ -1288,7 +1289,7 @@
             
             // Set default gameweek selection for all tabs
             if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.setDefaultSelection) {
-                console.log('ðŸ”§ Setting default selection for tab:', tabName);
+                console.log('ðŸ§ Setting default selection for tab:', tabName);
                 setTimeout(() => {
                     window.adminManagementManager.setDefaultSelection();
                 }, 100); // Small delay to ensure DOM elements are ready
