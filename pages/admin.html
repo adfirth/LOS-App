@@ -1322,6 +1322,32 @@
                     }
                 }, 150);
             }
+            
+            // Set up refresh statistics button for registration tab
+            if (tabName === 'registration') {
+                setTimeout(() => {
+                    const refreshStatsBtn = document.querySelector('#refresh-registration-stats');
+                    if (refreshStatsBtn) {
+                        console.log('🔧 Setting up refresh statistics button...');
+                        
+                        // Remove any existing event listeners
+                        const newBtn = refreshStatsBtn.cloneNode(true);
+                        refreshStatsBtn.parentNode.replaceChild(newBtn, refreshStatsBtn);
+                        
+                        // Add new event listener
+                        newBtn.addEventListener('click', function() {
+                            console.log('🔄 Refresh Statistics button clicked');
+                            if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.refreshRegistrationStatistics) {
+                                window.adminManagementManager.refreshRegistrationStatistics();
+                            } else {
+                                console.log('❌ adminManagementManager.refreshRegistrationStatistics not available');
+                            }
+                        });
+                        
+                        console.log('✅ Refresh statistics button event listener attached');
+                    }
+                }, 200);
+            }
         }
         
         // Initialize tabs when page loads
