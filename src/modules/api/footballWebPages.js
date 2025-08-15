@@ -24,6 +24,18 @@ export class FootballWebPagesAPI {
             return true;
         }
         
+        // Try to access from ENV_CONFIG (new environment configuration)
+        if (typeof window !== 'undefined' && window.ENV_CONFIG && window.ENV_CONFIG.RAPIDAPI_KEY) {
+            this.config = {
+                BASE_URL: 'https://football-web-pages1.p.rapidapi.com',
+                RAPIDAPI_KEY: window.ENV_CONFIG.RAPIDAPI_KEY,
+                RAPIDAPI_HOST: 'football-web-pages1.p.rapidapi.com'
+            };
+            console.log('✅ Football Web Pages API configuration loaded from ENV_CONFIG');
+            console.log('API Key available:', !!this.config.RAPIDAPI_KEY);
+            return true;
+        }
+        
         // Fallback: try to access as global variable (may not work in strict mode)
         if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
             this.config = FOOTBALL_WEBPAGES_CONFIG;
@@ -50,6 +62,17 @@ export class FootballWebPagesAPI {
             if (typeof window !== 'undefined' && window.FOOTBALL_WEBPAGES_CONFIG) {
                 this.config = window.FOOTBALL_WEBPAGES_CONFIG;
                 console.log('✅ Football Web Pages API configuration loaded from window object on retry attempt', attempts);
+                return;
+            }
+            
+            // Try to access from ENV_CONFIG (new environment configuration)
+            if (typeof window !== 'undefined' && window.ENV_CONFIG && window.ENV_CONFIG.RAPIDAPI_KEY) {
+                this.config = {
+                    BASE_URL: 'https://football-web-pages1.p.rapidapi.com',
+                    RAPIDAPI_KEY: window.ENV_CONFIG.RAPIDAPI_KEY,
+                    RAPIDAPI_HOST: 'football-web-pages1.p.rapidapi.com'
+                };
+                console.log('✅ Football Web Pages API configuration loaded from ENV_CONFIG on retry attempt', attempts);
                 return;
             }
             
@@ -131,7 +154,7 @@ export class FootballWebPagesAPI {
             statusElement.className = 'status-indicator loading';
             testBtn.disabled = true;
 
-            const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results', {
+            const response = await fetch('https://football-web-pages1.p.rapidapi.com/fixtures-results.json?comp=5&round=0&team=0', {
                 method: 'GET',
                 headers: {
                     'X-RapidAPI-Key': this.config.RAPIDAPI_KEY,

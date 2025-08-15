@@ -11,22 +11,29 @@ function getEnvVar(key, fallback) {
         return process.env[key] || fallback;
     }
     
-    // For browser environment, check multiple possible sources
-    if (typeof window !== 'undefined') {
-        // Check if the environment variable is available in window object
-        if (window[key]) {
-            return window[key];
-        }
-        
-        // Check if there's a global environment variables object
-        if (window.ENV && window.ENV[key]) {
-            return window.ENV[key];
-        }
-        
-        // Check if there's a config object with the key
-        if (window.CONFIG && window.CONFIG[key]) {
-            return window.CONFIG[key];
-        }
+    // For browser environment, check the new ENV_CONFIG first
+    if (typeof window !== 'undefined' && window.ENV_CONFIG && window.ENV_CONFIG[key]) {
+        return window.ENV_CONFIG[key];
+    }
+    
+    // Check if the environment variable is available in window object
+    if (typeof window !== 'undefined' && window[key]) {
+        return window[key];
+    }
+    
+    // Check if there's a global environment variables object
+    if (typeof window !== 'undefined' && window.ENV && window.ENV[key]) {
+        return window.ENV[key];
+    }
+    
+    // Check if there's a config object with the key
+    if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG[key]) {
+        return window.CONFIG[key];
+    }
+    
+    // Check for Vite-style environment variables (if available)
+    if (typeof window !== 'undefined' && window.import && window.import.meta && window.import.meta.env && window.import.meta.env[key]) {
+        return window.import.meta.env[key];
     }
     
     return fallback;
@@ -34,13 +41,27 @@ function getEnvVar(key, fallback) {
 
 // For development/testing, you can set the API key directly here
 // Remove this in production and use environment variables
-const DEV_API_KEY = '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef';
+const FOOTBALL_DEV_API_KEY = '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef';
+
+// Try to get API key from environment variables first
+let apiKey = getEnvVar('VITE_RAPIDAPI_KEY', null);
+
+// If no environment variable, try to get from a global config object
+if (!apiKey && typeof window !== 'undefined' && window.RAPIDAPI_KEY) {
+    apiKey = window.RAPIDAPI_KEY;
+}
+
+// If still no API key, use the dev key as fallback
+if (!apiKey) {
+    apiKey = FOOTBALL_DEV_API_KEY;
+    console.warn('⚠️ Using development API key - set VITE_RAPIDAPI_KEY environment variable for production');
+}
 
 const FOOTBALL_WEBPAGES_CONFIG = {
     BASE_URL: 'https://football-web-pages1.p.rapidapi.com',
     // API key should be stored in environment variables
     // Get it from: https://rapidapi.com/football-web-pages1-football-web-pages-default/api/football-web-pages1
-    RAPIDAPI_KEY: getEnvVar('VITE_RAPIDAPI_KEY', DEV_API_KEY), // Use environment variable or fallback to dev key
+    RAPIDAPI_KEY: apiKey,
     RAPIDAPI_HOST: 'football-web-pages1.p.rapidapi.com'
 };
 
@@ -69,8 +90,8 @@ if (typeof window !== 'undefined') {
     window.FOOTBALL_WEBPAGES_LEAGUE_IDS = FOOTBALL_WEBPAGES_LEAGUE_IDS;
     window.FOOTBALL_WEBPAGES_SEASON_IDS = FOOTBALL_WEBPAGES_SEASON_IDS;
     console.log('✅ Football Web Pages API configuration exposed to window object');
-    console.log('🔑 API Key status:', FOOTBALL_WEBPAGES_CONFIG.RAPIDAPI_KEY === 'YOUR_API_KEY_HERE' ? '⚠️ Using fallback - set VITE_RAPIDAPI_KEY' : '✅ API key configured');
-    console.log('🔑 API Key value:', FOOTBALL_WEBPAGES_CONFIG.RAPIDAPI_KEY.substring(0, 10) + '...');
+    console.log('🔑 API Key status:', apiKey === FOOTBALL_DEV_API_KEY ? '⚠️ Using development key - set VITE_RAPIDAPI_KEY' : '✅ API key configured');
+    console.log('🔑 API Key value:', apiKey.substring(0, 10) + '...');
 }
 
 // Also expose as global variables for modules that expect them

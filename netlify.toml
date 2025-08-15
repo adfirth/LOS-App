@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  command = "npm install && npm run build"
+  command = "npm install && node netlify/build-script.js && npm run build"
 
 [[headers]]
   for = "/*"
