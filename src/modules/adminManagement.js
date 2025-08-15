@@ -318,54 +318,33 @@ class AdminManagementManager {
         try {
             console.log('Saving competition settings...');
             
-            const editionSelect = document.querySelector('#active-edition-select');
             const gameweekSelect = document.querySelector('#active-gameweek-select');
             
-            if (!editionSelect || !gameweekSelect) {
-                console.error('Required select elements not found');
+            if (!gameweekSelect) {
+                console.error('Gameweek select element not found');
                 return false;
             }
             
-            const newEdition = editionSelect.value; // Keep as string to handle "test" value
             const newGameweek = gameweekSelect.value;
             
-            console.log('New settings - Edition:', newEdition, 'Gameweek:', newGameweek);
+            console.log('New settings - Gameweek:', newGameweek);
             
             // Update global variables
-            window.currentActiveEdition = newEdition;
             window.currentActiveGameweek = newGameweek;
             
             // Update app variables
             if (window.app) {
-                window.app.currentActiveEdition = newEdition;
                 window.app.currentActiveGameweek = newGameweek;
-            }
-            
-            // Update registration manager's current active edition
-            if (window.app && window.app.registrationManager) {
-                window.app.registrationManager.setCurrentActiveEdition(newEdition);
-            }
-            
-            // Update admin management manager's current active edition
-            if (window.app && window.app.adminManagementManager) {
-                window.app.adminManagementManager.updateCurrentActiveEdition(newEdition);
             }
             
             // Save to database
             await this.db.collection('settings').doc('currentCompetition').set({
-                active_edition: newEdition,
                 active_gameweek: newGameweek,
                 last_updated: new Date()
             });
             
             console.log('Settings saved successfully');
-            console.log('Global variables updated - Edition:', window.currentActiveEdition, 'Gameweek:', window.currentActiveGameweek);
-            
-            // Update the display
-            this.updateActiveEditionDisplay(newEdition);
-            
-            // Update the quick edition selector to reflect the new edition
-            this.updateQuickEditionSelector();
+            console.log('Global variables updated - Gameweek:', window.currentActiveGameweek);
             
             // Set default selection across all selectors after settings change
             this.setDefaultSelection();
@@ -1808,27 +1787,15 @@ class AdminManagementManager {
 
     // Set up event listeners for settings changes
     setupSettingsEventListeners() {
-        const editionSelect = document.querySelector('#active-edition-select');
         const gameweekSelect = document.querySelector('#active-gameweek-select');
-        
-        if (editionSelect) {
-            editionSelect.addEventListener('change', (e) => {
-                const selectedEdition = e.target.value;
-                console.log('Edition selection changed to:', selectedEdition);
-                // Update display immediately when selection changes
-                this.updateActiveEditionDisplay(selectedEdition);
-                // Update all other selectors when active edition changes
-                this.setDefaultSelection();
-            });
-        }
         
         if (gameweekSelect) {
             gameweekSelect.addEventListener('change', (e) => {
                 const selectedGameweek = e.target.value;
                 console.log('Gameweek selection changed to:', selectedGameweek);
                 
-                                        // Update all other selectors when active gameweek changes
-                        this.setDefaultSelection();
+                // Update all other selectors when active gameweek changes
+                this.setDefaultSelection();
             });
         }
     }
@@ -1853,20 +1820,12 @@ class AdminManagementManager {
                 currentGameweek = '1';
             }
             
-            // Get the current active edition from multiple sources
+            // Get the current active edition from global state
             let currentEdition = window.currentActiveEdition;
-            
-            // If not set globally, try to get from the active edition selector
-            if (!currentEdition) {
-                const activeEditionSelect = document.querySelector('#active-edition-select');
-                if (activeEditionSelect && activeEditionSelect.value) {
-                    currentEdition = activeEditionSelect.value;
-                }
-            }
             
             // Fallback to default
             if (!currentEdition) {
-                currentEdition = 'edition1';
+                currentEdition = '1';
             }
             
             console.log(`🔧 Setting default gameweek selection to: ${currentGameweek}`);
@@ -1874,7 +1833,7 @@ class AdminManagementManager {
             console.log(`🔍 Debug - window.currentActiveGameweek: ${window.currentActiveGameweek}`);
             console.log(`🔍 Debug - window.currentActiveEdition: ${window.currentActiveEdition}`);
             console.log(`🔍 Debug - active gameweek selector value: ${document.querySelector('#active-gameweek-select')?.value}`);
-            console.log(`🔍 Debug - active edition selector value: ${document.querySelector('#active-edition-select')?.value}`);
+            
             
             // List of all gameweek selectors to update
             const gameweekSelectors = [
@@ -1964,17 +1923,11 @@ class AdminManagementManager {
                 }
             });
             
-            // Also update the active selectors if they exist
+            // Also update the active gameweek selector if it exists
             const activeGameweekSelect = document.querySelector('#active-gameweek-select');
             if (activeGameweekSelect) {
                 activeGameweekSelect.value = currentGameweek;
                 console.log(`✅ Set active gameweek selector to: ${currentGameweek}`);
-            }
-            
-            const activeEditionSelect = document.querySelector('#active-edition-select');
-            if (activeEditionSelect) {
-                activeEditionSelect.value = currentEdition;
-                console.log(`✅ Set active edition selector to: ${currentEdition}`);
             }
             
             console.log(`🎯 Default selection completed for ${gameweekSelectors.length} gameweek selectors and ${editionSelectors.length} edition selectors`);

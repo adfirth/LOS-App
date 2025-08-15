@@ -550,19 +550,13 @@ export class Scheduling {
             quickEditionSelector.value = edition;
         }
         
-        // Update the Active Settings dropdown to sync with the edition
-        const activeSettingsDropdown = document.querySelector('#current-edition');
-        if (activeSettingsDropdown) {
-            activeSettingsDropdown.value = edition;
-        }
-        
         // Update any other edition-related displays
         const editionElements = document.querySelectorAll('[data-edition-display]');
         editionElements.forEach(element => {
             element.textContent = `Edition ${edition}`;
         });
         
-        console.log(`✅ Synced Active Settings dropdown with edition: ${edition}`);
+        console.log(`✅ Updated edition display to: ${edition}`);
     }
 
     // Refresh other displays
@@ -682,8 +676,7 @@ export class Scheduling {
         // Set up individual field change handlers
         this.setupSettingsFieldHandlers();
         
-        // Set up Active Settings dropdown sync
-        this.setupActiveSettingsSync();
+
         
         console.log('✅ Competition settings UI setup complete');
     }
@@ -714,45 +707,7 @@ export class Scheduling {
         }
     }
     
-        // Setup Active Settings dropdown synchronization
-    setupActiveSettingsSync() {
-        console.log('🔧 Setting up Active Settings dropdown sync...');
-        
-        const activeSettingsDropdown = document.querySelector('#current-edition');
-        if (activeSettingsDropdown) {
-            activeSettingsDropdown.addEventListener('change', (e) => {
-                const newEdition = e.target.value;
-                console.log(`🔄 Active Settings dropdown changed to: ${newEdition}`);
-                
-                // Update the quick edition selector to match
-                const quickEditionSelector = document.querySelector('#quick-edition-selector');
-                if (quickEditionSelector) {
-                    quickEditionSelector.value = newEdition;
-                }
-                
-                // Update local state
-                this.currentActiveEdition = newEdition;
-                
-                // Update global state
-                if (window.currentActiveEdition !== undefined) {
-                    window.currentActiveEdition = newEdition;
-                }
-                
-                if (window.app) {
-                    window.app.currentActiveEdition = newEdition;
-                }
-                
-                // Reset Active Week to 1 when edition changes (since different editions may have different week structures)
-                this.resetActiveWeekForNewEdition(newEdition);
-                
-                console.log(`✅ Synced quick edition selector with Active Settings: ${newEdition}`);
-            });
-            
-            console.log('✅ Active Settings dropdown sync setup complete');
-        } else {
-            console.log('⚠️ Active Settings dropdown not found for sync setup');
-        }
-    }
+    
     
     // Reset Active Week when edition changes
     resetActiveWeekForNewEdition(newEdition) {
