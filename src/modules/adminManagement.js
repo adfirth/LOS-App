@@ -21,11 +21,30 @@ class AdminManagementManager {
             this.currentActiveEdition = edition;
             console.log(`AdminManagementManager: Updated currentActiveEdition to ${edition}`);
         };
+        
+        // Debug: Check if renderPicksTable method is available
+        console.log('🔍 AdminManagementManager constructor - checking methods:');
+        console.log('🔍 this.renderPicksTable:', typeof this.renderPicksTable);
+        console.log('🔍 this.debugAllPicks:', typeof this.debugAllPicks);
+        console.log('🔍 Available methods:', Object.getOwnPropertyNames(this));
+        
+        // Check if methods are available on the prototype
+        console.log('🔍 Prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
+        
+        // Ensure renderPicksTable method is available on this instance
+        this.renderPicksTable = this.renderPicksTable.bind(this);
+        this.debugAllPicks = this.debugAllPicks.bind(this);
+        
+        console.log('🔍 After binding - this.renderPicksTable:', typeof this.renderPicksTable);
+        console.log('🔍 After binding - this.debugAllPicks:', typeof this.debugAllPicks);
     }
 
     // Function to render picks table
     async renderPicksTable() {
         console.log('🔍 renderPicksTable called - clearing table first');
+        console.log('🔍 this object:', this);
+        console.log('🔍 this.db:', this.db);
+        console.log('🔍 Available methods on this:', Object.getOwnPropertyNames(this));
         
         // Get the picks elements
         const picksEditionSelect = document.querySelector('#picks-edition-select');
