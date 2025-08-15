@@ -998,7 +998,7 @@ class FixturesManager {
                     <option value="AET" ${fixture.status === 'AET' ? 'selected' : ''}>Extra Time</option>
                     <option value="PEN" ${fixture.status === 'PEN' ? 'selected' : ''}>Penalties</option>
                 </select>
-                <span class="fixture-date">${fixture.date ? new Date(fixture.date).toLocaleDateString() : 'TBD'}</span>
+                <span class="fixture-date">${fixture.date ? new Date(fixture.date).toLocaleDateString('en-GB') : 'TBD'}</span>
             </div>
         `;
         scoresContainer.appendChild(scoreRow);

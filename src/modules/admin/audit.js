@@ -580,7 +580,7 @@ export class Audit {
         
         logs.forEach(log => {
             const timestamp = log.timestamp?.toDate?.() || log.timestamp || new Date();
-            const formattedTime = timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString();
+            const formattedTime = timestamp.toLocaleDateString('en-GB') + ' ' + timestamp.toLocaleTimeString();
             
             logsHtml += `
                 <tr>
@@ -710,7 +710,7 @@ export class Audit {
         
         logs.forEach(log => {
             const timestamp = log.timestamp?.toDate?.() || log.timestamp || new Date();
-            const formattedTime = timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString();
+            const formattedTime = timestamp.toLocaleDateString('en-GB') + ' ' + timestamp.toLocaleTimeString();
             
             const row = [
                 formattedTime,

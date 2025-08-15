@@ -657,7 +657,7 @@ class RegistrationManager {
                         const startDate = new Date(settings.startDate.toDate());
                         const endDate = new Date(settings.endDate.toDate());
 
-                        dateRange = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+                        dateRange = `${startDate.toLocaleDateString('en-GB')} - ${endDate.toLocaleDateString('en-GB')}`;
 
                         if (now >= startDate && now <= endDate) {
                             statusText = 'Registration Open';
@@ -868,7 +868,7 @@ class RegistrationManager {
                 // Get registration info for current edition
                 const currentEditionReg = userData.registrations[editionKey];
                 const editionName = currentEdition === 'test' ? 'Test Weeks' : `Edition ${currentEdition}`;
-                const registrationDate = currentEditionReg.registrationDate ? currentEditionReg.registrationDate.toDate().toLocaleDateString() : 'N/A';
+                const registrationDate = currentEditionReg.registrationDate ? currentEditionReg.registrationDate.toDate().toLocaleDateString('en-GB') : 'N/A';
 
                 row.innerHTML = `
                     <td>${name}</td>
@@ -965,7 +965,7 @@ class RegistrationManager {
         Object.keys(registrations).sort().forEach(edition => {
             const reg = registrations[edition];
             const editionName = edition.replace('edition', 'Edition ');
-            const date = reg.registrationDate ? reg.registrationDate.toDate().toLocaleDateString() : 'N/A';
+            const date = reg.registrationDate ? reg.registrationDate.toDate().toLocaleDateString('en-GB') : 'N/A';
             html += `
                 <div class="registration-item">
                     <strong>${editionName}:</strong> ${date}
@@ -1098,13 +1098,13 @@ class RegistrationManager {
 
                 if (startDate && now < startDate) {
                     const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
-                    this.showRegistrationClosed(`${editionText} registration opens on ` + startDate.toLocaleDateString());
+                    this.showRegistrationClosed(`${editionText} registration opens on ` + startDate.toLocaleDateString('en-GB'));
                     return false;
                 }
 
                 if (endDate && now > endDate) {
                     const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
-                    this.showRegistrationClosed(`${editionText} registration closed on ` + endDate.toLocaleDateString());
+                    this.showRegistrationClosed(`${editionText} registration closed on ` + endDate.toLocaleDateString('en-GB'));
                     return false;
                 }
 

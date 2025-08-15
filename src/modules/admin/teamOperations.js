@@ -622,7 +622,7 @@ export class TeamOperations {
         
         logs.forEach(log => {
             const date = log.adjustedAt?.toDate?.() || log.adjustedAt || new Date();
-            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            const formattedDate = date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString();
             
             historyHtml += `
                 <tr>
@@ -682,7 +682,7 @@ export class TeamOperations {
         
         logs.forEach(log => {
             const date = log.adjustedAt?.toDate?.() || log.adjustedAt || new Date();
-            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            const formattedDate = date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString();
             
             const row = [
                 formattedDate,
