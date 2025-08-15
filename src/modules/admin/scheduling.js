@@ -57,6 +57,15 @@ export class Scheduling {
             this.saveQuickEditionChange();
         });
         
+        // Ensure the selector looks and behaves like a dropdown
+        newSelector.style.appearance = 'auto';
+        newSelector.style.webkitAppearance = 'auto';
+        newSelector.style.mozAppearance = 'auto';
+        newSelector.style.cursor = 'pointer';
+        newSelector.style.pointerEvents = 'auto';
+        newSelector.style.opacity = '1';
+        newSelector.style.disabled = false;
+        
         // Set current selection
         this.updateQuickEditionSelector();
         
@@ -345,11 +354,19 @@ export class Scheduling {
             
             console.log(`✅ Active edition changed to ${editionValue}`);
             
-            // Ensure selector remains interactive
+            // Ensure selector remains interactive and looks like a dropdown
             editionSelector.disabled = false;
             editionSelector.style.pointerEvents = 'auto';
             editionSelector.style.opacity = '1';
             editionSelector.style.cursor = 'pointer';
+            editionSelector.style.appearance = 'auto';
+            editionSelector.style.webkitAppearance = 'auto';
+            editionSelector.style.mozAppearance = 'auto';
+            editionSelector.style.backgroundImage = 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")';
+            editionSelector.style.backgroundRepeat = 'no-repeat';
+            editionSelector.style.backgroundPosition = 'right 8px center';
+            editionSelector.style.backgroundSize = '12px auto';
+            editionSelector.style.paddingRight = '30px';
             
             console.log('✅ Edition selector remains interactive after change');
             
@@ -756,6 +773,25 @@ export class Scheduling {
         
         const checkInterval = setInterval(() => {
             checkCount++;
+            
+            // Log detailed selector state
+            const computedStyle = window.getComputedStyle(selector);
+            const isDisabled = selector.disabled;
+            const pointerEvents = computedStyle.pointerEvents;
+            const opacity = computedStyle.opacity;
+            const cursor = computedStyle.cursor;
+            const display = computedStyle.display;
+            const visibility = computedStyle.visibility;
+            
+            console.log(`🔍 Selector state check ${checkCount}:`, {
+                disabled: isDisabled,
+                pointerEvents,
+                opacity,
+                cursor,
+                display,
+                visibility,
+                style: selector.style.cssText
+            });
             
             if (selector.disabled || selector.style.pointerEvents === 'none' || selector.style.opacity === '0') {
                 console.log(`🔄 Selector became non-interactive (check ${checkCount}), re-enabling...`);
