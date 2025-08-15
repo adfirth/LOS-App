@@ -879,6 +879,7 @@
                                 </div>
                                 <button id="refresh-picks-btn" class="btn btn-primary">Refresh Picks</button>
                                 <button id="debug-picks-btn" class="btn btn-secondary" style="background-color: #6c757d; color: white;">Debug All Picks</button>
+                                <button id="migrate-picks-btn" class="btn btn-warning" style="background-color: #ffc107; color: #212529; border: 1px solid #ffc107;">🚀 Migrate to Picks Collection</button>
                             </div>
                             <h3 id="picks-title">Picks for Edition 1 - Game Week 1</h3>
                             <table class="league-table">
@@ -1246,11 +1247,11 @@
                 console.log('ðŸŽ Picks tab clicked - calling renderPicksTable...');
                 console.log('ðŸ" adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
                 console.log('ðŸ" adminManagementManager object:', window.adminManagementManager);
-                if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.renderPicksTable) {
-                    console.log('âœ Calling renderPicksTable...');
-                    window.adminManagementManager.renderPicksTable();
+                if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.renderPicksTableFromCollection) {
+                    console.log('✅ Calling renderPicksTableFromCollection...');
+                    window.adminManagementManager.renderPicksTableFromCollection();
                 } else {
-                    console.log('â adminManagementManager.renderPicksTable not available yet');
+                    console.log('❌ adminManagementManager.renderPicksTableFromCollection not available yet');
                     console.log('ðŸ" Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
                     // Try to trigger the refresh picks button click as fallback
                     setTimeout(() => {
