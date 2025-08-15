@@ -281,6 +281,7 @@ class App {
          // window.deletePlayer = (playerId) => this.adminManagementManager.deletePlayer(playerId);
          // window.resetAllPlayerLives = () => this.adminManagementManager.resetAllPlayerLives();
          window.resetTestLives = () => this.adminManagementManager.resetTestLives();
+         window.saveApiSuspensionSettings = () => this.adminManagementManager.saveApiSuspensionSettings();
          // window.generateTestScores = () => this.adminManagementManager.generateTestScores();
          // window.initializeEnhancedVidiprinter = () => this.adminManagementManager.initializeEnhancedVidiprinter();
          // window.startEnhancedVidiprinter = () => this.adminManagementManager.startEnhancedVidiprinter();

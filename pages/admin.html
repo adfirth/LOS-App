@@ -155,7 +155,7 @@
                                             When enabled, all automatic API calls will be paused. Manual API calls will still work.
                                         </small>
                                     </div>
-                                    <button id="save-api-suspension-btn" class="cta-button" style="background-color: #dc3545; border-color: #dc3545;">
+                                    <button id="save-api-suspension-btn" class="cta-button" style="background-color: #dc3545; border-color: #dc3545;" onclick="if(window.saveApiSuspensionSettings) window.saveApiSuspensionSettings(); else if(window.app && window.app.adminManagementManager) window.app.adminManagementManager.saveApiSuspensionSettings(); else alert('Function not available. Please refresh the page.');">
                                         <i class="fas fa-pause"></i> Save API Suspension Settings
                                     </button>
                                     <p id="api-suspension-status" class="status-message"></p>
@@ -168,7 +168,7 @@
                                         Use this button to reset all test edition players back to 2 lives. 
                                         This is useful after fixing bugs that caused incorrect life deductions.
                                     </p>
-                                    <button id="reset-test-lives-btn" class="cta-button" style="background-color: #dc3545; border-color: #dc3545;">
+                                    <button id="reset-test-lives-btn" class="cta-button" style="background-color: #dc3545; border-color: #dc3545;" onclick="if(window.resetTestLives) window.resetTestLives(); else if(window.app && window.app.adminManagementManager) window.app.adminManagementManager.resetTestLives(); else alert('Function not available. Please refresh the page.');">
                                         <i class="fas fa-redo"></i> Reset All Test Players to 2 Lives
                                     </button>
                                     <p id="reset-status" class="status-message"></p>
@@ -1485,5 +1485,6 @@
     </script>
 </body>
 </html>
+
 
 
