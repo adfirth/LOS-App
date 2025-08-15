@@ -16,21 +16,25 @@ export class FootballWebPagesAPI {
 
     // Load configuration from global variables
     loadConfiguration() {
+        // First try to access from window object (most reliable)
+        if (typeof window !== 'undefined' && window.FOOTBALL_WEBPAGES_CONFIG) {
+            this.config = window.FOOTBALL_WEBPAGES_CONFIG;
+            console.log('✅ Football Web Pages API configuration loaded from window object');
+            console.log('API Key available:', !!this.config.RAPIDAPI_KEY);
+            return true;
+        }
+        
+        // Fallback: try to access as global variable (may not work in strict mode)
         if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
             this.config = FOOTBALL_WEBPAGES_CONFIG;
             console.log('✅ Football Web Pages API configuration loaded from global variable');
             console.log('API Key available:', !!this.config.RAPIDAPI_KEY);
             return true;
-        } else if (window.FOOTBALL_WEBPAGES_CONFIG) {
-            this.config = window.FOOTBALL_WEBPAGES_CONFIG;
-            console.log('✅ Football Web Pages API configuration loaded from window object');
-            console.log('API Key available:', !!this.config.RAPIDAPI_KEY);
-            return true;
-        } else {
-            console.warn('⚠️ Football Web Pages API configuration not found - will retry during initialization');
-            this.retryLoadConfiguration();
-            return false;
         }
+        
+        console.warn('⚠️ Football Web Pages API configuration not found - will retry during initialization');
+        this.retryLoadConfiguration();
+        return false;
     }
 
     // Retry loading configuration with exponential backoff
@@ -42,15 +46,17 @@ export class FootballWebPagesAPI {
             attempts++;
             console.log(`🔄 Attempt ${attempts}/${maxAttempts} to load Football Web Pages API configuration...`);
             
-            if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-                this.config = FOOTBALL_WEBPAGES_CONFIG;
-                console.log('✅ Football Web Pages API configuration loaded on retry attempt', attempts);
+            // First try window object (most reliable)
+            if (typeof window !== 'undefined' && window.FOOTBALL_WEBPAGES_CONFIG) {
+                this.config = window.FOOTBALL_WEBPAGES_CONFIG;
+                console.log('✅ Football Web Pages API configuration loaded from window object on retry attempt', attempts);
                 return;
             }
             
-            if (window.FOOTBALL_WEBPAGES_CONFIG) {
-                this.config = window.FOOTBALL_WEBPAGES_CONFIG;
-                console.log('✅ Football Web Pages API configuration loaded from window object on retry attempt', attempts);
+            // Fallback: try global variable
+            if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+                this.config = FOOTBALL_WEBPAGES_CONFIG;
+                console.log('✅ Football Web Pages API configuration loaded on retry attempt', attempts);
                 return;
             }
             
@@ -62,12 +68,12 @@ export class FootballWebPagesAPI {
                 
                 // Try one more time after a longer delay
                 setTimeout(() => {
-                    if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
-                        this.config = FOOTBALL_WEBPAGES_CONFIG;
-                        console.log('✅ Football Web Pages API configuration loaded on final attempt');
-                    } else if (window.FOOTBALL_WEBPAGES_CONFIG) {
+                    if (typeof window !== 'undefined' && window.FOOTBALL_WEBPAGES_CONFIG) {
                         this.config = window.FOOTBALL_WEBPAGES_CONFIG;
                         console.log('✅ Football Web Pages API configuration loaded from window object on final attempt');
+                    } else if (typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
+                        this.config = FOOTBALL_WEBPAGES_CONFIG;
+                        console.log('✅ Football Web Pages API configuration loaded on final attempt');
                     }
                 }, 2000);
             }
