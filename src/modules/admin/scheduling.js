@@ -30,78 +30,105 @@ export class Scheduling {
         
         console.log('🔧 Setting up quick edition selector...');
         
-        const editionSelector = document.querySelector('#quick-edition-selector');
-        const quickSaveEditionBtn = document.querySelector('#quick-save-edition-btn');
-        
-        if (!editionSelector) {
-            console.log('Quick edition selector not found');
-            return;
-        }
-        
-        console.log('✅ Found edition selector:', editionSelector);
-        console.log('🔍 Selector properties:', {
-            disabled: editionSelector.disabled,
-            style: editionSelector.style.cssText,
-            className: editionSelector.className,
-            type: editionSelector.type
-        });
-        
-        // Remove any existing event listeners to prevent duplicates
-        const newSelector = editionSelector.cloneNode(true);
-        editionSelector.parentNode.replaceChild(newSelector, editionSelector);
-        
-        // Load available editions
-        this.loadAvailableEditions();
-        
-        // Set up change handler for the selector
-        newSelector.addEventListener('change', (e) => {
-            console.log('🔄 Edition selector change event triggered');
-            this.saveQuickEditionChange();
-        });
-        
-        // Set up save button event listener
-        if (quickSaveEditionBtn) {
-            console.log('✅ Found quick save edition button:', quickSaveEditionBtn);
+        // Use a more robust approach - try multiple times if elements aren't found
+        const setupElements = () => {
+            const editionSelector = document.querySelector('#quick-edition-selector');
+            const quickSaveEditionBtn = document.querySelector('#quick-save-edition-btn');
             
-            // Remove any existing event listeners to prevent duplicates
-            const newSaveBtn = quickSaveEditionBtn.cloneNode(true);
-            quickSaveEditionBtn.parentNode.replaceChild(newSaveBtn, quickSaveEditionBtn);
+            console.log('🔍 Looking for elements...');
+            console.log('Edition selector found:', !!editionSelector);
+            console.log('Save button found:', !!quickSaveEditionBtn);
             
-            // Add event listener for the save button
-            newSaveBtn.addEventListener('click', () => {
-                console.log('🔄 Quick save edition button clicked');
+            if (!editionSelector) {
+                console.log('❌ Quick edition selector not found, will retry...');
+                return false;
+            }
+            
+            if (!quickSaveEditionBtn) {
+                console.log('❌ Quick save edition button not found, will retry...');
+                return false;
+            }
+            
+            console.log('✅ Found both elements');
+            console.log('🔍 Edition selector properties:', {
+                disabled: editionSelector.disabled,
+                style: editionSelector.style.cssText,
+                className: editionSelector.className,
+                type: editionSelector.type
+            });
+            
+            console.log('🔍 Save button properties:', {
+                disabled: quickSaveEditionBtn.disabled,
+                style: quickSaveEditionBtn.style.cssText,
+                className: quickSaveEditionBtn.className,
+                type: quickSaveEditionBtn.type
+            });
+            
+            // Load available editions
+            this.loadAvailableEditions();
+            
+            // Set up change handler for the selector
+            editionSelector.addEventListener('change', (e) => {
+                console.log('🔄 Edition selector change event triggered');
+                this.saveQuickEditionChange();
+            });
+            
+            // Set up save button event listener - use direct approach without cloning
+            quickSaveEditionBtn.addEventListener('click', (e) => {
+                console.log('🔄 Quick save edition button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
                 this.saveQuickEditionChange();
             });
             
             // Also allow saving by pressing Enter in the selector
-            newSelector.addEventListener('keypress', (e) => {
+            editionSelector.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     console.log('🔄 Enter key pressed in edition selector');
                     this.saveQuickEditionChange();
                 }
             });
             
-            console.log('✅ Quick save edition button event listener set up');
-        } else {
-            console.warn('❌ Quick save edition button not found');
+            // Ensure the selector looks and behaves like a dropdown
+            editionSelector.style.appearance = 'auto';
+            editionSelector.style.webkitAppearance = 'auto';
+            editionSelector.style.mozAppearance = 'auto';
+            editionSelector.style.cursor = 'pointer';
+            editionSelector.style.pointerEvents = 'auto';
+            editionSelector.style.opacity = '1';
+            editionSelector.disabled = false;
+            
+            // Ensure the save button is enabled and clickable
+            quickSaveEditionBtn.disabled = false;
+            quickSaveEditionBtn.style.pointerEvents = 'auto';
+            quickSaveEditionBtn.style.opacity = '1';
+            quickSaveEditionBtn.style.cursor = 'pointer';
+            
+            // Set current selection
+            this.updateQuickEditionSelector();
+            
+            console.log('✅ Quick edition selector and save button setup complete');
+            return true;
+        };
+        
+        // Try to set up elements immediately
+        if (!setupElements()) {
+            // If elements aren't found, retry after a short delay
+            console.log('🔄 Elements not found, retrying in 100ms...');
+            setTimeout(() => {
+                if (!setupElements()) {
+                    console.log('🔄 Elements still not found, retrying in 500ms...');
+                    setTimeout(() => {
+                        if (!setupElements()) {
+                            console.error('❌ Failed to find elements after multiple retries');
+                        }
+                    }, 500);
+                }
+            }, 100);
         }
-        
-        // Ensure the selector looks and behaves like a dropdown
-        newSelector.style.appearance = 'auto';
-        newSelector.style.webkitAppearance = 'auto';
-        newSelector.style.mozAppearance = 'auto';
-        newSelector.style.cursor = 'pointer';
-        newSelector.style.pointerEvents = 'auto';
-        newSelector.style.opacity = '1';
-        newSelector.style.disabled = false;
-        
-        // Set current selection
-        this.updateQuickEditionSelector();
         
         // Mark as initialized
         this.editionSelectorInitialized = true;
-        
-        console.log('✅ Quick edition selector setup complete');
     }
 
     // Setup active gameweek selector
