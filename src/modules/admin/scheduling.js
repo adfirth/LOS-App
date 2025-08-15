@@ -42,6 +42,140 @@ export class Scheduling {
         console.log('✅ Quick edition selector setup complete');
     }
 
+    // Setup active gameweek selector
+    setupActiveGameweekSelector() {
+        console.log('🔧 Setting up active gameweek selector...');
+        
+        const gameweekSelector = document.querySelector('#active-gameweek-select');
+        if (!gameweekSelector) {
+            console.log('Active gameweek selector not found');
+            return;
+        }
+        
+        // Load available gameweeks
+        this.loadAvailableGameweeks();
+        
+        // Set up change handler
+        gameweekSelector.addEventListener('change', (e) => this.handleGameweekChange(e));
+        
+        // Set current selection
+        this.updateActiveGameweekSelector();
+        
+        console.log('✅ Active gameweek selector setup complete');
+    }
+
+    // Load available gameweeks
+    async loadAvailableGameweeks() {
+        try {
+            const gameweekSelector = document.querySelector('#active-gameweek-select');
+            if (!gameweekSelector) return;
+            
+            // Clear existing options
+            gameweekSelector.innerHTML = '';
+            
+            // Add gameweek options (1-10)
+            for (let i = 1; i <= 10; i++) {
+                const option = document.createElement('option');
+                option.value = i.toString();
+                option.textContent = `Week ${i}`;
+                gameweekSelector.appendChild(option);
+            }
+            
+            console.log('✅ Loaded 10 gameweek options');
+            
+        } catch (error) {
+            console.error('❌ Error loading gameweeks:', error);
+        }
+    }
+
+    // Update active gameweek selector
+    updateActiveGameweekSelector() {
+        const gameweekSelector = document.querySelector('#active-gameweek-select');
+        if (!gameweekSelector) return;
+        
+        gameweekSelector.value = this.currentActiveGameweek;
+        console.log(`✅ Updated gameweek selector to ${this.currentActiveGameweek}`);
+    }
+
+    // Handle gameweek change
+    async handleGameweekChange(e) {
+        const selectedGameweek = e.target.value;
+        console.log('Gameweek selection changed to:', selectedGameweek);
+        
+        // Update current active gameweek
+        this.currentActiveGameweek = selectedGameweek;
+        
+        // Update global variables
+        if (window.currentActiveGameweek !== undefined) {
+            window.currentActiveGameweek = selectedGameweek;
+        }
+        
+        if (window.app && window.app.currentActiveGameweek !== undefined) {
+            window.app.currentActiveGameweek = selectedGameweek;
+        }
+        
+        // Update all other gameweek selectors
+        this.setDefaultGameweekSelection();
+        
+        // Save the change to database
+        await this.saveGameweekChange(selectedGameweek);
+    }
+
+    // Save gameweek change to database
+    async saveGameweekChange(gameweek) {
+        try {
+            const settingsDoc = await this.db.collection('settings').doc('currentCompetition').get();
+            let settings = {};
+            
+            if (settingsDoc.exists) {
+                settings = settingsDoc.data();
+            }
+            
+            settings.active_gameweek = gameweek;
+            settings.last_updated = new Date();
+            
+            await this.db.collection('settings').doc('currentCompetition').set(settings);
+            console.log(`✅ Gameweek change saved to database: ${gameweek}`);
+            
+        } catch (error) {
+            console.error('❌ Error saving gameweek change:', error);
+        }
+    }
+
+    // Set default gameweek selection across all selectors
+    setDefaultGameweekSelection() {
+        console.log('🔧 Setting default gameweek selection...');
+        
+        const gameweekSelectors = [
+            '#gameweek-select',           // Fixtures tab
+            '#score-gameweek-select',     // Scores tab
+            '#picks-gameweek-select',     // Picks tab
+            '#standings-gameweek-select', // As It Stands tab
+            '#history-gameweek-select',   // History tab
+            '#import-gameweek-select',    // API Import section
+            '#source-gameweek',           // Reallocate fixtures source
+            '#target-gameweek',           // Reallocate fixtures target
+            '#delete-gameweek'            // Delete fixtures
+        ];
+        
+        gameweekSelectors.forEach(selectorId => {
+            const selector = document.querySelector(selectorId);
+            if (selector) {
+                const optionExists = Array.from(selector.options).some(option => option.value === this.currentActiveGameweek);
+                if (optionExists) {
+                    selector.value = this.currentActiveGameweek;
+                    console.log(`✅ Set ${selectorId} to default gameweek: ${this.currentActiveGameweek}`);
+                    
+                    // Trigger change event to ensure any listeners are notified
+                    const event = new Event('change', { bubbles: true });
+                    selector.dispatchEvent(event);
+                } else {
+                    console.log(`⚠️ Gameweek ${this.currentActiveGameweek} not available in ${selectorId}`);
+                }
+            }
+        });
+    }
+
     // Load available editions
     async loadAvailableEditions() {
         try {
@@ -62,7 +196,9 @@ export class Scheduling {
                 editions = [
                     { id: 1, name: 'Edition 1', active: true },
                     { id: 2, name: 'Edition 2', active: false },
-                    { id: 3, name: 'Edition 3', active: false }
+                    { id: 3, name: 'Edition 3', active: false },
+                    { id: 4, name: 'Edition 4', active: false },
+                    { id: 'test', name: 'Test Weeks', active: false }
                 ];
                 
                 // Save default editions
@@ -103,30 +239,33 @@ export class Scheduling {
             const editionSelector = document.querySelector('#quick-edition-selector');
             if (!editionSelector) return;
             
-            const newEdition = parseInt(editionSelector.value);
+            const newEdition = editionSelector.value;
             if (newEdition === this.currentActiveEdition) return;
             
-            console.log(`🔧 Changing active edition from ${this.currentActiveEdition} to ${newEdition}`);
+            // Handle test edition specially
+            const editionValue = newEdition === 'test' ? 'test' : parseInt(newEdition);
+            
+            console.log(`🔧 Changing active edition from ${this.currentActiveEdition} to ${editionValue}`);
             
             // Update local state
-            this.currentActiveEdition = newEdition;
+            this.currentActiveEdition = editionValue;
             
             // Update global state
             if (window.currentActiveEdition !== undefined) {
-                window.currentActiveEdition = newEdition;
+                window.currentActiveEdition = editionValue;
             }
             
             if (window.app) {
-                window.app.currentActiveEdition = newEdition;
+                window.app.currentActiveEdition = editionValue;
             }
             
             // Update settings in database
             await this.db.collection('settings').doc('currentActiveEdition').set({
-                edition: newEdition,
+                edition: editionValue,
                 lastUpdated: new Date()
             });
             
-            console.log(`✅ Active edition changed to ${newEdition}`);
+            console.log(`✅ Active edition changed to ${editionValue}`);
             
             // Refresh displays
             this.refreshDisplaysAfterEditionChange();
@@ -281,6 +420,12 @@ export class Scheduling {
         if (form) {
             form.addEventListener('submit', (e) => this.saveCompetitionSettings(e));
         }
+        
+        // Set up active gameweek selector
+        this.setupActiveGameweekSelector();
+        
+        // Set up quick edition selector
+        this.setupQuickEditionSelector();
         
         // Set up individual field change handlers
         this.setupSettingsFieldHandlers();
