@@ -643,6 +643,56 @@ export class AdminManager {
         console.log('✅ Enhanced vidiprinter feed cleared');
     }
 
+    // Reset test edition players to 2 lives
+    async resetTestLives() {
+        if (!confirm('Are you sure you want to reset all TEST EDITION players to 2 lives? This will only affect players in the test edition.')) return;
+        
+        try {
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = 'Resetting test players...';
+                statusElement.style.color = '#007bff';
+            }
+            
+            const usersSnapshot = await this.db.collection('users').get();
+            const batch = this.db.batch();
+            let resetCount = 0;
+            
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                // Only reset players in test edition
+                if (userData.status === 'active' && userData.edition === 'test') {
+                    batch.update(doc.ref, {
+                        lives: 2,
+                        lastUpdated: new Date()
+                    });
+                    resetCount++;
+                }
+            });
+            
+            await batch.commit();
+            
+            if (statusElement) {
+                statusElement.textContent = `✅ Reset ${resetCount} test edition players to 2 lives successfully!`;
+                statusElement.style.color = '#28a745';
+            } else {
+                alert(`✅ Reset ${resetCount} test edition players to 2 lives successfully!`);
+            }
+            
+            console.log(`✅ Reset ${resetCount} test edition players to 2 lives`);
+            
+        } catch (error) {
+            console.error('Error resetting test player lives:', error);
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = `❌ Error: ${error.message}`;
+                statusElement.style.color = '#dc3545';
+            } else {
+                alert('Error resetting test player lives: ' + error.message);
+            }
+        }
+    }
+
     // Cleanup method
     cleanup() {
         console.log('🧹 AdminManager cleanup started');
