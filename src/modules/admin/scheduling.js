@@ -826,31 +826,30 @@ export class Scheduling {
             
             // Check if selector is being styled as a button (which would cause visual locking)
             const hasButtonLikeStyling = selector.style.backgroundColor === 'var(--alty-yellow)' ||
-                                       selector.style.fontWeight === 'bold' ||
                                        selector.style.textAlign === 'center' ||
                                        selector.style.borderRadius === '8px' ||
                                        selector.style.borderRadius === '12px' ||
-                                       selector.style.borderRadius === '16px';
+                                       selector.style.borderRadius === '16px' ||
+                                       selector.style.borderRadius === '20px' ||
+                                       selector.style.borderRadius === '24px';
             
             if (hasButtonLikeStyling) {
                 console.log(`⚠️ Selector has button-like styling (check ${checkCount}), resetting to dropdown...`);
-                console.log(`🔍 Button-like properties detected:`, {
-                    backgroundColor: selector.style.backgroundColor,
-                    fontWeight: selector.style.fontWeight,
-                    textAlign: selector.style.textAlign,
-                    borderRadius: selector.style.borderRadius
-                });
-                // Reset to standard dropdown styling
-                selector.style.borderRadius = '4px';
-                selector.style.backgroundColor = 'white';
-                selector.style.fontWeight = 'normal';
-                selector.style.textAlign = 'left';
-                selector.style.border = '1px solid #ccc';
-                selector.style.padding = '4px 30px 4px 8px';
-                selector.style.cursor = 'pointer';
-                selector.style.appearance = 'auto';
-                selector.style.webkitAppearance = 'auto';
-                selector.style.mozAppearance = 'auto';
+                                 console.log(`🔍 Button-like properties detected:`, {
+                     backgroundColor: selector.style.backgroundColor,
+                     textAlign: selector.style.textAlign,
+                     borderRadius: selector.style.borderRadius
+                 });
+                 // Reset to standard dropdown styling
+                 selector.style.borderRadius = '4px';
+                 selector.style.backgroundColor = 'white';
+                 selector.style.textAlign = 'left';
+                 selector.style.border = '1px solid #ccc';
+                 selector.style.padding = '4px 30px 4px 8px';
+                 selector.style.cursor = 'pointer';
+                 selector.style.appearance = 'auto';
+                 selector.style.webkitAppearance = 'auto';
+                 selector.style.mozAppearance = 'auto';
             }
             
             // Check if element is still a select element
