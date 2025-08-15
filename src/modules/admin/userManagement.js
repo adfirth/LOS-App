@@ -12,15 +12,15 @@ export class UserManagement {
     showPlayerManagement(type) {
         console.log(`🔧 Showing player management for type: ${type}`);
         
-        const playerManagementDiv = document.querySelector('#player-management');
-        const playerEditDiv = document.querySelector('#player-edit');
+        const playerManagementModal = document.querySelector('#player-management-modal');
+        const playerEditModal = document.querySelector('#player-edit-modal');
         
-        if (playerManagementDiv) {
-            playerManagementDiv.style.display = 'block';
+        if (playerManagementModal) {
+            playerManagementModal.style.display = 'block';
         }
         
-        if (playerEditDiv) {
-            playerEditDiv.style.display = 'none';
+        if (playerEditModal) {
+            playerEditModal.style.display = 'none';
         }
         
         this.currentPlayerManagementType = type;
@@ -29,17 +29,17 @@ export class UserManagement {
 
     // Close player management interface
     closePlayerManagement() {
-        const playerManagementDiv = document.querySelector('#player-management');
-        if (playerManagementDiv) {
-            playerManagementDiv.style.display = 'none';
+        const playerManagementModal = document.querySelector('#player-management-modal');
+        if (playerManagementModal) {
+            playerManagementModal.style.display = 'none';
         }
     }
 
     // Close player edit interface
     closePlayerEdit() {
-        const playerEditDiv = document.querySelector('#player-edit');
-        if (playerEditDiv) {
-            playerEditDiv.style.display = 'none';
+        const playerEditModal = document.querySelector('#player-edit-modal');
+        if (playerEditModal) {
+            playerEditModal.style.display = 'none';
         }
     }
 
@@ -164,7 +164,7 @@ The user's data in Firestore will remain unless manually deleted.
 
     // Display players in the management interface
     displayPlayers(players) {
-        const playerListContainer = document.querySelector('#player-list-container');
+        const playerListContainer = document.querySelector('#player-management-list');
         if (!playerListContainer) {
             console.error('Player list container not found');
             return;
@@ -175,60 +175,44 @@ The user's data in Firestore will remain unless manually deleted.
             return;
         }
         
-        let playerListHtml = `
-            <div class="player-list-header">
-                <h3>Players (${players.length})</h3>
-                <div class="player-list-controls">
-                    <input type="text" id="player-search" placeholder="Search players..." class="search-input">
-                    <select id="player-filter" class="filter-select">
-                        <option value="all">All Players</option>
-                        <option value="active">Active Only</option>
-                        <option value="archived">Archived Only</option>
-                        <option value="test">Test Weeks Only</option>
-                    </select>
-                </div>
-            </div>
-            <div class="player-list">
-        `;
+        let playerListHtml = '';
         
         players.forEach(player => {
             const statusClass = player.status === 'active' ? 'active' : 'archived';
             const isTestWeeks = player.registrations && player.registrations['editiontest'];
-            const testWeeksClass = isTestWeeks ? 'test-weeks' : '';
             
             // Get current edition registrations
             const currentEdition = this.getCurrentActiveEdition();
             const isCurrentEdition = player.registrations && player.registrations[`edition${currentEdition}`];
             
+            // Determine edition display
+            let editionDisplay = '';
+            if (isTestWeeks) {
+                editionDisplay = 'Test Weeks';
+            } else if (isCurrentEdition) {
+                editionDisplay = `Edition ${currentEdition}`;
+            } else {
+                editionDisplay = 'None';
+            }
+            
             playerListHtml += `
-                <div class="player-item ${statusClass} ${testWeeksClass}" data-player-id="${player.id}">
-                    <div class="player-info">
-                        <div class="player-name">${player.displayName || 'Unknown'}</div>
-                        <div class="player-email">${player.email || 'No email'}</div>
-                        <div class="player-status">
-                            <span class="status-badge ${statusClass}">${player.status || 'unknown'}</span>
-                            ${isTestWeeks ? '<span class="test-badge">Test Weeks</span>' : ''}
-                            ${isCurrentEdition ? `<span class="current-badge">Edition ${currentEdition}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="player-actions">
-                        <button class="edit-btn" onclick="this.parentElement.parentElement.querySelector('.edit-player-btn').click()">
-                            Edit
-                        </button>
-                        <button class="edit-player-btn" style="display: none;" onclick="this.closest('.player-item').dispatchEvent(new CustomEvent('editPlayer', {detail: '${player.id}'}))">
-                            Edit Player
-                        </button>
+                <tr class="player-row ${statusClass}" data-player-id="${player.id}">
+                    <td>${player.displayName || 'Unknown'}</td>
+                    <td>${player.email || 'No email'}</td>
+                    <td><span class="status-badge ${statusClass}">${player.status || 'unknown'}</span></td>
+                    <td>${player.lives || 2}</td>
+                    <td>${editionDisplay}</td>
+                    <td>
+                        <button class="edit-btn" onclick="window.adminManagementManager.userManagement.editPlayer('${player.id}')">Edit</button>
                         ${player.status === 'active' ? 
-                            `<button class="archive-btn" onclick="this.closest('.player-item').dispatchEvent(new CustomEvent('archivePlayer', {detail: '${player.id}'}))">Archive</button>` :
-                            `<button class="unarchive-btn" onclick="this.closest('.player-item').dispatchEvent(new CustomEvent('unarchivePlayer', {detail: '${player.id}'}))">Unarchive</button>`
+                            `<button class="archive-btn" onclick="window.adminManagementManager.userManagement.archivePlayer('${player.id}')">Archive</button>` :
+                            `<button class="unarchive-btn" onclick="window.adminManagementManager.userManagement.unarchivePlayer('${player.id}')">Unarchive</button>`
                         }
-                        <button class="delete-btn" onclick="this.closest('.player-item').dispatchEvent(new CustomEvent('deletePlayer', {detail: '${player.id}'}))">Delete</button>
-                    </div>
-                </div>
+                        <button class="delete-btn" onclick="window.adminManagementManager.userManagement.deletePlayer('${player.id}')">Delete</button>
+                    </td>
+                </tr>
             `;
         });
-        
-        playerListHtml += '</div>';
         playerListContainer.innerHTML = playerListHtml;
         
         // Set up event listeners for the new buttons
@@ -319,93 +303,62 @@ The user's data in Firestore will remain unless manually deleted.
 
     // Show player edit form
     showPlayerEditForm(playerId, playerData) {
-        const playerEditDiv = document.querySelector('#player-edit');
-        const playerManagementDiv = document.querySelector('#player-management');
+        const playerEditModal = document.querySelector('#player-edit-modal');
+        const playerManagementModal = document.querySelector('#player-management-modal');
         
-        if (playerEditDiv) {
-            playerEditDiv.style.display = 'block';
+        if (playerEditModal) {
+            playerEditModal.style.display = 'block';
         }
         
-        if (playerManagementDiv) {
-            playerManagementDiv.style.display = 'none';
+        if (playerManagementModal) {
+            playerManagementModal.style.display = 'none';
         }
         
-        const editForm = document.querySelector('#player-edit-form');
-        if (editForm) {
-            editForm.innerHTML = `
-                <h3>Edit Player: ${playerData.displayName || 'Unknown'}</h3>
-                <form id="edit-player-form">
-                    <input type="hidden" id="edit-player-id" value="${playerId}">
-                    
-                    <div class="form-group">
-                        <label for="edit-display-name">Display Name:</label>
-                        <input type="text" id="edit-display-name" value="${playerData.displayName || ''}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-email">Email:</label>
-                        <input type="email" id="edit-email" value="${playerData.email || ''}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-status">Status:</label>
-                        <select id="edit-status">
-                            <option value="active" ${playerData.status === 'active' ? 'selected' : ''}>Active</option>
-                            <option value="archived" ${playerData.status === 'archived' ? 'selected' : ''}>Archived</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="edit-test-weeks" ${playerData.testWeeks ? 'checked' : ''}>
-                            Test Weeks Player
-                        </label>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="edit-lives">Current Lives:</label>
-                        <input type="number" id="edit-lives" value="${playerData.lives || 2}" min="0" max="2">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="save-btn">Save Changes</button>
-                        <button type="button" class="cancel-btn" onclick="this.closest('#player-edit').dispatchEvent(new CustomEvent('closePlayerEdit'))">Cancel</button>
-                    </div>
-                </form>
-            `;
-            
-            // Set up form submission
-            const form = document.querySelector('#edit-player-form');
-            if (form) {
-                form.addEventListener('submit', (e) => this.savePlayerEdit(e));
-            }
-            
-            // Set up close button
-            const closeBtn = document.querySelector('#player-edit');
-            if (closeBtn) {
-                closeBtn.addEventListener('closePlayerEdit', () => this.closePlayerEdit());
-            }
+        // Populate the existing form fields
+        const firstNameInput = document.querySelector('#edit-first-name');
+        const surnameInput = document.querySelector('#edit-surname');
+        const emailInput = document.querySelector('#edit-email');
+        const livesInput = document.querySelector('#edit-lives');
+        const statusSelect = document.querySelector('#edit-status');
+        const notesTextarea = document.querySelector('#edit-notes');
+        
+        if (firstNameInput) firstNameInput.value = playerData.firstName || '';
+        if (surnameInput) surnameInput.value = playerData.surname || '';
+        if (emailInput) emailInput.value = playerData.email || '';
+        if (livesInput) livesInput.value = playerData.lives || 2;
+        if (statusSelect) statusSelect.value = playerData.status || 'active';
+        if (notesTextarea) notesTextarea.value = playerData.adminNotes || '';
+        
+        // Set up form submission
+        const form = document.querySelector('#player-edit-form');
+        if (form) {
+            // Remove existing event listeners
+            form.removeEventListener('submit', this.savePlayerEdit.bind(this));
+            // Add new event listener
+            form.addEventListener('submit', (e) => this.savePlayerEdit(e, playerId));
         }
     }
 
     // Save player edit
-    async savePlayerEdit(event) {
+    async savePlayerEdit(event, playerId) {
         event.preventDefault();
         
         try {
-            const playerId = document.querySelector('#edit-player-id').value;
-            const displayName = document.querySelector('#edit-display-name').value;
+            const firstName = document.querySelector('#edit-first-name').value;
+            const surname = document.querySelector('#edit-surname').value;
             const email = document.querySelector('#edit-email').value;
-            const status = document.querySelector('#edit-status').value;
-            const testWeeks = document.querySelector('#edit-test-weeks').checked;
             const lives = parseInt(document.querySelector('#edit-lives').value);
+            const status = document.querySelector('#edit-status').value;
+            const adminNotes = document.querySelector('#edit-notes').value;
             
             const updateData = {
-                displayName,
+                firstName,
+                surname,
+                displayName: `${firstName} ${surname}`.trim(),
                 email,
-                status,
-                testWeeks,
                 lives,
+                status,
+                adminNotes,
                 lastUpdated: new Date()
             };
             
