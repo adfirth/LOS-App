@@ -83,7 +83,158 @@ export class AdminManager {
         // Initialize audit functionality
         this.audit.initializeAudit();
         
+        // Initialize Player Picks v2 functionality
+        this.initializePlayerPicksV2();
+        
         console.log('✅ Admin page initialization complete');
+    }
+
+    // Initialize Player Picks v2 functionality
+    initializePlayerPicksV2() {
+        console.log('🚀 Initializing Player Picks v2...');
+        
+        // Get DOM elements
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const gameweekSelect = document.querySelector('#picks-v2-gameweek-select');
+        const refreshBtn = document.querySelector('#picks-v2-refresh-btn');
+        const exportBtn = document.querySelector('#picks-v2-export-btn');
+        
+        if (!editionSelect || !gameweekSelect || !refreshBtn) {
+            console.error('❌ Player Picks v2 elements not found');
+            return;
+        }
+        
+        // Set up event listeners
+        editionSelect.addEventListener('change', () => this.loadPlayerPicksV2());
+        gameweekSelect.addEventListener('change', () => this.loadPlayerPicksV2());
+        refreshBtn.addEventListener('click', () => this.loadPlayerPicksV2());
+        exportBtn.addEventListener('click', () => this.exportPlayerPicksV2());
+        
+        // Load initial data
+        this.loadPlayerPicksV2();
+        
+        console.log('✅ Player Picks v2 initialized');
+    }
+
+    // Load player picks for v2 tab
+    async loadPlayerPicksV2() {
+        console.log('🔄 Loading Player Picks v2...');
+        
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const gameweekSelect = document.querySelector('#picks-v2-gameweek-select');
+        const tableBody = document.querySelector('#picks-v2-table-body');
+        const loadingDiv = document.querySelector('#picks-v2-loading');
+        
+        if (!editionSelect || !gameweekSelect || !tableBody) {
+            console.error('❌ Player Picks v2 elements not found');
+            return;
+        }
+        
+        const selectedEdition = editionSelect.value;
+        const selectedGameweek = gameweekSelect.value;
+        
+        // Show loading
+        loadingDiv.style.display = 'block';
+        tableBody.innerHTML = '';
+        
+        try {
+            console.log(`🔍 Fetching picks for edition: ${selectedEdition}, gameweek: ${selectedGameweek}`);
+            
+            // Query picks collection
+            const picksQuery = this.db.collection('picks')
+                .where('edition', '==', selectedEdition)
+                .where('gameweek', '==', selectedGameweek)
+                .where('isActive', '==', true);
+            
+            const picksSnapshot = await picksQuery.get();
+            console.log(`✅ Found ${picksSnapshot.size} picks`);
+            
+            // Update stats
+            this.updatePlayerPicksV2Stats(picksSnapshot);
+            
+            // Render table
+            this.renderPlayerPicksV2Table(picksSnapshot, tableBody);
+            
+        } catch (error) {
+            console.error('❌ Error loading Player Picks v2:', error);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        Error loading picks: ${error.message}
+                    </td>
+                </tr>
+            `;
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    // Update Player Picks v2 statistics
+    updatePlayerPicksV2Stats(picksSnapshot) {
+        const totalCount = document.querySelector('#picks-v2-total-count');
+        const playersCount = document.querySelector('#picks-v2-players-count');
+        const teamsCount = document.querySelector('#picks-v2-teams-count');
+        
+        if (!totalCount || !playersCount || !teamsCount) return;
+        
+        const picks = picksSnapshot.docs.map(doc => doc.data());
+        const uniquePlayers = new Set(picks.map(pick => pick.userId)).size;
+        const uniqueTeams = new Set(picks.map(pick => pick.teamPicked)).size;
+        
+        totalCount.textContent = picksSnapshot.size;
+        playersCount.textContent = uniquePlayers;
+        teamsCount.textContent = uniqueTeams;
+    }
+
+    // Render Player Picks v2 table
+    renderPlayerPicksV2Table(picksSnapshot, tableBody) {
+        if (picksSnapshot.empty) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No picks found for this edition and game week
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        const rows = picksSnapshot.docs.map(doc => {
+            const pickData = doc.data();
+            return `
+                <tr>
+                    <td>
+                        <strong>${pickData.userFirstName} ${pickData.userSurname}</strong>
+                    </td>
+                    <td>
+                        <span class="team-badge">${pickData.teamPicked}</span>
+                    </td>
+                    <td>${pickData.gameweek}</td>
+                    <td>${pickData.edition}</td>
+                    <td>
+                        <span class="status-badge status-active">Active</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        tableBody.innerHTML = rows;
+    }
+
+    // Export Player Picks v2 data
+    exportPlayerPicksV2() {
+        console.log('📤 Exporting Player Picks v2...');
+        
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const gameweekSelect = document.querySelector('#picks-v2-gameweek-select');
+        
+        if (!editionSelect || !gameweekSelect) return;
+        
+        const selectedEdition = editionSelect.value;
+        const selectedGameweek = gameweekSelect.value;
+        
+        // This would implement CSV export functionality
+        alert(`Export functionality for ${selectedEdition} - Game Week ${selectedGameweek} would be implemented here.`);
     }
 
     // Ensure Save Settings button is ready
