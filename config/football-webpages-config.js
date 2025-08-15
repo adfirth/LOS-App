@@ -31,6 +31,11 @@ function getEnvVar(key, fallback) {
         return window.CONFIG[key];
     }
     
+    // Check for Netlify environment configuration
+    if (typeof window !== 'undefined' && window.NETLIFY_ENV && window.NETLIFY_ENV[key]) {
+        return window.NETLIFY_ENV[key];
+    }
+    
     // Check for Vite-style environment variables (if available)
     if (typeof window !== 'undefined' && window.import && window.import.meta && window.import.meta.env && window.import.meta.env[key]) {
         return window.import.meta.env[key];
@@ -49,6 +54,11 @@ let apiKey = getEnvVar('VITE_RAPIDAPI_KEY', null);
 // If no environment variable, try to get from a global config object
 if (!apiKey && typeof window !== 'undefined' && window.RAPIDAPI_KEY) {
     apiKey = window.RAPIDAPI_KEY;
+}
+
+// If still no API key, try to get from Netlify environment
+if (!apiKey && typeof window !== 'undefined' && window.NETLIFY_ENV && window.NETLIFY_ENV.RAPIDAPI_KEY) {
+    apiKey = window.NETLIFY_ENV.RAPIDAPI_KEY;
 }
 
 // If still no API key, use the dev key as fallback
