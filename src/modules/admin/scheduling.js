@@ -70,6 +70,12 @@ export class Scheduling {
             // Set up change handler for the selector
             editionSelector.addEventListener('change', (e) => {
                 console.log('🔄 Edition selector change event triggered');
+                
+                // Reset Active Week to 1 when edition changes
+                const newEdition = editionSelector.value;
+                this.resetActiveWeekForNewEdition(newEdition);
+                
+                // Save the edition change
                 this.saveQuickEditionChange();
             });
             
@@ -474,6 +480,9 @@ export class Scheduling {
             
             console.log(`✅ Active edition changed to ${editionValue}`);
             
+            // Reset Active Week to 1 for the new edition
+            this.resetActiveWeekForNewEdition(editionValue);
+            
             // Ensure selector remains interactive and looks like a dropdown
             editionSelector.disabled = false;
             editionSelector.style.pointerEvents = 'auto';
@@ -705,7 +714,7 @@ export class Scheduling {
         }
     }
     
-    // Setup Active Settings dropdown synchronization
+        // Setup Active Settings dropdown synchronization
     setupActiveSettingsSync() {
         console.log('🔧 Setting up Active Settings dropdown sync...');
         
@@ -733,6 +742,9 @@ export class Scheduling {
                     window.app.currentActiveEdition = newEdition;
                 }
                 
+                // Reset Active Week to 1 when edition changes (since different editions may have different week structures)
+                this.resetActiveWeekForNewEdition(newEdition);
+                
                 console.log(`✅ Synced quick edition selector with Active Settings: ${newEdition}`);
             });
             
@@ -741,7 +753,43 @@ export class Scheduling {
             console.log('⚠️ Active Settings dropdown not found for sync setup');
         }
     }
-
+    
+    // Reset Active Week when edition changes
+    resetActiveWeekForNewEdition(newEdition) {
+        console.log(`🔧 Resetting Active Week for new edition: ${newEdition}`);
+        
+        // Reset to week 1 for the new edition
+        this.currentActiveGameweek = '1';
+        
+        // Update global state
+        if (window.currentActiveGameweek !== undefined) {
+            window.currentActiveGameweek = '1';
+        }
+        
+        if (window.app) {
+            window.app.currentActiveGameweek = '1';
+        }
+        
+        // Update the Active Week selector
+        const activeGameweekSelector = document.querySelector('#active-gameweek-select');
+        if (activeGameweekSelector) {
+            activeGameweekSelector.value = '1';
+            console.log('✅ Reset Active Week selector to Week 1');
+        }
+        
+        // Update the Competition Settings current gameweek field
+        const currentGameweekInput = document.querySelector('#current-gameweek');
+        if (currentGameweekInput) {
+            currentGameweekInput.value = '1';
+            console.log('✅ Reset Competition Settings current gameweek to 1');
+        }
+        
+        // Update all other gameweek selectors to maintain consistency
+        this.setDefaultGameweekSelection();
+        
+        console.log(`✅ Active Week reset to 1 for edition: ${newEdition}`);
+    }
+    
     // Handle tiebreak change
     handleTiebreakChange() {
         const tiebreakCheckbox = document.querySelector('#tiebreak-enabled');
