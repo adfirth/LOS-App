@@ -461,26 +461,48 @@ export class AdminManager {
         }
     }
 
+    // Refresh registration statistics when edition changes
+    async refreshRegistrationStatistics() {
+        try {
+            console.log('🔄 Refreshing registration statistics for edition change...');
+            await this.loadRegistrationStatistics();
+        } catch (error) {
+            console.error('❌ Error refreshing registration statistics:', error);
+        }
+    }
+
     // Load registration statistics
     async loadRegistrationStatistics() {
         try {
             console.log('🔧 Loading registration statistics...');
             
-            // Get total active registrations (excluding archived)
-            const activeUsersQuery = await this.db.collection('users').where('status', '==', 'active').get();
-            const totalActive = activeUsersQuery.size;
-            
-            // Get current edition registrations
+            // Get all users and filter in memory to avoid composite index requirements
+            const allUsersQuery = await this.db.collection('users').get();
             const currentEdition = this.getCurrentActiveEdition();
-            const currentEditionUsersQuery = await this.db.collection('users')
-                .where('status', '==', 'active')
-                .where('editions', 'array-contains', currentEdition)
-                .get();
-            const currentEditionCount = currentEditionUsersQuery.size;
             
-            // Get archived users count
-            const archivedUsersQuery = await this.db.collection('users').where('status', '==', 'archived').get();
-            const archivedCount = archivedUsersQuery.size;
+            let totalActive = 0;
+            let currentEditionCount = 0;
+            let archivedCount = 0;
+            
+            allUsersQuery.forEach(doc => {
+                const userData = doc.data();
+                
+                if (userData.status === 'active') {
+                    totalActive++;
+                    
+                    // Check if user is registered for current edition
+                    if (userData.editions && Array.isArray(userData.editions) && userData.editions.includes(currentEdition)) {
+                        currentEditionCount++;
+                    }
+                    
+                    // Also check for testWeeks if current edition is 'test'
+                    if (currentEdition === 'test' && userData.testWeeks === true) {
+                        currentEditionCount++;
+                    }
+                } else if (userData.status === 'archived') {
+                    archivedCount++;
+                }
+            });
             
             // Update the UI
             const totalRegistrationsElement = document.querySelector('#total-registrations');
@@ -497,7 +519,7 @@ export class AdminManager {
                 archivedElement.textContent = archivedCount;
             }
             
-            console.log(`✅ Registration statistics loaded: ${totalActive} active, ${currentEditionCount} current edition, ${archivedCount} archived`);
+            console.log(`✅ Registration statistics loaded: ${totalActive} active, ${currentEditionCount} current edition (${currentEdition}), ${archivedCount} archived`);
             
         } catch (error) {
             console.error('❌ Error loading registration statistics:', error);
@@ -506,8 +528,18 @@ export class AdminManager {
 
     // Get current active edition
     getCurrentActiveEdition() {
-        // This should get the current active edition from settings
-        // For now, return a default value
+        // Get the current active edition from the edition selector
+        const editionSelector = document.querySelector('#edition-selector');
+        if (editionSelector) {
+            return editionSelector.value;
+        }
+        
+        // Fallback to checking window.currentActiveEdition
+        if (window.currentActiveEdition) {
+            return window.currentActiveEdition;
+        }
+        
+        // Default fallback
         return 1;
     }
 

@@ -77,6 +77,12 @@ export class Scheduling {
                 
                 // Save the edition change
                 this.saveQuickEditionChange();
+                
+                // Refresh registration statistics if admin management manager is available
+                if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
+                    console.log('🔄 Refreshing registration statistics after edition change...');
+                    window.adminManagementManager.refreshRegistrationStatistics();
+                }
             });
             
             // Set up save button event listener - use direct approach without cloning
