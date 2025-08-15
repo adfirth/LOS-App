@@ -355,7 +355,7 @@ export class AdminManager {
 
     // Save API suspension settings
     async saveApiSuspensionSettings(event) {
-        event.preventDefault();
+        if (event) event.preventDefault();
         
         try {
             console.log('🔧 Saving API suspension settings...');
