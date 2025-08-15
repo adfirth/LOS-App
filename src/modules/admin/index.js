@@ -485,6 +485,14 @@ export class AdminManager {
                 newBtn.addEventListener('click', async () => {
                     if (window.registrationManager) {
                         await window.registrationManager.saveRegistrationSettings();
+                        
+                        // Also refresh the overview from admin management to ensure UI updates
+                        if (window.registrationManager) {
+                            await window.registrationManager.loadAllEditionsOverview();
+                        }
+                        
+                        // Refresh registration statistics as well
+                        await this.loadRegistrationStatistics();
                     }
                 });
                 

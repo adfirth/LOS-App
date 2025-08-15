@@ -633,11 +633,16 @@ class RegistrationManager {
     // Load overview of all editions
     async loadAllEditionsOverview() {
         try {
+            console.log('🔧 Loading all editions overview...');
             const editions = [1, 2, 3, 4, 'test'];
             for (const edition of editions) {
                 const statusCard = document.querySelector(`#edition-${edition}-status`);
-                if (!statusCard) continue;
+                if (!statusCard) {
+                    console.log(`⚠️ Status card not found for edition ${edition}`);
+                    continue;
+                }
 
+                console.log(`🔍 Loading settings for edition ${edition}...`);
                 const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${edition}`).get();
 
                 if (settingsDoc.exists) {
@@ -669,10 +674,12 @@ class RegistrationManager {
                     statusCard.className = `edition-status-card ${statusClass}`;
                     statusCard.querySelector('.status-text').textContent = statusText;
                     statusCard.querySelector('.date-range').textContent = dateRange;
+                    console.log(`✅ Updated edition ${edition} status: ${statusText} (${dateRange})`);
                 } else {
                     statusCard.className = 'edition-status-card';
                     statusCard.querySelector('.status-text').textContent = 'Not configured';
                     statusCard.querySelector('.date-range').textContent = 'No dates set';
+                    console.log(`⚠️ Edition ${edition} has no settings - showing as Not configured`);
                 }
             }
         } catch (error) {
