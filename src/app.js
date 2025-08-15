@@ -280,6 +280,7 @@ class App {
          // window.addToTestWeeks = (playerId) => this.adminManagementManager.addToTestWeeks(playerId);
          // window.deletePlayer = (playerId) => this.adminManagementManager.deletePlayer(playerId);
          // window.resetAllPlayerLives = () => this.adminManagementManager.resetAllPlayerLives();
+         window.resetTestLives = () => this.adminManagementManager.resetTestLives();
          // window.generateTestScores = () => this.adminManagementManager.generateTestScores();
          // window.initializeEnhancedVidiprinter = () => this.adminManagementManager.initializeEnhancedVidiprinter();
          // window.startEnhancedVidiprinter = () => this.adminManagementManager.startEnhancedVidiprinter();

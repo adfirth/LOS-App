@@ -507,6 +507,38 @@ class AdminManagementManager {
         } else {
             console.warn('❌ API suspension save button not found');
         }
+
+        // Set up test reset button event listener
+        const resetTestLivesBtn = document.querySelector('#reset-test-lives-btn');
+        if (resetTestLivesBtn) {
+            // Ensure the button is enabled and clickable
+            resetTestLivesBtn.disabled = false;
+            resetTestLivesBtn.style.pointerEvents = 'auto';
+            resetTestLivesBtn.style.opacity = '1';
+            resetTestLivesBtn.style.cursor = 'pointer';
+            resetTestLivesBtn.classList.remove('disabled');
+            resetTestLivesBtn.removeAttribute('disabled');
+            
+            // Remove any existing event listeners to prevent duplicates
+            resetTestLivesBtn.removeEventListener('click', window.resetTestLives);
+            
+            // Add the event listener
+            resetTestLivesBtn.addEventListener('click', () => {
+                console.log('Test reset button clicked!');
+                if (this.resetTestLives && typeof this.resetTestLives === 'function') {
+                    this.resetTestLives();
+                } else if (window.resetTestLives && typeof window.resetTestLives === 'function') {
+                    window.resetTestLives();
+                } else {
+                    console.error('resetTestLives function not available');
+                    alert('Error: Test reset function not available. Please refresh the page.');
+                }
+            });
+            
+            console.log('✅ Test reset button event listener added and button enabled');
+        } else {
+            console.warn('❌ Test reset button not found');
+        }
     }
 
     // Set up quick edition selector
@@ -2623,6 +2655,56 @@ class AdminManagementManager {
         } catch (error) {
             console.error('Error resetting player lives:', error);
             alert('Error resetting player lives: ' + error.message);
+        }
+    }
+
+    // Reset test edition players to 2 lives
+    async resetTestLives() {
+        if (!confirm('Are you sure you want to reset all TEST EDITION players to 2 lives? This will only affect players in the test edition.')) return;
+        
+        try {
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = 'Resetting test players...';
+                statusElement.style.color = '#007bff';
+            }
+            
+            const usersSnapshot = await this.db.collection('users').get();
+            const batch = this.db.batch();
+            let resetCount = 0;
+            
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                // Only reset players in test edition
+                if (userData.status === 'active' && userData.edition === 'test') {
+                    batch.update(doc.ref, {
+                        lives: 2,
+                        lastUpdated: new Date()
+                    });
+                    resetCount++;
+                }
+            });
+            
+            await batch.commit();
+            
+            if (statusElement) {
+                statusElement.textContent = `✅ Reset ${resetCount} test edition players to 2 lives successfully!`;
+                statusElement.style.color = '#28a745';
+            } else {
+                alert(`✅ Reset ${resetCount} test edition players to 2 lives successfully!`);
+            }
+            
+            console.log(`✅ Reset ${resetCount} test edition players to 2 lives`);
+            
+        } catch (error) {
+            console.error('Error resetting test player lives:', error);
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = `❌ Error: ${error.message}`;
+                statusElement.style.color = '#dc3545';
+            } else {
+                alert('Error resetting test player lives: ' + error.message);
+            }
         }
     }
 
