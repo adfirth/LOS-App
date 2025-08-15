@@ -418,7 +418,7 @@ class App {
         // window.showRegistrationClosed = (message) => this.registrationManager.showRegistrationClosed(message);
         // window.initializeRegistrationManagement = () => this.registrationManager.initializeRegistrationManagement();
         // window.loadRegistrationSettings = () => this.registrationManager.loadRegistrationSettings();
-        // window.loadEditionRegistrationSettings = () => this.registrationManager.loadEditionRegistrationSettings();
+        window.loadEditionRegistrationSettings = () => this.registrationManager.loadEditionRegistrationSettings();
         // window.loadAllEditionsOverview = () => this.registrationManager.loadAllEditionsOverview();
         // window.saveRegistrationSettings = () => this.registrationManager.saveRegistrationSettings();
         // window.refreshRegistrationStats = () => this.registrationManager.refreshRegistrationStats();

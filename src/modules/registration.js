@@ -577,7 +577,7 @@ class RegistrationManager {
     async loadEditionRegistrationSettings() {
         try {
             const editionForSettings = document.querySelector('#edition-for-settings');
-            const editionNumber = editionForSettings ? parseInt(editionForSettings.value) : 1;
+            const editionNumber = editionForSettings ? editionForSettings.value : '1';
 
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${editionNumber}`).get();
 
