@@ -22,6 +22,12 @@ export class Scheduling {
 
     // Setup quick edition selector
     setupQuickEditionSelector() {
+        // Prevent multiple initializations
+        if (this.editionSelectorInitialized) {
+            console.log('🔄 Edition selector already initialized, skipping...');
+            return;
+        }
+        
         console.log('🔧 Setting up quick edition selector...');
         
         const editionSelector = document.querySelector('#quick-edition-selector');
@@ -38,17 +44,24 @@ export class Scheduling {
             type: editionSelector.type
         });
         
+        // Remove any existing event listeners to prevent duplicates
+        const newSelector = editionSelector.cloneNode(true);
+        editionSelector.parentNode.replaceChild(newSelector, editionSelector);
+        
         // Load available editions
         this.loadAvailableEditions();
         
         // Set up change handler
-        editionSelector.addEventListener('change', (e) => {
+        newSelector.addEventListener('change', (e) => {
             console.log('🔄 Edition selector change event triggered');
             this.saveQuickEditionChange();
         });
         
         // Set current selection
         this.updateQuickEditionSelector();
+        
+        // Mark as initialized
+        this.editionSelectorInitialized = true;
         
         console.log('✅ Quick edition selector setup complete');
     }
@@ -339,6 +352,17 @@ export class Scheduling {
             editionSelector.style.cursor = 'pointer';
             
             console.log('✅ Edition selector remains interactive after change');
+            
+            // Log selector state after change
+            console.log('🔍 Selector state after change:', {
+                disabled: editionSelector.disabled,
+                style: editionSelector.style.cssText,
+                className: editionSelector.className,
+                value: editionSelector.value
+            });
+            
+            // Set up periodic check to ensure selector stays interactive
+            this.ensureSelectorInteractive(editionSelector);
             
             // Refresh displays
             this.refreshDisplaysAfterEditionChange();
@@ -722,6 +746,32 @@ export class Scheduling {
         console.log('✅ Default selection set');
     }
 
+    // Ensure selector stays interactive
+    ensureSelectorInteractive(selector) {
+        if (!selector) return;
+        
+        // Check every 100ms for 2 seconds to ensure selector stays interactive
+        let checkCount = 0;
+        const maxChecks = 20;
+        
+        const checkInterval = setInterval(() => {
+            checkCount++;
+            
+            if (selector.disabled || selector.style.pointerEvents === 'none' || selector.style.opacity === '0') {
+                console.log(`🔄 Selector became non-interactive (check ${checkCount}), re-enabling...`);
+                selector.disabled = false;
+                selector.style.pointerEvents = 'auto';
+                selector.style.opacity = '1';
+                selector.style.cursor = 'pointer';
+            }
+            
+            if (checkCount >= maxChecks) {
+                clearInterval(checkInterval);
+                console.log('✅ Selector interactive state monitoring completed');
+            }
+        }, 100);
+    }
+    
     // Cleanup method
     cleanup() {
         console.log('🧹 Scheduling cleanup completed');
