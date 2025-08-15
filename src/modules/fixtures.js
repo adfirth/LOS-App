@@ -20,7 +20,11 @@ class FixturesManager {
         }
         
         // Check if we're on a page that needs fixture management
-        const hasFixtureElements = document.querySelector('#gameweek-select') || document.querySelector('#score-gameweek-select');
+        const hasFixtureElements = document.querySelector('#gameweek-select') || 
+                                  document.querySelector('#score-gameweek-select') ||
+                                  document.querySelector('#desktop-as-it-stands-gameweek') ||
+                                  document.querySelector('.gameweek-tab') ||
+                                  document.querySelector('#mobile-gameweek-navigation');
         if (!hasFixtureElements) {
             console.log('Fixture management elements not found on this page, skipping...');
             return;

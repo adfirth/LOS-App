@@ -171,6 +171,9 @@ class AuthManager {
         const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
         const onAdminPage = window.location.pathname.endsWith('admin.html');
 
+        // Initialize user logout functionality
+        this.initializeUserLogout();
+
         if (onDashboardPage) {
             // Reset initialization flags when user logs in
             if (window.resetAsItStandsInitialization) {
@@ -431,6 +434,48 @@ class AuthManager {
         errorMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 2rem; color: #721c24; z-index: 9999; text-align: center;';
         errorMessage.innerHTML = `<i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><br><strong>Logout failed!</strong><br>${error.message}<br><br><button onclick="this.parentElement.remove()" style="padding: 0.5rem 1rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>`;
         document.body.appendChild(errorMessage);
+    }
+
+    // Initialize regular user logout functionality
+    initializeUserLogout() {
+        const logoutBtn = document.querySelector('#logout-button');
+        if (logoutBtn) {
+            logoutBtn.removeEventListener('click', this.handleUserLogout.bind(this));
+            logoutBtn.addEventListener('click', this.handleUserLogout.bind(this));
+            console.log('✅ User logout button initialized');
+        }
+    }
+
+    // Handle regular user logout
+    async handleUserLogout() {
+        console.log('User logout initiated');
+
+        const logoutBtn = document.querySelector('#logout-button');
+        const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
+        
+        if (logoutBtn) {
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = 'Logging out...';
+        }
+
+        try {
+            await this.auth.signOut();
+            console.log('User logged out successfully, redirecting to home page');
+
+            // Show success message and redirect
+            this.showLogoutSuccessMessage();
+            setTimeout(() => {
+                window.location.href = '/index.html';
+            }, 1500);
+
+        } catch (error) {
+            console.error('User logout error:', error);
+            if (logoutBtn) {
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = originalText;
+            }
+            this.handleLogoutError(error, logoutBtn, originalText);
+        }
     }
 
     // Admin token refresh mechanism
