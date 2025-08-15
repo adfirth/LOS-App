@@ -446,6 +446,9 @@ export class AdminManager {
         try {
             console.log('🔧 Loading registration data...');
             
+            // Initialize registration settings functionality for admin page
+            this.initializeRegistrationSettingsForAdmin();
+            
             // Load registration settings
             if (window.registrationManager) {
                 await window.registrationManager.loadRegistrationSettings();
@@ -463,6 +466,50 @@ export class AdminManager {
             
         } catch (error) {
             console.error('❌ Error loading registration data:', error);
+        }
+    }
+
+    // Initialize registration settings functionality for admin page
+    initializeRegistrationSettingsForAdmin() {
+        try {
+            console.log('🔧 Initializing registration settings for admin page...');
+            
+            // Set up save registration settings button
+            const saveRegistrationSettingsBtn = document.querySelector('#save-registration-settings');
+            if (saveRegistrationSettingsBtn) {
+                // Remove existing event listeners to avoid duplicates
+                const newBtn = saveRegistrationSettingsBtn.cloneNode(true);
+                saveRegistrationSettingsBtn.parentNode.replaceChild(newBtn, saveRegistrationSettingsBtn);
+                
+                // Add new event listener
+                newBtn.addEventListener('click', async () => {
+                    if (window.registrationManager) {
+                        await window.registrationManager.saveRegistrationSettings();
+                    }
+                });
+                
+                console.log('✅ Save registration settings button initialized');
+            }
+            
+            // Set up refresh registration stats button
+            const refreshStatsBtn = document.querySelector('#refresh-registration-stats');
+            if (refreshStatsBtn) {
+                // Remove existing event listeners to avoid duplicates
+                const newRefreshBtn = refreshStatsBtn.cloneNode(true);
+                refreshStatsBtn.parentNode.replaceChild(newRefreshBtn, refreshStatsBtn);
+                
+                // Add new event listener
+                newRefreshBtn.addEventListener('click', async () => {
+                    await this.refreshRegistrationStatistics();
+                });
+                
+                console.log('✅ Refresh registration stats button initialized');
+            }
+            
+            console.log('✅ Registration settings for admin page initialized successfully');
+            
+        } catch (error) {
+            console.error('❌ Error initializing registration settings for admin page:', error);
         }
     }
 
