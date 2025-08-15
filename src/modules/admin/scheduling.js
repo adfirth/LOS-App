@@ -30,11 +30,22 @@ export class Scheduling {
             return;
         }
         
+        console.log('✅ Found edition selector:', editionSelector);
+        console.log('🔍 Selector properties:', {
+            disabled: editionSelector.disabled,
+            style: editionSelector.style.cssText,
+            className: editionSelector.className,
+            type: editionSelector.type
+        });
+        
         // Load available editions
         this.loadAvailableEditions();
         
         // Set up change handler
-        editionSelector.addEventListener('change', (e) => this.saveQuickEditionChange());
+        editionSelector.addEventListener('change', (e) => {
+            console.log('🔄 Edition selector change event triggered');
+            this.saveQuickEditionChange();
+        });
         
         // Set current selection
         this.updateQuickEditionSelector();
@@ -320,6 +331,14 @@ export class Scheduling {
             });
             
             console.log(`✅ Active edition changed to ${editionValue}`);
+            
+            // Ensure selector remains interactive
+            editionSelector.disabled = false;
+            editionSelector.style.pointerEvents = 'auto';
+            editionSelector.style.opacity = '1';
+            editionSelector.style.cursor = 'pointer';
+            
+            console.log('✅ Edition selector remains interactive after change');
             
             // Refresh displays
             this.refreshDisplaysAfterEditionChange();
