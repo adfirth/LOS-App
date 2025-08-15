@@ -364,8 +364,11 @@ class AdminManagementManager {
             // Update the display
             this.updateActiveEditionDisplay(newEdition);
             
-                            // Set default selection across all selectors after settings change
-                this.setDefaultSelection();
+            // Update the quick edition selector to reflect the new edition
+            this.updateQuickEditionSelector();
+            
+            // Set default selection across all selectors after settings change
+            this.setDefaultSelection();
             
             // Refresh registration statistics to reflect new edition
             if (typeof window.refreshRegistrationStats === 'function') {

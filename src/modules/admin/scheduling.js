@@ -415,9 +415,10 @@ export class Scheduling {
 
     // Update active edition display
     updateActiveEditionDisplay(edition) {
-        const editionDisplay = document.querySelector('#active-edition-display');
-        if (editionDisplay) {
-            editionDisplay.textContent = `Edition ${edition}`;
+        // Update the quick edition selector to reflect the new edition
+        const quickEditionSelector = document.querySelector('#quick-edition-selector');
+        if (quickEditionSelector) {
+            quickEditionSelector.value = edition;
         }
         
         // Update any other edition-related displays
