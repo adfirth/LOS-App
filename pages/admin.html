@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Last One Standing</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../assets/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
-        <img src="images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
+        <img src="../assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
         <div class="header-text">
             <h1>Altrincham FC Juniors<br>Last One Standing</h1>
             <h2>Admin Panel</h2>
         </div>
-        <img src="images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
+        <img src="../assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
     </header>
 
     <div class="container">
@@ -141,7 +141,7 @@
                                 
                                 <!-- API Suspension Settings -->
                                 <div style="margin-top: 2rem; padding: 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
-                                    <h4 style="color: #495057; margin-bottom: 1rem;">🚫 API Pull Suspension</h4>
+                                    <h4 style="color: #495057; margin-bottom: 1rem;">ðŸš« API Pull Suspension</h4>
                                     <p style="color: #6c757d; margin-bottom: 1rem; font-size: 0.9rem;">
                                         Temporarily suspend automatic API pulls to reduce server load. 
                                         This will stop automatic vidiprinter updates and other scheduled API calls.
@@ -163,7 +163,7 @@
                                 
                                 <!-- Test Edition Reset Button -->
                                 <div style="margin-top: 2rem; padding: 1rem; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
-                                    <h4 style="color: #856404; margin-bottom: 1rem;">🔄 Test Edition Reset</h4>
+                                    <h4 style="color: #856404; margin-bottom: 1rem;">ðŸ”„ Test Edition Reset</h4>
                                     <p style="color: #856404; margin-bottom: 1rem; font-size: 0.9rem;">
                                         Use this button to reset all test edition players back to 2 lives. 
                                         This is useful after fixing bugs that caused incorrect life deductions.
@@ -1093,9 +1093,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
-    <script src="football-webpages-config.js"></script>
-    <script src="teams-config.js"></script>
+    <script src="../config/firebase-init.js"></script>
+    <script src="../config/football-webpages-config.js"></script>
+    <script src="../config/teams-config.js"></script>
 
     <script>
         // Wait for Firebase to be fully initialized before loading app.js
@@ -1227,36 +1227,36 @@
             // Load standings if As It Stands tab was clicked
             if (tabName === 'as-it-stands') {
                 console.log('As It Stands tab clicked - loading standings...');
-                console.log('🔍 adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
-                console.log('🔍 adminManagementManager object:', window.adminManagementManager);
+                console.log('ðŸ” adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                console.log('ðŸ” adminManagementManager object:', window.adminManagementManager);
                 if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadStandings) {
-                    console.log('✅ Calling loadStandings...');
+                    console.log('âœ… Calling loadStandings...');
                     window.adminManagementManager.loadStandings();
                 } else {
-                    console.log('❌ adminManagementManager.loadStandings not available yet');
-                    console.log('🔍 Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
+                    console.log('âŒ adminManagementManager.loadStandings not available yet');
+                    console.log('ðŸ” Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
                 }
             }
             
             // Load picks if Picks tab was clicked
             if (tabName === 'picks') {
-                console.log('🎯 Picks tab clicked - calling renderPicksTable...');
-                console.log('🔍 adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
-                console.log('🔍 adminManagementManager object:', window.adminManagementManager);
+                console.log('ðŸŽ¯ Picks tab clicked - calling renderPicksTable...');
+                console.log('ðŸ” adminManagementManager available:', typeof window.adminManagementManager !== 'undefined');
+                console.log('ðŸ” adminManagementManager object:', window.adminManagementManager);
                 if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.renderPicksTable) {
-                    console.log('✅ Calling renderPicksTable...');
+                    console.log('âœ… Calling renderPicksTable...');
                     window.adminManagementManager.renderPicksTable();
                 } else {
-                    console.log('❌ adminManagementManager.renderPicksTable not available yet');
-                    console.log('🔍 Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
+                    console.log('âŒ adminManagementManager.renderPicksTable not available yet');
+                    console.log('ðŸ” Available methods:', window.adminManagementManager ? Object.getOwnPropertyNames(window.adminManagementManager) : 'undefined');
                     // Try to trigger the refresh picks button click as fallback
                     setTimeout(() => {
                         const refreshPicksBtn = document.querySelector('#refresh-picks-btn');
                         if (refreshPicksBtn) {
-                            console.log('🔄 Triggering refresh picks button click as fallback...');
+                            console.log('ðŸ”„ Triggering refresh picks button click as fallback...');
                             refreshPicksBtn.click();
                         } else {
-                            console.log('❌ Refresh picks button not found');
+                            console.log('âŒ Refresh picks button not found');
                         }
                     }, 500);
                 }
@@ -1264,7 +1264,7 @@
             
             // Set default gameweek selection for all tabs
             if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.setDefaultSelection) {
-                console.log('🔧 Setting default selection for tab:', tabName);
+                console.log('ðŸ”§ Setting default selection for tab:', tabName);
                 setTimeout(() => {
                     window.adminManagementManager.setDefaultSelection();
                 }, 100); // Small delay to ensure DOM elements are ready
