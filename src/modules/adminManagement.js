@@ -23,6 +23,182 @@ class AdminManagementManager {
         };
     }
 
+    // Function to render picks table
+    async renderPicksTable() {
+        console.log('🔍 renderPicksTable called - clearing table first');
+        
+        // Get the picks elements
+        const picksEditionSelect = document.querySelector('#picks-edition-select');
+        const picksGameweekSelect = document.querySelector('#picks-gameweek-select');
+        const picksTitle = document.querySelector('#picks-title');
+        const picksTableBody = document.querySelector('#admin-picks-body');
+        
+        if (!picksTableBody) {
+            console.error('❌ Picks table body not found');
+            return;
+        }
+        
+        // Clear the table completely before adding new rows
+        picksTableBody.innerHTML = '';
+        
+        const selectedEdition = picksEditionSelect ? picksEditionSelect.value : 'editiontest';
+        const selectedGameweek = picksGameweekSelect ? picksGameweekSelect.value : '1';
+        const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
+        
+        // Validate edition value
+        if (!selectedEdition || selectedEdition.trim() === '') {
+            console.warn('Invalid edition value:', selectedEdition);
+            return;
+        }
+        
+        console.log('🔍 Selected edition:', selectedEdition, 'gameweek:', selectedGameweek, 'gwKey:', gwKey);
+        
+        const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
+        if (picksTitle) {
+            picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
+        }
+        
+        try {
+            console.log('🔍 Fetching users from database...');
+            const usersSnapshot = await this.db.collection('users').get();
+            console.log('🔍 Users snapshot received, count:', usersSnapshot.size);
+            
+            let registeredUsersCount = 0;
+            let totalUsersWithPicks = 0;
+            let usersProcessed = 0;
+            
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                usersProcessed++;
+                
+                console.log(`🔍 Processing user ${usersProcessed}/${usersSnapshot.size}:`, {
+                    id: doc.id,
+                    firstName: userData.firstName,
+                    surname: userData.surname,
+                    displayName: userData.displayName,
+                    registrations: userData.registrations,
+                    picks: userData.picks,
+                    hasPicks: !!userData.picks,
+                    picksKeys: userData.picks ? Object.keys(userData.picks) : []
+                });
+                
+                // Check if user is registered for this edition
+                const isRegisteredForEdition = userData.registrations && userData.registrations[selectedEdition];
+                console.log(`🔍 User ${userData.firstName} ${userData.surname} - Registered for ${selectedEdition}:`, isRegisteredForEdition);
+                
+                // TEMPORARY: Show all users with picks for debugging
+                // TODO: Restore this filter once we understand the registration structure
+                if (!userData.picks || Object.keys(userData.picks).length === 0) {
+                    console.log(`🔍 Skipping user ${userData.firstName} ${userData.surname} - no picks data`);
+                    return;
+                }
+                
+                // Check if user has picks for the selected gameweek
+                const hasPickForGameweek = userData.picks[gwKey];
+                
+                if (!hasPickForGameweek) {
+                    console.log(`🔍 Skipping user ${userData.firstName} ${userData.surname} - no pick for ${gwKey}`);
+                    return;
+                }
+                
+                registeredUsersCount++;
+                console.log('🔍 Processing user:', userData.firstName, userData.surname, 'for edition:', selectedEdition);
+                
+                // Picks are stored using both edition-prefixed format (e.g., edition1_gw1) and simple format (e.g., gw1)
+                // For the test edition, we need to handle both "editiontest" and "test" formats
+                let editionGameweekKey;
+                if (selectedEdition === 'editiontest') {
+                    editionGameweekKey = `editiontest_${gwKey}`;
+                } else if (selectedEdition.startsWith('edition')) {
+                    editionGameweekKey = `${selectedEdition}_${gwKey}`;
+                } else {
+                    editionGameweekKey = `edition${selectedEdition}_${gwKey}`;
+                }
+                
+                console.log('🔍 Looking for picks with key:', editionGameweekKey, 'and fallback key:', gwKey);
+                console.log('🔍 User picks object:', userData.picks);
+                
+                const playerPick = userData.picks && (userData.picks[editionGameweekKey] || userData.picks[gwKey]) ? 
+                    (userData.picks[editionGameweekKey] || userData.picks[gwKey]) : 'No Pick Made';
+                
+                console.log('🔍 Player pick found:', playerPick);
+                
+                const row = document.createElement('tr');
+                const badge = playerPick !== 'No Pick Made' ? this.getTeamBadge(playerPick) : null;
+                const badgeHtml = badge ? `<img src="${badge}" alt="${playerPick}" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;">` : '';
+                
+                // Determine pick status
+                let statusText = 'No Pick';
+                let statusClass = 'no-pick';
+                if (playerPick !== 'No Pick Made') {
+                    statusText = 'Pick Made';
+                    statusClass = 'pick-made';
+                    totalUsersWithPicks++;
+                }
+                
+                // Use firstName and surname instead of displayName
+                const userName = `${userData.firstName || ''} ${userData.surname || ''}`.trim();
+                
+                row.innerHTML = `
+                    <td>${userName}</td>
+                    <td>${badgeHtml}${playerPick}</td>
+                    <td><span class="pick-status ${statusClass}">${statusText}</span></td>
+                `;
+                picksTableBody.appendChild(row);
+            });
+            
+            console.log('🔍 Summary:', {
+                totalUsers: usersSnapshot.size,
+                usersProcessed: usersProcessed,
+                registeredUsersForEdition: registeredUsersCount,
+                totalUsersWithPicks: totalUsersWithPicks,
+                rowsAddedToTable: picksTableBody.children.length
+            });
+            
+        } catch (error) {
+            console.error('❌ Error loading picks:', error);
+            console.error('❌ Error details:', error.message, error.code);
+            picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks: ' + error.message + '</td></tr>';
+        }
+    }
+
+    // Debug function to show all users with picks
+    async debugAllPicks() {
+        console.log('🔍 DEBUG: Showing all users with picks data...');
+        try {
+            const usersSnapshot = await this.db.collection('users').get();
+            console.log('🔍 Total users in database:', usersSnapshot.size);
+            
+            let usersWithPicks = 0;
+            let totalPicks = 0;
+            
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                if (userData.picks && Object.keys(userData.picks).length > 0) {
+                    usersWithPicks++;
+                    const pickCount = Object.keys(userData.picks).length;
+                    totalPicks += pickCount;
+                    
+                    console.log(`🔍 User with picks: ${userData.firstName} ${userData.surname}`, {
+                        id: doc.id,
+                        picks: userData.picks,
+                        pickCount: pickCount,
+                        registrations: userData.registrations
+                    });
+                }
+            });
+            
+            console.log('🔍 Summary:', {
+                totalUsers: usersSnapshot.size,
+                usersWithPicks: usersWithPicks,
+                totalPicks: totalPicks
+            });
+            
+        } catch (error) {
+            console.error('❌ Error in debugAllPicks:', error);
+        }
+    }
+
     // Initialize admin management
     initializeAdminManagement() {
         if (this.adminManagementInitialized) {
@@ -163,181 +339,10 @@ class AdminManagementManager {
         if (picksEditionSelect) picksEditionSelect.value = picksEditionValue;
         if (picksGameweekSelect) picksGameweekSelect.value = activeGameweek;
         
-        // Function to render picks table
-        const renderPicksTable = async () => {
-            console.log('🔍 renderPicksTable called - clearing table first');
-            
-            // Clear the table completely before adding new rows
-            if (picksTableBody) picksTableBody.innerHTML = '';
-            
-            const selectedEdition = picksEditionSelect ? picksEditionSelect.value : activeEdition;
-            const selectedGameweek = picksGameweekSelect ? picksGameweekSelect.value : activeGameweek;
-            const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
-            
-            // Validate edition value
-            if (!selectedEdition || selectedEdition.trim() === '') {
-                console.warn('Invalid edition value:', selectedEdition);
-                return;
-            }
-            
-            console.log('🔍 Selected edition:', selectedEdition, 'gameweek:', selectedGameweek, 'gwKey:', gwKey);
-            
-            const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
-            if (picksTitle) {
-                picksTitle.textContent = `Picks for ${selectedEdition.charAt(0).toUpperCase() + selectedEdition.slice(1)} - ${displayText}`;
-            }
-            
-            try {
-                console.log('🔍 Fetching users from database...');
-                const usersSnapshot = await this.db.collection('users').get();
-                console.log('🔍 Users snapshot received, count:', usersSnapshot.size);
-                
-                let registeredUsersCount = 0;
-                let totalUsersWithPicks = 0;
-                let usersProcessed = 0;
-                
-                usersSnapshot.forEach(doc => {
-                    const userData = doc.data();
-                    usersProcessed++;
-                    
-                    console.log(`🔍 Processing user ${usersProcessed}/${usersSnapshot.size}:`, {
-                        id: doc.id,
-                        firstName: userData.firstName,
-                        surname: userData.surname,
-                        displayName: userData.displayName,
-                        registrations: userData.registrations,
-                        picks: userData.picks,
-                        hasPicks: !!userData.picks,
-                        picksKeys: userData.picks ? Object.keys(userData.picks) : []
-                    });
-                    
-                    // Check if user is registered for this edition
-                    const isRegisteredForEdition = userData.registrations && userData.registrations[selectedEdition];
-                    console.log(`🔍 User ${userData.firstName} ${userData.surname} - Registered for ${selectedEdition}:`, isRegisteredForEdition);
-                    
-                    // TEMPORARY: Show all users with picks for debugging
-                    // TODO: Restore this filter once we understand the registration structure
-                    if (!userData.picks || Object.keys(userData.picks).length === 0) {
-                        console.log(`🔍 Skipping user ${userData.firstName} ${userData.surname} - no picks data`);
-                        return;
-                    }
-                    
-                    // Check if user has picks for the selected gameweek
-                    const gwKey = selectedGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${selectedGameweek}`;
-                    const hasPickForGameweek = userData.picks[gwKey];
-                    
-                    if (!hasPickForGameweek) {
-                        console.log(`🔍 Skipping user ${userData.firstName} ${userData.surname} - no pick for ${gwKey}`);
-                        return;
-                    }
-                    
-                    registeredUsersCount++;
-                    console.log('🔍 Processing user:', userData.firstName, userData.surname, 'for edition:', selectedEdition);
-                    
-                    // Picks are stored using both edition-prefixed format (e.g., edition1_gw1) and simple format (e.g., gw1)
-                    // For the test edition, we need to handle both "editiontest" and "test" formats
-                    let editionGameweekKey;
-                    if (selectedEdition === 'editiontest') {
-                        editionGameweekKey = `editiontest_${gwKey}`;
-                    } else if (selectedEdition.startsWith('edition')) {
-                        editionGameweekKey = `${selectedEdition}_${gwKey}`;
-                    } else {
-                        editionGameweekKey = `edition${selectedEdition}_${gwKey}`;
-                    }
-                    
-                    console.log('🔍 Looking for picks with key:', editionGameweekKey, 'and fallback key:', gwKey);
-                    console.log('🔍 User picks object:', userData.picks);
-                    
-                    const playerPick = userData.picks && (userData.picks[editionGameweekKey] || userData.picks[gwKey]) ? 
-                        (userData.picks[editionGameweekKey] || userData.picks[gwKey]) : 'No Pick Made';
-                    
-                    console.log('🔍 Player pick found:', playerPick);
-                    
-                    const row = document.createElement('tr');
-                    const badge = playerPick !== 'No Pick Made' ? this.getTeamBadge(playerPick) : null;
-                    const badgeHtml = badge ? `<img src="${badge}" alt="${playerPick}" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;">` : '';
-                    
-                    // Determine pick status
-                    let statusText = 'No Pick';
-                    let statusClass = 'no-pick';
-                    if (playerPick !== 'No Pick Made') {
-                        statusText = 'Pick Made';
-                        statusClass = 'pick-made';
-                        totalUsersWithPicks++;
-                    }
-                    
-                    // Use firstName and surname instead of displayName
-                    const userName = `${userData.firstName || ''} ${userData.surname || ''}`.trim();
-                    
-                    row.innerHTML = `
-                        <td>${userName}</td>
-                        <td>${badgeHtml}${playerPick}</td>
-                        <td><span class="pick-status ${statusClass}">${statusText}</span></td>
-                    `;
-                    if (picksTableBody) picksTableBody.appendChild(row);
-                });
-                
-                console.log('🔍 Summary:', {
-                    totalUsers: usersSnapshot.size,
-                    usersProcessed: usersProcessed,
-                    registeredUsersForEdition: registeredUsersCount,
-                    totalUsersWithPicks: totalUsersWithPicks,
-                    rowsAddedToTable: picksTableBody ? picksTableBody.children.length : 0
-                });
-                
-            } catch (error) {
-                console.error('❌ Error loading picks:', error);
-                console.error('❌ Error details:', error.message, error.code);
-                if (picksTableBody) {
-                    picksTableBody.innerHTML = '<tr><td colspan="3">Error loading picks: ' + error.message + '</td></tr>';
-                }
-            }
-        };
-        
-        // Expose renderPicksTable as a class method
-        this.renderPicksTable = renderPicksTable;
-        
-        // Debug function to show all users with picks
-        this.debugAllPicks = async () => {
-            console.log('🔍 DEBUG: Showing all users with picks data...');
-            try {
-                const usersSnapshot = await this.db.collection('users').get();
-                console.log('🔍 Total users in database:', usersSnapshot.size);
-                
-                let usersWithPicks = 0;
-                let totalPicks = 0;
-                
-                usersSnapshot.forEach(doc => {
-                    const userData = doc.data();
-                    if (userData.picks && Object.keys(userData.picks).length > 0) {
-                        usersWithPicks++;
-                        const pickCount = Object.keys(userData.picks).length;
-                        totalPicks += pickCount;
-                        
-                        console.log(`🔍 User with picks: ${userData.firstName} ${userData.surname}`, {
-                            id: doc.id,
-                            picks: userData.picks,
-                            pickCount: pickCount,
-                            registrations: userData.registrations
-                        });
-                    }
-                });
-                
-                console.log('🔍 Summary:', {
-                    totalUsers: usersSnapshot.size,
-                    usersWithPicks: usersWithPicks,
-                    totalPicks: totalPicks
-                });
-                
-            } catch (error) {
-                console.error('❌ Error in debugAllPicks:', error);
-            }
-        };
-        
-        // Set up event listeners for picks controls
-        if (picksEditionSelect) picksEditionSelect.addEventListener('change', renderPicksTable);
-        if (picksGameweekSelect) picksGameweekSelect.addEventListener('change', renderPicksTable);
-        if (refreshPicksBtn) refreshPicksBtn.addEventListener('click', renderPicksTable);
+        // Set up event listeners for picks controls to use the class method
+        if (picksEditionSelect) picksEditionSelect.addEventListener('change', () => this.renderPicksTable());
+        if (picksGameweekSelect) picksGameweekSelect.addEventListener('change', () => this.renderPicksTable());
+        if (refreshPicksBtn) refreshPicksBtn.addEventListener('click', () => this.renderPicksTable());
         
         // Add event listener for debug button
         const debugPicksBtn = document.querySelector('#debug-picks-btn');
