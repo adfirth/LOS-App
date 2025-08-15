@@ -447,16 +447,16 @@ export class AdminManager {
             console.log('🔧 Loading registration data...');
             
             // Load registration settings
-            if (this.registrationManager) {
-                await this.registrationManager.loadRegistrationSettings();
+            if (window.registrationManager) {
+                await window.registrationManager.loadRegistrationSettings();
             }
             
             // Load registration statistics
             await this.loadRegistrationStatistics();
             
             // Load all editions overview (this populates the "All Editions Registration Status" cards)
-            if (this.registrationManager) {
-                await this.registrationManager.loadAllEditionsOverview();
+            if (window.registrationManager) {
+                await window.registrationManager.loadAllEditionsOverview();
             }
             
             console.log('✅ Registration data loaded successfully');
