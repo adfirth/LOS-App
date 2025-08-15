@@ -496,8 +496,20 @@ export class AdminManager {
                     }
                     
                     // Also check for testWeeks if current edition is 'test'
-                    if (currentEdition === 'test' && userData.testWeeks === true) {
-                        currentEditionCount++;
+                    if (currentEdition === 'test') {
+                        // Debug: Log the testWeeks field for each user
+                        console.log(`🔍 User ${userData.name || userData.email}: testWeeks =`, userData.testWeeks, `(type: ${typeof userData.testWeeks})`);
+                        
+                        // Check multiple possible formats for testWeeks
+                        if (userData.testWeeks === true || 
+                            userData.testWeeks === 'true' || 
+                            userData.testWeeks === 1 || 
+                            userData.testWeeks === '1' ||
+                            userData.testWeeks === 'yes' ||
+                            userData.testWeeks === 'Yes') {
+                            currentEditionCount++;
+                            console.log(`✅ User ${userData.name || userData.email} counted for Test Weeks`);
+                        }
                     }
                 } else if (userData.status === 'archived') {
                     archivedCount++;
