@@ -454,6 +454,11 @@ export class AdminManager {
             // Load registration statistics
             await this.loadRegistrationStatistics();
             
+            // Load all editions overview (this populates the "All Editions Registration Status" cards)
+            if (this.registrationManager) {
+                await this.registrationManager.loadAllEditionsOverview();
+            }
+            
             console.log('✅ Registration data loaded successfully');
             
         } catch (error) {
