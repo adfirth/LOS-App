@@ -212,106 +212,8 @@ class AdminManagementManager {
             console.log('🔍 After manual binding - this.debugAllPicks:', typeof this.debugAllPicks);
         }
         
-        // Migration function to create picks collection
-        this.migratePicksToCollection = async function() {
-            console.log('🚀 Starting picks migration...');
+
             
-            try {
-                // Get all users
-                const usersSnapshot = await this.db.collection('users').get();
-                console.log('🔍 Found users:', usersSnapshot.size);
-                
-                let totalPicksMigrated = 0;
-                let usersProcessed = 0;
-                
-                // Process each user
-                for (const userDoc of usersSnapshot.docs) {
-                    const userData = userDoc.data();
-                    usersProcessed++;
-                    
-                    if (!userData.picks || Object.keys(userData.picks).length === 0) {
-                        console.log(`⏭️ Skipping user ${userData.firstName} ${userData.surname} - no picks`);
-                        continue;
-                    }
-                    
-                    console.log(`🔍 Processing user ${usersProcessed}/${usersSnapshot.size}: ${userData.firstName} ${userData.surname}`);
-                    
-                    // Process each pick
-                    for (const [pickKey, teamPicked] of Object.entries(userData.picks)) {
-                        if (!teamPicked || teamPicked === 'No Pick Made') {
-                            console.log(`⏭️ Skipping invalid pick: ${pickKey} = ${teamPicked}`);
-                            continue;
-                        }
-                        
-                        // Parse pick key to extract edition and gameweek
-                        let edition, gameweek, gameweekKey;
-                        
-                        if (pickKey.startsWith('editiontest_')) {
-                            edition = 'test';
-                            gameweekKey = pickKey.replace('editiontest_', '');
-                        } else if (pickKey.startsWith('edition') && pickKey.includes('_')) {
-                            const parts = pickKey.split('_');
-                            edition = parts[0].replace('edition', '');
-                            gameweekKey = parts[1];
-                        } else if (pickKey.startsWith('gw')) {
-                            edition = 'test'; // Default to test for simple gw keys
-                            gameweekKey = pickKey;
-                        } else {
-                            console.log(`⚠️ Unknown pick key format: ${pickKey}`);
-                            continue;
-                        }
-                        
-                        // Extract gameweek number
-                        if (gameweekKey === 'gwtiebreak') {
-                            gameweek = 'tiebreak';
-                        } else if (gameweekKey.startsWith('gw')) {
-                            gameweek = gameweekKey.replace('gw', '');
-                        } else {
-                            console.log(`⚠️ Unknown gameweek format: ${gameweekKey}`);
-                            continue;
-                        }
-                        
-                        // Create pick document
-                        const pickData = {
-                            userId: userDoc.id,
-                            userFirstName: userData.firstName || '',
-                            userSurname: userData.surname || '',
-                            displayName: userData.displayName || '',
-                            edition: edition,
-                            gameweek: gameweek,
-                            gameweekKey: gameweekKey,
-                            teamPicked: teamPicked,
-                            timestamp: new Date(),
-                            isActive: true,
-                            originalPickKey: pickKey // Keep reference to original format
-                        };
-                        
-                        // Add to picks collection
-                        await this.db.collection('picks').add(pickData);
-                        totalPicksMigrated++;
-                        
-                        console.log(`✅ Migrated pick: ${userData.firstName} ${userData.surname} - ${edition} ${gameweek} -> ${teamPicked}`);
-                    }
-                }
-                
-                console.log('🎉 Migration completed!');
-                console.log(`📊 Total picks migrated: ${totalPicksMigrated}`);
-                console.log(`👥 Users processed: ${usersProcessed}`);
-                
-                return {
-                    success: true,
-                    totalPicksMigrated,
-                    usersProcessed
-                };
-                
-            } catch (error) {
-                console.error('❌ Migration failed:', error);
-                return {
-                    success: false,
-                    error: error.message
-                };
-            }
-        };
         
         // New renderPicksTable function using picks collection
         this.renderPicksTableFromCollection = async function() {
@@ -334,7 +236,15 @@ class AdminManagementManager {
             const selectedEdition = picksEditionSelect ? picksEditionSelect.value : 'test';
             const selectedGameweek = picksGameweekSelect ? picksGameweekSelect.value : '1';
             
-            console.log('🔍 Selected edition:', selectedEdition, 'gameweek:', selectedGameweek);
+            // Map edition values from HTML to migrated data format
+            let editionFilter = selectedEdition;
+            if (selectedEdition === 'editiontest') {
+                editionFilter = 'test';
+            } else if (selectedEdition.startsWith('edition')) {
+                editionFilter = selectedEdition.replace('edition', '');
+            }
+            
+            console.log('🔍 Selected edition:', selectedEdition, 'mapped to:', editionFilter, 'gameweek:', selectedGameweek);
             
             const displayText = selectedGameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${selectedGameweek}`;
             if (picksTitle) {
@@ -346,7 +256,7 @@ class AdminManagementManager {
                 
                 // Query picks collection
                 let picksQuery = this.db.collection('picks')
-                    .where('edition', '==', selectedEdition)
+                    .where('edition', '==', editionFilter)
                     .where('gameweek', '==', selectedGameweek)
                     .where('isActive', '==', true);
                 
@@ -355,7 +265,7 @@ class AdminManagementManager {
                 
                 if (picksSnapshot.empty) {
                     const noDataRow = document.createElement('tr');
-                    noDataRow.innerHTML = '<td colspan="4" class="text-center">No picks found for this edition and gameweek</td>';
+                    noDataRow.innerHTML = '<td colspan="3" class="text-center">No picks found for this edition and gameweek</td>';
                     picksTableBody.appendChild(noDataRow);
                     return;
                 }
@@ -370,9 +280,8 @@ class AdminManagementManager {
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${pickData.userFirstName} ${pickData.userSurname}</td>
-                        <td>${pickData.edition}</td>
-                        <td>${displayText}</td>
                         <td>${pickData.teamPicked}</td>
+                        <td>Active</td>
                     `;
                     picksTableBody.appendChild(row);
                 });
@@ -382,7 +291,7 @@ class AdminManagementManager {
             } catch (error) {
                 console.error('❌ Error rendering picks table:', error);
                 const errorRow = document.createElement('tr');
-                errorRow.innerHTML = `<td colspan="4" class="text-center text-danger">Error loading picks: ${error.message}</td>`;
+                errorRow.innerHTML = `<td colspan="3" class="text-center text-danger">Error loading picks: ${error.message}</td>`;
                 picksTableBody.appendChild(errorRow);
             }
         };
@@ -721,35 +630,7 @@ class AdminManagementManager {
             });
         }
         
-        // Add migration button listener
-        const migratePicksBtn = document.querySelector('#migrate-picks-btn');
-        if (migratePicksBtn) {
-            migratePicksBtn.addEventListener('click', async () => {
-                console.log('🚀 Migration button clicked');
-                if (confirm('This will migrate all picks from user documents to a new picks collection. Continue?')) {
-                    try {
-                        migratePicksBtn.disabled = true;
-                        migratePicksBtn.textContent = '🔄 Migrating...';
-                        
-                        const result = await this.migratePicksToCollection();
-                        
-                        if (result.success) {
-                            alert(`Migration completed successfully!\n\nTotal picks migrated: ${result.totalPicksMigrated}\nUsers processed: ${result.usersProcessed}`);
-                            // Refresh the picks table to show migrated data
-                            await this.renderPicksTableFromCollection();
-                        } else {
-                            alert(`Migration failed: ${result.error}`);
-                        }
-                    } catch (error) {
-                        console.error('❌ Migration error:', error);
-                        alert(`Migration error: ${error.message}`);
-                    } finally {
-                        migratePicksBtn.disabled = false;
-                        migratePicksBtn.textContent = '🚀 Migrate to Picks Collection';
-                    }
-                }
-            });
-        }
+
         
         // Initial render - use the new collection-based function
         this.renderPicksTableFromCollection();
