@@ -79,6 +79,72 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Validate API key
+    if (!process.env.VITE_RAPIDAPI_KEY) {
+      console.error('VITE_RAPIDAPI_KEY environment variable is not set');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'API configuration error - please contact administrator'
+        })
+      };
+    }
+
+    // Input validation
+    if (hasOldParams) {
+      if (!Number.isInteger(parseInt(league)) || parseInt(league) < 1) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Invalid league parameter - must be a positive integer'
+          })
+        };
+      }
+      if (!Number.isInteger(parseInt(matchday)) || parseInt(matchday) < 1) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Invalid matchday parameter - must be a positive integer'
+          })
+        };
+      }
+    }
+
+    if (hasNewParams) {
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Invalid date format - must be YYYY-MM-DD'
+          })
+        };
+      }
+      
+      // Validate date range
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start > end) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Start date must be before or equal to end date'
+          })
+        };
+      }
+    }
+
     // Football Web Pages API configuration
     let config;
     
@@ -94,7 +160,7 @@ exports.handler = async (event, context) => {
           to: endDate
         },
         headers: {
-          'X-RapidAPI-Key': '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef',
+          'X-RapidAPI-Key': process.env.VITE_RAPIDAPI_KEY,
           'X-RapidAPI-Host': 'football-web-pages1.p.rapidapi.com'
         }
       };
@@ -109,7 +175,7 @@ exports.handler = async (event, context) => {
           matchday: matchday
         },
         headers: {
-          'X-RapidAPI-Key': '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef',
+          'X-RapidAPI-Key': process.env.VITE_RAPIDAPI_KEY,
           'X-RapidAPI-Host': 'football-web-pages1.p.rapidapi.com'
         }
       };
@@ -140,11 +206,14 @@ exports.handler = async (event, context) => {
 
     if (!data || !data.fixtures) {
       return {
-        statusCode: 404,
+        statusCode: 200,
         headers,
         body: JSON.stringify({
-          success: false,
-          error: 'No fixtures found for the specified parameters'
+          success: true,
+          fixtures: [],
+          count: 0,
+          message: 'No fixtures found for the specified parameters',
+          scrapedAt: new Date().toISOString()
         })
       };
     }

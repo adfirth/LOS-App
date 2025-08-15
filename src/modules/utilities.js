@@ -721,5 +721,88 @@ class UtilitiesManager {
     }
 }
 
+/**
+ * DOM Ready Utilities
+ * Replaces setTimeout patterns with proper event handling
+ */
+export class DOMReadyManager {
+    constructor() {
+        this.readyCallbacks = [];
+        this.isReady = false;
+        this.init();
+    }
+
+    init() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.handleReady());
+        } else {
+            this.handleReady();
+        }
+    }
+
+    handleReady() {
+        this.isReady = true;
+        this.readyCallbacks.forEach(callback => callback());
+        this.readyCallbacks = [];
+    }
+
+    /**
+     * Execute callback when DOM is ready
+     * @param {Function} callback - Function to execute
+     */
+    ready(callback) {
+        if (this.isReady) {
+            callback();
+        } else {
+            this.readyCallbacks.push(callback);
+        }
+    }
+
+    /**
+     * Wait for an element to be available in the DOM
+     * @param {string} selector - CSS selector for the element
+     * @param {number} timeout - Maximum time to wait in milliseconds
+     * @returns {Promise<Element>} - Promise that resolves with the element
+     */
+    waitForElement(selector, timeout = 5000) {
+        return new Promise((resolve, reject) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                resolve(element);
+                return;
+            }
+
+            const observer = new MutationObserver((mutations) => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    observer.disconnect();
+                    resolve(element);
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            // Set timeout
+            setTimeout(() => {
+                observer.disconnect();
+                reject(new Error(`Element ${selector} not found within ${timeout}ms`));
+            }, timeout);
+        });
+    }
+
+    /**
+     * Wait for multiple elements to be available
+     * @param {string[]} selectors - Array of CSS selectors
+     * @param {number} timeout - Maximum time to wait in milliseconds
+     * @returns {Promise<Element[]>} - Promise that resolves with the elements
+     */
+    waitForElements(selectors, timeout = 5000) {
+        return Promise.all(selectors.map(selector => this.waitForElement(selector, timeout)));
+    }
+}
+
 // Export the class
 export default UtilitiesManager;

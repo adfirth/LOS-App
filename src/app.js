@@ -13,7 +13,8 @@ import MobileNavigationManager from './modules/mobileNavigation.js';
 import { AdminManager } from './modules/admin/index.js';
 import DatabaseManager from './modules/database.js'; // New Database Module import
 import ApiManager from './modules/api/index.js'; // New modular API Module import
-import UtilitiesManager from './modules/utilities.js'; // New Utilities Module import
+import UtilitiesManager, { DOMReadyManager } from './modules/utilities.js'; // New Utilities Module import
+import { appState } from './modules/state.js'; // New State Management import
 
 console.log('🔍 Imports completed, about to define App class...');
 
@@ -33,15 +34,20 @@ class App {
         this.databaseManager = null; // New Database Manager
         this.apiManager = null; // New API Manager
         this.utilitiesManager = null; // New Utilities Manager
-        this.currentActiveEdition = 1;
-        this.currentActiveGameweek = '1';
+        this.domReadyManager = null; // New DOM Ready Manager
         this.initialized = false;
+        
+        // Use state management instead of global variables
+        this.state = appState;
     }
 
     // Initialize the app
     async initialize() {
         try {
             console.log('🚀 Initializing LOS App...');
+            
+            // Initialize DOM ready manager
+            this.domReadyManager = new DOMReadyManager();
             
             // Wait for Firebase to be available
             await this.waitForFirebase();
@@ -59,6 +65,7 @@ class App {
             
         } catch (error) {
             console.error('❌ Error initializing LOS App:', error);
+            this.state.setError(error.message);
         }
     }
 
@@ -86,8 +93,8 @@ class App {
         this.authManager = new AuthManager();
         this.registrationManager = new RegistrationManager(this.db, this.auth);
         this.fixturesManager = new FixturesManager(this.db);
-        this.apiManager = new ApiManager(this.db, this.currentActiveEdition); // Initialize API Manager first
-        this.scoresManager = new ScoresManager(this.db, this.currentActiveEdition, this.currentActiveGameweek, this.apiManager);
+        this.apiManager = new ApiManager(this.db, this.state.get('currentActiveEdition')); // Initialize API Manager first
+        this.scoresManager = new ScoresManager(this.db, this.state.get('currentActiveEdition'), this.state.get('currentActiveGameweek'), this.apiManager);
         this.uiManager = new UIManager(this.db);
         this.gameLogicManager = new GameLogicManager(this.db);
         this.mobileNavigationManager = new MobileNavigationManager(this.db);
@@ -147,9 +154,9 @@ class App {
         // Global app instance
         window.app = this;
         
-        // Global variables
-        window.currentActiveEdition = this.currentActiveEdition;
-        window.currentActiveGameweek = this.currentActiveGameweek;
+        // Global variables for backward compatibility
+        window.currentActiveEdition = this.state.get('currentActiveEdition');
+        window.currentActiveGameweek = this.state.get('currentActiveGameweek');
         
         // Global functions for backward compatibility
         this.setupGlobalFunctions();
