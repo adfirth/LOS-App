@@ -1,11 +1,11 @@
 // --- YOUR FIREBASE CONFIGURATION OBJECT ---
 const firebaseConfig = {
-    apiKey: "AIzaSyBn2RvXmQ8mfDHrBQal1h5MRFVsOxsqgks",
-    authDomain: "alty-jfc-los.firebaseapp.com",
-    projectId: "alty-jfc-los",
-    storageBucket: "alty-jfc-los.firebasestorage.app",
-    messagingSenderId: "40979114514",
-    appId: "1:40979114514:web:850676ff855b372d4806cb"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBn2RvXmQ8mfDHrBQal1h5MRFVsOxsqgks",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "alty-jfc-los.firebaseapp.com",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "alty-jfc-los",
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "alty-jfc-los.firebasestorage.app",
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "40979114514",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:40979114514:web:850676ff855b372d4806cb"
   };
   
 

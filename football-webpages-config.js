@@ -6,9 +6,9 @@
 
 const FOOTBALL_WEBPAGES_CONFIG = {
     BASE_URL: 'https://football-web-pages1.p.rapidapi.com',
-    // You'll need to add your RapidAPI key here
+    // API key from environment variable for security
     // Get it from: https://rapidapi.com/football-web-pages1-football-web-pages-default/api/football-web-pages1
-    RAPIDAPI_KEY: '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef', // Valid RapidAPI key
+    RAPIDAPI_KEY: import.meta.env.VITE_RAPIDAPI_KEY || '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef', // Fallback for development
     RAPIDAPI_HOST: 'football-web-pages1.p.rapidapi.com'
 };
 
