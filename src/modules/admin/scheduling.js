@@ -777,14 +777,14 @@ export class Scheduling {
             // Log detailed selector state
             const computedStyle = window.getComputedStyle(selector);
             const isDisabled = selector.disabled;
-            const pointerEvents = computedStyle.pointerEvents;
-            const opacity = computedStyle.opacity;
-            const cursor = computedStyle.cursor;
-            const display = computedStyle.display;
-            const visibility = computedStyle.visibility;
-            const appearance = computedStyle.appearance;
-            const webkitAppearance = computedStyle.webkitAppearance;
-            const mozAppearance = computedStyle.mozAppearance;
+            const pointerEvents = selector.style.pointerEvents || computedStyle.pointerEvents;
+            const opacity = selector.style.opacity || computedStyle.opacity;
+            const cursor = selector.style.cursor || computedStyle.cursor;
+            const display = selector.style.display || computedStyle.display;
+            const visibility = selector.style.visibility || computedStyle.visibility;
+            const appearance = selector.style.appearance || computedStyle.appearance;
+            const webkitAppearance = selector.style.webkitAppearance || computedStyle.webkitAppearance;
+            const mozAppearance = selector.style.mozAppearance || computedStyle.mozAppearance;
             
             console.log(`🔍 Selector state check ${checkCount}:`);
             console.log(`  - disabled: ${isDisabled}`);
@@ -820,6 +820,27 @@ export class Scheduling {
                 selector.style.backgroundPosition = 'right 8px center';
                 selector.style.backgroundSize = '12px auto';
                 selector.style.paddingRight = '30px';
+            }
+            
+            // Check if selector is being styled as a button (which would cause visual locking)
+            const hasButtonLikeStyling = selector.style.borderRadius || 
+                                       selector.style.backgroundColor === 'var(--alty-yellow)' ||
+                                       selector.style.fontWeight === 'bold' ||
+                                       selector.style.textAlign === 'center';
+            
+            if (hasButtonLikeStyling) {
+                console.log(`⚠️ Selector has button-like styling (check ${checkCount}), resetting to dropdown...`);
+                // Reset to standard dropdown styling
+                selector.style.borderRadius = '4px';
+                selector.style.backgroundColor = 'white';
+                selector.style.fontWeight = 'normal';
+                selector.style.textAlign = 'left';
+                selector.style.border = '1px solid #ccc';
+                selector.style.padding = '4px 30px 4px 8px';
+                selector.style.cursor = 'pointer';
+                selector.style.appearance = 'auto';
+                selector.style.webkitAppearance = 'auto';
+                selector.style.mozAppearance = 'auto';
             }
             
             // Check if element is still a select element
