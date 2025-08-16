@@ -1,6 +1,6 @@
 [build]
-  publish = "."
-  command = "npm install && node netlify/build-script.js && npm run build"
+  publish = "dist"
+  command = "npm install && node netlify/build-script.js && npm run build && mkdir -p dist && cp -r config assets pages index.html netlify dist/"
 
 [[headers]]
   for = "/*"
