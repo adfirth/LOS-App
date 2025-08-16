@@ -348,7 +348,7 @@ export class Scheduling {
         const gameweekSelectors = [
             '#gameweek-select',           // Fixtures tab
             '#score-gameweek-select',     // Scores tab
-            '#picks-gameweek-select',     // Picks tab
+
             '#standings-gameweek-select', // As It Stands tab
             '#history-gameweek-select',   // History tab
             '#import-gameweek-select',    // API Import section

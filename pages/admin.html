@@ -6,191 +6,21 @@
     <title>Admin Panel - Last One Standing</title>
     <link rel="stylesheet" href="/assets/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        /* Player Picks v2 Styling */
-        .picks-v2-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-        }
+
+
         
-        .picks-v2-header h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.8rem;
-            font-weight: 600;
-        }
+
         
-        .picks-v2-header p {
-            margin: 0;
-            opacity: 0.9;
-        }
+
         
-        .picks-v2-controls {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            border: 1px solid #e9ecef;
-        }
+
         
-        .control-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            align-items: end;
-        }
+
         
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+
         
-        .control-group label {
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.9rem;
-        }
-        
-        .control-group select {
-            padding: 0.5rem;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            min-width: 150px;
-        }
-        
-        .control-group button {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        
-        .control-group button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        
-        .picks-v2-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid #e9ecef;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #007bff;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .picks-v2-table-container {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .picks-v2-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .picks-v2-table th {
-            background: #f8f9fa;
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-        }
-        
-        .picks-v2-table td {
-            padding: 1rem;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: middle;
-        }
-        
-        .picks-v2-table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .picks-v2-loading {
-            text-align: center;
-            padding: 3rem;
-        }
-        
-        .loading-spinner {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            color: #6c757d;
-        }
-        
-        .loading-spinner i {
-            font-size: 2rem;
-            color: #007bff;
-        }
-        
-        .team-badge {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status-active {
-            background: #e8f5e8;
-            color: #2e7d32;
-        }
-        
-        @media (max-width: 768px) {
-            .control-row {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .control-group select,
-            .control-group button {
-                width: 100%;
-            }
-            
-            .picks-v2-stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+
+
 </head>
 <body>
     <header>
@@ -283,11 +113,8 @@
                     <button class="admin-tab" data-tab="fixtures">
                         <i class="fas fa-calendar-alt"></i> Fixtures
                     </button>
-                    <button class="admin-tab" data-tab="picks">
-                        <i class="fas fa-users"></i> Player Picks (Legacy)
-                    </button>
                     <button class="admin-tab" data-tab="picks-v2">
-                        <i class="fas fa-users"></i> Player Picks v2
+                        <i class="fas fa-users"></i> Player Picks
                     </button>
                     <button class="admin-tab" data-tab="vidiprinter">
                         <i class="fas fa-tv"></i> Vidiprinter
@@ -1035,63 +862,17 @@
                         </div>
                     </div>
 
-                    <!-- Picks Tab (Legacy) -->
-                    <div id="picks-tab" class="tab-pane">
-                        <div class="admin-section">
-                            <div class="picks-controls">
-                                <div class="control-group">
-                                    <label for="picks-edition-select">Edition:</label>
-                                    <select id="picks-edition-select">
-                                        <option value="edition1">Edition 1</option>
-                                        <option value="edition2">Edition 2</option>
-                                        <option value="edition3">Edition 3</option>
-                                        <option value="edition4">Edition 4</option>
-                                        <option value="editiontest" selected>Test Weeks</option>
-                                    </select>
-                                </div>
-                                <div class="control-group">
-                                    <label for="picks-gameweek-select">Game Week:</label>
-                                    <select id="picks-gameweek-select">
-                                        <option value="1" selected>1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                        <option value="10">10</option>
-                                        <option value="tiebreak">Tiebreak</option>
-                                    </select>
-                                </div>
-                                <button id="refresh-picks-btn" class="btn btn-primary">Refresh Picks</button>
-                                <button id="debug-picks-btn" class="btn btn-secondary" style="background-color: #6c757d; color: white;">Debug All Picks</button>
-                            </div>
-                            <h3 id="picks-title">Picks for Test Weeks - Game Week 1</h3>
-                            <table class="league-table">
-                                <thead>
-                                    <tr>
-                                        <th>Player Name</th>
-                                        <th>Team Picked</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="admin-picks-body">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
 
-                    <!-- Player Picks v2 Tab -->
+
+                    <!-- Player Picks Tab -->
                     <div id="picks-v2-tab" class="tab-pane">
                         <div class="admin-section">
                             <div class="picks-v2-header">
-                                <h3>Player Picks v2 - New Collection</h3>
-                                <p class="text-muted">Viewing picks from the new dedicated picks collection</p>
+                                <h3>Player Picks</h3>
+                                <p class="text-muted">View and manage player picks for each edition and game week</p>
                             </div>
                             
-                            <div class="picks-v2-controls">
+                            <div class="picks-controls">
                                 <div class="control-row">
                                     <div class="control-group">
                                         <label for="picks-v2-edition-select">Edition:</label>
@@ -1120,17 +901,17 @@
                                         </select>
                                     </div>
                                     <div class="control-group">
-                                        <button id="picks-v2-refresh-btn" class="btn btn-primary">
-                                            <i class="fas fa-sync-alt"></i> Refresh
+                                        <button id="picks-v2-refresh-btn" class="cta-button">
+                                            <i class="fas fa-sync-alt"></i> Refresh Picks
                                         </button>
-                                        <button id="picks-v2-export-btn" class="btn btn-success">
+                                        <button id="picks-v2-export-btn" class="cta-button" style="background-color: #28a745; border-color: #28a745;">
                                             <i class="fas fa-download"></i> Export
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="picks-v2-stats">
+                            <div class="stats-grid">
                                 <div class="stat-card">
                                     <div class="stat-number" id="picks-v2-total-count">-</div>
                                     <div class="stat-label">Total Picks</div>
@@ -1145,8 +926,8 @@
                                 </div>
                             </div>
 
-                            <div class="picks-v2-table-container">
-                                <table class="picks-v2-table">
+                            <div class="table-container">
+                                <table class="league-table">
                                     <thead>
                                         <tr>
                                             <th>Player Name</th>
@@ -1166,7 +947,7 @@
                                 </table>
                             </div>
 
-                            <div class="picks-v2-loading" id="picks-v2-loading" style="display: none;">
+                            <div class="loading-container" id="picks-v2-loading" style="display: none;">
                                 <div class="loading-spinner">
                                     <i class="fas fa-spinner fa-spin"></i>
                                     <span>Loading picks...</span>
