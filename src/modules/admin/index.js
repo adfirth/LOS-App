@@ -725,11 +725,17 @@ export class AdminManager {
             let currentEditionCount = 0;
             let archivedCount = 0;
             
+            console.log(`🔍 Checking ${allUsersQuery.size} users for active status...`);
+            
             allUsersQuery.forEach(doc => {
                 const userData = doc.data();
+                const userName = userData.displayName || userData.firstName || 'Unknown';
                 
-                // Check if user is active (has no status field or status is 'active')
-                const isActive = !userData.status || userData.status === 'active';
+                // Check if user is active (has no status field or status is 'active' - case-insensitive)
+                const status = userData.status;
+                const isActive = !status || status.toLowerCase() === 'active';
+                
+                console.log(`👤 ${userName}: status="${status}", isActive=${isActive}`);
                 
                 if (isActive) {
                     totalActive++;
@@ -737,9 +743,15 @@ export class AdminManager {
                     // Check if user is registered for current edition using the registrations object
                     if (userData.registrations && userData.registrations[`edition${currentEdition}`]) {
                         currentEditionCount++;
+                        console.log(`✅ ${userName} counted for current edition (${currentEdition})`);
+                    } else {
+                        console.log(`⏭️ ${userName} active but not registered for current edition (${currentEdition})`);
                     }
                 } else if (userData.status === 'archived') {
                     archivedCount++;
+                    console.log(`📦 ${userName} is archived`);
+                } else {
+                    console.log(`❌ ${userName} not active (status: "${status}")`);
                 }
             });
             
