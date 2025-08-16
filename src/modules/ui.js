@@ -517,13 +517,17 @@ class UIManager {
 
     // Registration window display functionality
     async initializeRegistrationWindowDisplay() {
+        // Clear any existing timer to prevent duplicates
+        if (this.registrationUpdateTimer) {
+            clearInterval(this.registrationUpdateTimer);
+        }
+        
         await this.updateRegistrationWindowDisplay();
         // Update every minute
-        setInterval(() => this.updateRegistrationWindowDisplay(), 60000);
+        this.registrationUpdateTimer = setInterval(() => this.updateRegistrationWindowDisplay(), 60000);
     }
 
     async updateRegistrationWindowDisplay() {
-        console.log('🔧 updateRegistrationWindowDisplay called');
         try {
             // Ensure database is available before proceeding
             if (!this.db) {
@@ -537,8 +541,6 @@ class UIManager {
                 setTimeout(() => this.updateRegistrationWindowDisplay(), 1000);
                 return;
             }
-            
-            console.log('🔧 Registration manager available, proceeding with update...');
             
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${window.currentActiveEdition || 1}`).get();
             if (!settingsDoc.exists) {
@@ -585,6 +587,18 @@ class UIManager {
         }
     }
 
+    // Cleanup method to clear timers
+    cleanupRegistrationTimers() {
+        if (this.registrationUpdateTimer) {
+            clearInterval(this.registrationUpdateTimer);
+            this.registrationUpdateTimer = null;
+        }
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+    }
+
     showRegistrationCountdown(endDate) {
         const countdownDiv = document.querySelector('#registration-countdown');
         const nextCountdownDiv = document.querySelector('#next-registration-countdown');
@@ -623,8 +637,12 @@ class UIManager {
             };
             
             updateCountdown();
+            // Clear any existing countdown timer
+            if (this.countdownTimer) {
+                clearInterval(this.countdownTimer);
+            }
             // Update every second
-            setInterval(updateCountdown, 1000);
+            this.countdownTimer = setInterval(updateCountdown, 1000);
         }
     }
 
@@ -665,8 +683,12 @@ class UIManager {
             };
             
             updateCountdown();
+            // Clear any existing countdown timer
+            if (this.countdownTimer) {
+                clearInterval(this.countdownTimer);
+            }
             // Update every second
-            setInterval(updateCountdown, 1000);
+            this.countdownTimer = setInterval(updateCountdown, 1000);
         }
     }
 
@@ -679,12 +701,9 @@ class UIManager {
     }
 
     showRegisterButton(show) {
-        console.log('🔧 showRegisterButton called with show:', show);
         const registerButton = document.querySelector('#register-now-button');
-        console.log('🔧 Found register button:', !!registerButton);
         if (registerButton) {
             registerButton.style.display = show ? 'inline-block' : 'none';
-            console.log('🔧 Set register button display to:', show ? 'inline-block' : 'none');
         }
     }
 
