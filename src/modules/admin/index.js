@@ -149,21 +149,7 @@ export class AdminManager {
             const picksSnapshot = await picksQuery.get();
             console.log(`✅ Found ${picksSnapshot.size} picks`);
             
-            // Debug: Log all pick data to see what we're getting
-            console.log('🔍 All picks data:');
-            picksSnapshot.forEach((doc, index) => {
-                const pickData = doc.data();
-                console.log(`Pick ${index + 1}:`, {
-                    userId: pickData.userId,
-                    userFirstName: pickData.userFirstName,
-                    userSurname: pickData.userSurname,
-                    teamPicked: pickData.teamPicked,
-                    gameweek: pickData.gameweek,
-                    edition: pickData.edition,
-                    isActive: pickData.isActive,
-                    docId: doc.id
-                });
-            });
+
             
             // Update stats
             this.updatePlayerPicksV2Stats(picksSnapshot);
@@ -197,34 +183,7 @@ export class AdminManager {
         const uniquePlayers = new Set(picks.map(pick => pick.userId)).size;
         const uniqueTeams = new Set(picks.map(pick => pick.teamPicked)).size;
         
-        // Debug: Log detailed statistics
-        console.log('📊 Statistics breakdown:');
-        console.log('Total picks:', picksSnapshot.size);
-        console.log('Unique players (by userId):', uniquePlayers);
-        console.log('Unique teams:', uniqueTeams);
-        
-        // Show player breakdown
-        const playerBreakdown = {};
-        const userIdBreakdown = {};
-        
-        picks.forEach(pick => {
-            const playerKey = `${pick.userFirstName} ${pick.userSurname}`;
-            const userId = pick.userId;
-            
-            if (!playerBreakdown[playerKey]) {
-                playerBreakdown[playerKey] = [];
-            }
-            if (!userIdBreakdown[userId]) {
-                userIdBreakdown[userId] = [];
-            }
-            
-            playerBreakdown[playerKey].push(pick.teamPicked);
-            userIdBreakdown[userId].push(pick.teamPicked);
-        });
-        
-        console.log('Player breakdown (by name):', playerBreakdown);
-        console.log('User ID breakdown:', userIdBreakdown);
-        console.log('Unique players (by name):', Object.keys(playerBreakdown).length);
+
         
         totalCount.textContent = picksSnapshot.size;
         playersCount.textContent = uniquePlayers;
@@ -740,19 +699,11 @@ export class AdminManager {
             let currentEditionCount = 0;
             let archivedCount = 0;
             
-            console.log(`🔍 Checking ${allUsersQuery.size} users for edition: ${currentEdition}`);
-            
             allUsersQuery.forEach(doc => {
                 const userData = doc.data();
                 
                 // Check if user is active (has no status field or status is 'active')
                 const isActive = !userData.status || userData.status === 'active';
-                
-                console.log(`👤 User: ${userData.displayName || userData.firstName || 'Unknown'}`);
-                console.log(`   - Status: ${userData.status || 'active (default)'}`);
-                console.log(`   - Is Active: ${isActive}`);
-                console.log(`   - Registrations:`, userData.registrations || 'none');
-                console.log(`   - Edition ${currentEdition} registered: ${userData.registrations && userData.registrations[`edition${currentEdition}`] ? 'YES' : 'NO'}`);
                 
                 if (isActive) {
                     totalActive++;
@@ -760,13 +711,9 @@ export class AdminManager {
                     // Check if user is registered for current edition using the registrations object
                     if (userData.registrations && userData.registrations[`edition${currentEdition}`]) {
                         currentEditionCount++;
-                        console.log(`✅ User ${userData.displayName || userData.firstName} counted for Edition ${currentEdition}`);
-                    } else {
-                        console.log(`❌ User ${userData.displayName || userData.firstName} NOT counted for Edition ${currentEdition} - missing registration`);
                     }
                 } else if (userData.status === 'archived') {
                     archivedCount++;
-                    console.log(`📦 User ${userData.displayName || userData.firstName} is archived`);
                 }
             });
             
@@ -775,55 +722,19 @@ export class AdminManager {
             const currentEditionElement = document.querySelector('#current-edition-registrations');
             const archivedElement = document.querySelector('#archived-players-count');
             
-            console.log('🔍 DOM elements found:', {
-                totalRegistrationsElement: !!totalRegistrationsElement,
-                currentEditionElement: !!currentEditionElement,
-                archivedElement: !!archivedElement
-            });
-            
-            console.log('🔍 Values being set:', {
-                totalActive,
-                currentEditionCount,
-                archivedCount
-            });
-            
             if (totalRegistrationsElement) {
                 totalRegistrationsElement.textContent = totalActive;
-                console.log(`✅ Set #total-registrations to: ${totalActive}`);
-                console.log(`🔍 Element content after update: "${totalRegistrationsElement.textContent}"`);
-            } else {
-                console.error('❌ #total-registrations element not found');
             }
             
             if (currentEditionElement) {
                 currentEditionElement.textContent = currentEditionCount;
-                console.log(`✅ Set #current-edition-registrations to: ${currentEditionCount}`);
-            } else {
-                console.error('❌ #current-edition-registrations element not found');
             }
             
             if (archivedElement) {
                 archivedElement.textContent = archivedCount;
-                console.log(`✅ Set #archived-players-count to: ${archivedCount}`);
-            } else {
-                archivedElement.textContent = '0';
-                console.log('⚠️ #archived-players-count not found, setting to 0');
             }
             
             console.log(`✅ Registration statistics loaded: ${totalActive} active, ${currentEditionCount} current edition (${currentEdition}), ${archivedCount} archived`);
-            
-            // Double-check the final values in the DOM
-            setTimeout(() => {
-                const finalTotalElement = document.querySelector('#total-registrations');
-                const finalCurrentElement = document.querySelector('#current-edition-registrations');
-                const finalArchivedElement = document.querySelector('#archived-players-count');
-                
-                console.log('🔍 Final DOM values check:', {
-                    total: finalTotalElement ? finalTotalElement.textContent : 'NOT FOUND',
-                    current: finalCurrentElement ? finalCurrentElement.textContent : 'NOT FOUND',
-                    archived: finalArchivedElement ? finalArchivedElement.textContent : 'NOT FOUND'
-                });
-            }, 100);
             
         } catch (error) {
             console.error('❌ Error loading registration statistics:', error);
