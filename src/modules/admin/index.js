@@ -775,17 +775,55 @@ export class AdminManager {
             const currentEditionElement = document.querySelector('#current-edition-registrations');
             const archivedElement = document.querySelector('#archived-players-count');
             
+            console.log('🔍 DOM elements found:', {
+                totalRegistrationsElement: !!totalRegistrationsElement,
+                currentEditionElement: !!currentEditionElement,
+                archivedElement: !!archivedElement
+            });
+            
+            console.log('🔍 Values being set:', {
+                totalActive,
+                currentEditionCount,
+                archivedCount
+            });
+            
             if (totalRegistrationsElement) {
                 totalRegistrationsElement.textContent = totalActive;
+                console.log(`✅ Set #total-registrations to: ${totalActive}`);
+                console.log(`🔍 Element content after update: "${totalRegistrationsElement.textContent}"`);
+            } else {
+                console.error('❌ #total-registrations element not found');
             }
+            
             if (currentEditionElement) {
                 currentEditionElement.textContent = currentEditionCount;
+                console.log(`✅ Set #current-edition-registrations to: ${currentEditionCount}`);
+            } else {
+                console.error('❌ #current-edition-registrations element not found');
             }
+            
             if (archivedElement) {
                 archivedElement.textContent = archivedCount;
+                console.log(`✅ Set #archived-players-count to: ${archivedCount}`);
+            } else {
+                archivedElement.textContent = '0';
+                console.log('⚠️ #archived-players-count not found, setting to 0');
             }
             
             console.log(`✅ Registration statistics loaded: ${totalActive} active, ${currentEditionCount} current edition (${currentEdition}), ${archivedCount} archived`);
+            
+            // Double-check the final values in the DOM
+            setTimeout(() => {
+                const finalTotalElement = document.querySelector('#total-registrations');
+                const finalCurrentElement = document.querySelector('#current-edition-registrations');
+                const finalArchivedElement = document.querySelector('#archived-players-count');
+                
+                console.log('🔍 Final DOM values check:', {
+                    total: finalTotalElement ? finalTotalElement.textContent : 'NOT FOUND',
+                    current: finalCurrentElement ? finalCurrentElement.textContent : 'NOT FOUND',
+                    archived: finalArchivedElement ? finalArchivedElement.textContent : 'NOT FOUND'
+                });
+            }, 100);
             
         } catch (error) {
             console.error('❌ Error loading registration statistics:', error);
