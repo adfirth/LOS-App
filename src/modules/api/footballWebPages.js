@@ -328,7 +328,7 @@ export class FootballWebPagesAPI {
             console.log(`📅 Note: You're searching for ${startDate} (${new Date(startDate).toLocaleDateString()})`);
             console.log(`📅 If you meant September 8th, 2025, use 2025-09-08 instead`);
             
-            statusElement.textContent = 'Fetching fixtures...';
+            statusElement.innerHTML = '<h4>🔄 Fetching Fixtures...</h4><p>Please wait while we fetch fixtures from the API...</p><p>This may take a few seconds for large date ranges.</p>';
             statusElement.className = 'status-message loading';
 
             // Try date range query first, then fall back to league-only if needed
@@ -513,6 +513,17 @@ export class FootballWebPagesAPI {
                     if (fixturesContainer) {
                         this.displayFixtures(filteredFixtures, fixturesContainer);
                         console.log(`✅ Date range fixtures displayed using displayFixtures: ${filteredFixtures.length} fixtures for ${startDate} to ${endDate}`);
+                        
+                        // Update status to show completion
+                        statusElement.innerHTML = `<h4>✅ Fetch Complete!</h4><p>Successfully fetched and displayed ${filteredFixtures.length} fixtures for ${startDate} to ${endDate}.</p><p>The fixtures are now displayed below and import buttons are enabled.</p>`;
+                        statusElement.className = 'status-message success';
+                        
+                        // Show the import controls
+                        const importControls = document.querySelector('#import-controls');
+                        if (importControls) {
+                            importControls.style.display = 'block';
+                            console.log('✅ Import controls displayed');
+                        }
                     } else {
                         // Fallback to the old method if fixtures container is not available
                         statusElement.innerHTML = fixturesHtml;
@@ -577,6 +588,8 @@ export class FootballWebPagesAPI {
     // Display fixtures in the container
     displayFixtures(fixtures, container) {
         console.log(`🔧 displayFixtures called with ${fixtures?.length || 0} fixtures`);
+        console.log(`🔧 Container element:`, container);
+        console.log(`🔧 Container visibility:`, container.style.display, container.offsetParent !== null);
         
         if (!Array.isArray(fixtures) || fixtures.length === 0) {
             container.innerHTML = '<p>No fixtures found</p>';
@@ -607,8 +620,16 @@ export class FootballWebPagesAPI {
             container.appendChild(fixtureElement);
         });
         
+        // Add a success message at the top of the container
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixture-success-message';
+        successMessage.innerHTML = `<h4>✅ ${fixtures.length} Fixtures Loaded Successfully!</h4><p>Select the fixtures you want to import and use the import buttons below.</p>`;
+        container.insertBefore(successMessage, container.firstChild);
+        
         // Enable import buttons when fixtures are available
         this.updateImportButtonStates(true);
+        
+        console.log(`🔧 Successfully displayed ${fixtures.length} fixtures in container`);
     }
 
     // Select all fixtures

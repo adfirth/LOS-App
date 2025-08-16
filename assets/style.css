@@ -7067,6 +7067,27 @@ a:hover {
     font-size: 0.875em;
 }
 
+/* Fixture Success Message */
+.fixture-success-message {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.fixture-success-message h4 {
+    margin: 0 0 8px 0;
+    color: #155724;
+}
+
+.fixture-success-message p {
+    margin: 0;
+    font-size: 0.9em;
+}
+
 /* API Button Styling */
 #test-api-btn, #fetch-fixtures-btn {
     background-color: var(--alty-yellow);
