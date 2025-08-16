@@ -200,20 +200,31 @@ export class AdminManager {
         // Debug: Log detailed statistics
         console.log('📊 Statistics breakdown:');
         console.log('Total picks:', picksSnapshot.size);
-        console.log('Unique players:', uniquePlayers);
+        console.log('Unique players (by userId):', uniquePlayers);
         console.log('Unique teams:', uniqueTeams);
         
         // Show player breakdown
         const playerBreakdown = {};
+        const userIdBreakdown = {};
+        
         picks.forEach(pick => {
             const playerKey = `${pick.userFirstName} ${pick.userSurname}`;
+            const userId = pick.userId;
+            
             if (!playerBreakdown[playerKey]) {
                 playerBreakdown[playerKey] = [];
             }
+            if (!userIdBreakdown[userId]) {
+                userIdBreakdown[userId] = [];
+            }
+            
             playerBreakdown[playerKey].push(pick.teamPicked);
+            userIdBreakdown[userId].push(pick.teamPicked);
         });
         
-        console.log('Player breakdown:', playerBreakdown);
+        console.log('Player breakdown (by name):', playerBreakdown);
+        console.log('User ID breakdown:', userIdBreakdown);
+        console.log('Unique players (by name):', Object.keys(playerBreakdown).length);
         
         totalCount.textContent = picksSnapshot.size;
         playersCount.textContent = uniquePlayers;
@@ -729,11 +740,19 @@ export class AdminManager {
             let currentEditionCount = 0;
             let archivedCount = 0;
             
+            console.log(`🔍 Checking ${allUsersQuery.size} users for edition: ${currentEdition}`);
+            
             allUsersQuery.forEach(doc => {
                 const userData = doc.data();
                 
                 // Check if user is active (has no status field or status is 'active')
                 const isActive = !userData.status || userData.status === 'active';
+                
+                console.log(`👤 User: ${userData.displayName || userData.firstName || 'Unknown'}`);
+                console.log(`   - Status: ${userData.status || 'active (default)'}`);
+                console.log(`   - Is Active: ${isActive}`);
+                console.log(`   - Registrations:`, userData.registrations || 'none');
+                console.log(`   - Edition ${currentEdition} registered: ${userData.registrations && userData.registrations[`edition${currentEdition}`] ? 'YES' : 'NO'}`);
                 
                 if (isActive) {
                     totalActive++;
@@ -742,9 +761,12 @@ export class AdminManager {
                     if (userData.registrations && userData.registrations[`edition${currentEdition}`]) {
                         currentEditionCount++;
                         console.log(`✅ User ${userData.displayName || userData.firstName} counted for Edition ${currentEdition}`);
+                    } else {
+                        console.log(`❌ User ${userData.displayName || userData.firstName} NOT counted for Edition ${currentEdition} - missing registration`);
                     }
                 } else if (userData.status === 'archived') {
                     archivedCount++;
+                    console.log(`📦 User ${userData.displayName || userData.firstName} is archived`);
                 }
             });
             
