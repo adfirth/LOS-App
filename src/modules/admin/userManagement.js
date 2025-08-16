@@ -108,7 +108,9 @@ The user's data in Firestore will remain unless manually deleted.
                         includePlayer = true;
                         break;
                     case 'active':
-                        includePlayer = !playerData.status || playerData.status === 'active';
+                        // Check if status is missing, 'active', or 'Active' (case-insensitive)
+                        const status = playerData.status;
+                        includePlayer = !status || status.toLowerCase() === 'active';
                         break;
                     case 'archived':
                         includePlayer = playerData.status === 'archived';
@@ -178,7 +180,9 @@ The user's data in Firestore will remain unless manually deleted.
         let playerListHtml = '';
         
         players.forEach(player => {
-            const statusClass = player.status === 'active' ? 'active' : 'archived';
+            // Normalize status for consistent display
+            const normalizedStatus = player.status ? player.status.toLowerCase() : 'active';
+            const statusClass = normalizedStatus === 'active' ? 'active' : 'archived';
             const isTestWeeks = player.registrations && player.registrations['editiontest'];
             
             // Get current edition registrations
@@ -199,12 +203,12 @@ The user's data in Firestore will remain unless manually deleted.
                 <tr class="player-row ${statusClass}" data-player-id="${player.id}">
                     <td>${player.displayName || 'Unknown'}</td>
                     <td>${player.email || 'No email'}</td>
-                    <td><span class="status-badge ${statusClass}">${player.status || 'unknown'}</span></td>
+                    <td><span class="status-badge ${statusClass}">${normalizedStatus === 'active' ? 'Active' : (normalizedStatus === 'archived' ? 'Archived' : 'Unknown')}</span></td>
                     <td>${player.lives || 2}</td>
                     <td>${editionDisplay}</td>
                     <td>
                         <button class="edit-btn" onclick="window.adminManagementManager.userManagement.editPlayer('${player.id}')">Edit</button>
-                        ${player.status === 'active' ? 
+                        ${normalizedStatus === 'active' ? 
                             `<button class="archive-btn" onclick="window.adminManagementManager.userManagement.archivePlayer('${player.id}')">Archive</button>` :
                             `<button class="unarchive-btn" onclick="window.adminManagementManager.userManagement.unarchivePlayer('${player.id}')">Unarchive</button>`
                         }
