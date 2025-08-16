@@ -24,7 +24,7 @@ class UIManager {
         
         this.setupEventListeners();
         this.initializeTestimonialModal();
-        this.initializeRegistrationWindowDisplay();
+        // Registration window display will be initialized manually after global references are set
         this.initializeVidiprinter();
         
         // Initialize tab functionality
@@ -541,6 +541,8 @@ class UIManager {
                 setTimeout(() => this.updateRegistrationWindowDisplay(), 1000);
                 return;
             }
+            
+            console.log('✅ Registration manager is now available, proceeding with update...');
             
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${window.currentActiveEdition || 1}`).get();
             if (!settingsDoc.exists) {

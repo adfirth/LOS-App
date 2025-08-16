@@ -114,7 +114,7 @@ class App {
         // Initialize scores manager
         this.scoresManager.initializeScoresManagement();
         
-        // Initialize UI manager
+        // Initialize UI manager (but don't initialize registration window yet)
         this.uiManager.initializeUIManagement();
         
         // Initialize game logic manager
@@ -134,6 +134,11 @@ class App {
         
         // Set up global references for backward compatibility
         this.setupGlobalReferences();
+        
+        // Now initialize registration window display after global references are set
+        if (this.uiManager) {
+            this.uiManager.initializeRegistrationWindowDisplay();
+        }
     }
 
     // Set up global references for backward compatibility
