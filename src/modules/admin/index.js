@@ -25,6 +25,8 @@ export class AdminManager {
         this.fixtureManagementInitialized = false;
         this.registrationManagementInitialized = false;
         this.competitionSettingsInitialized = false;
+        this.eventListenersInitialized = false;
+        this.playerManagementEventListenersInitialized = false;
         
         // Current active edition and gameweek
         this.currentActiveEdition = 1;
@@ -58,7 +60,7 @@ export class AdminManager {
         console.log('Initializing admin management...');
         this.adminManagementInitialized = true;
         
-        this.setupEventListeners();
+        // Event listeners are now set up in initializeAdminPage() to avoid duplicates
     }
 
     // Initialize admin page
@@ -278,6 +280,11 @@ export class AdminManager {
 
     // Setup event listeners
     setupEventListeners() {
+        if (this.eventListenersInitialized) {
+            console.log('🔧 Event listeners already initialized, skipping...');
+            return;
+        }
+        
         console.log('🔧 Setting up admin management event listeners...');
         
         // Set up settings event listeners
@@ -298,6 +305,7 @@ export class AdminManager {
         // Set up player management event listeners
         this.setupPlayerManagementEventListeners();
         
+        this.eventListenersInitialized = true;
         console.log('✅ Admin management event listeners setup complete');
     }
 
@@ -358,6 +366,11 @@ export class AdminManager {
 
     // Setup player management event listeners
     setupPlayerManagementEventListeners() {
+        if (this.playerManagementEventListenersInitialized) {
+            console.log('🔧 Player management event listeners already initialized, skipping...');
+            return;
+        }
+        
         console.log('🔧 Setting up player management event listeners...');
         
         // Player management stat cards
@@ -366,19 +379,31 @@ export class AdminManager {
         const archivedPlayersCard = document.querySelector('#archived-players-card');
         
         if (totalRegistrationsCard) {
-            totalRegistrationsCard.addEventListener('click', () => {
+            // Remove existing event listeners to prevent duplicates
+            const newTotalCard = totalRegistrationsCard.cloneNode(true);
+            totalRegistrationsCard.parentNode.replaceChild(newTotalCard, totalRegistrationsCard);
+            
+            newTotalCard.addEventListener('click', () => {
                 this.userManagement.showPlayerManagement('total');
             });
         }
         
         if (currentEditionCard) {
-            currentEditionCard.addEventListener('click', () => {
+            // Remove existing event listeners to prevent duplicates
+            const newCurrentCard = currentEditionCard.cloneNode(true);
+            currentEditionCard.parentNode.replaceChild(newCurrentCard, currentEditionCard);
+            
+            newCurrentCard.addEventListener('click', () => {
                 this.userManagement.showPlayerManagement('current');
             });
         }
         
         if (archivedPlayersCard) {
-            archivedPlayersCard.addEventListener('click', () => {
+            // Remove existing event listeners to prevent duplicates
+            const newArchivedCard = archivedPlayersCard.cloneNode(true);
+            archivedPlayersCard.parentNode.replaceChild(newArchivedCard, archivedPlayersCard);
+            
+            newArchivedCard.addEventListener('click', () => {
                 this.userManagement.showPlayerManagement('archived');
             });
         }
@@ -439,6 +464,7 @@ export class AdminManager {
             });
         }
         
+        this.playerManagementEventListenersInitialized = true;
         console.log('✅ Player management event listeners setup complete');
     }
 

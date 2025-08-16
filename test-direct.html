@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOS App - Direct Testing (No Build Required)</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .test-banner {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+        }
+        .test-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .test-controls button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-controls button:hover {
+            background: #0056b3;
+        }
+        .error-log {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px;
+        }
+        .status-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .status-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-value {
+            font-weight: bold;
+        }
+        .status-success { color: #28a745; }
+        .status-warning { color: #ffc107; }
+        .status-error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="test-banner">
+        🧪 DIRECT TESTING MODE - No Build Required
+    </div>
+    
+    <div class="test-info">
+        <h3>🚀 Direct Source Testing</h3>
+        <p>This loads your source files directly without any build process. Perfect for quick testing when npm isn't available.</p>
+        <p><strong>Status:</strong> <span id="load-status">Initializing...</span></p>
+    </div>
+
+    <div class="status-grid">
+        <div class="status-card">
+            <h4>📁 File Loading Status</h4>
+            <div class="status-item">
+                <span>Main App:</span>
+                <span id="app-status" class="status-value">⏳ Loading...</span>
+            </div>
+            <div class="status-item">
+                <span>Modules:</span>
+                <span id="modules-status" class="status-value">⏳ Loading...</span>
+            </div>
+            <div class="status-item">
+                <span>CSS:</span>
+                <span id="css-status" class="status-value">⏳ Loading...</span>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h4>🔧 App Status</h4>
+            <div class="status-item">
+                <span>App Object:</span>
+                <span id="app-object-status" class="status-value">⏳ Checking...</span>
+            </div>
+            <div class="status-item">
+                <span>Firebase:</span>
+                <span id="firebase-status" class="status-value">⏳ Checking...</span>
+            </div>
+            <div class="status-item">
+                <span>Initialized:</span>
+                <span id="init-status" class="status-value">⏳ Checking...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-controls">
+        <h4>🧪 Testing Controls</h4>
+        <button onclick="testApp()">Test App Functionality</button>
+        <button onclick="checkModules()">Check Module Loading</button>
+        <button onclick="checkFirebase()">Check Firebase Status</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        <button onclick="window.location.reload()">🔄 Refresh Page</button>
+    </div>
+
+    <div id="error-log" class="error-log"></div>
+
+    <!-- Load source files directly -->
+    <script type="module">
+        console.log('🧪 Starting direct source testing...');
+        
+        // Status update functions
+        function updateStatus(elementId, status, type = 'success') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = status;
+                element.className = `status-value status-${type}`;
+            }
+        }
+        
+        function updateLoadStatus(message, isError = false) {
+            const loadStatus = document.getElementById('load-status');
+            if (loadStatus) {
+                loadStatus.textContent = message;
+                loadStatus.style.color = isError ? '#dc3545' : '#28a745';
+            }
+        }
+        
+        function logError(message) {
+            const errorLog = document.getElementById('error-log');
+            if (errorLog) {
+                errorLog.style.display = 'block';
+                errorLog.innerHTML += `<div>❌ ${message}</div>`;
+            }
+            console.error('❌', message);
+        }
+        
+        // Check CSS loading
+        function checkCSSLoading() {
+            const link = document.querySelector('link[href="assets/style.css"]');
+            if (link && link.sheet) {
+                updateStatus('css-status', '✅ Loaded', 'success');
+            } else {
+                updateStatus('css-status', '❌ Failed', 'error');
+                logError('CSS file failed to load');
+            }
+        }
+        
+        // Check Firebase status
+        function checkFirebaseStatus() {
+            if (window.db && window.auth) {
+                updateStatus('firebase-status', '✅ Available', 'success');
+                return true;
+            } else {
+                updateStatus('firebase-status', '❌ Not Found', 'error');
+                return false;
+            }
+        }
+        
+        // Check app object status
+        function checkAppObjectStatus() {
+            if (window.app) {
+                updateStatus('app-object-status', '✅ Found', 'success');
+                updateStatus('init-status', window.app.initialized ? '✅ Yes' : '❌ No', window.app.initialized ? 'success' : 'warning');
+                return true;
+            } else {
+                updateStatus('app-object-status', '❌ Not Found', 'error');
+                updateStatus('init-status', '❌ N/A', 'error');
+                return false;
+            }
+        }
+        
+        // Try to load the main app
+        async function loadApp() {
+            try {
+                updateStatus('app-status', '⏳ Loading...', 'warning');
+                updateLoadStatus('Loading main app module...');
+                
+                // Import the main app
+                const appModule = await import('./src/app.js');
+                console.log('✅ Main app module loaded successfully');
+                updateStatus('app-status', '✅ Loaded', 'success');
+                
+                // Check if app was initialized
+                setTimeout(() => {
+                    checkFirebaseStatus();
+                    checkAppObjectStatus();
+                    
+                    if (checkAppObjectStatus()) {
+                        updateLoadStatus('✅ App loaded and ready for testing!');
+                    } else {
+                        updateLoadStatus('⚠️ App loaded but not fully initialized');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                updateStatus('app-status', '❌ Failed', 'error');
+                updateLoadStatus(`Failed to load main app: ${error.message}`, true);
+                logError(`Failed to load main app: ${error.message}`);
+                console.error('❌ Failed to load main app:', error);
+            }
+        }
+        
+        // Check modules directory
+        async function checkModulesStatus() {
+            try {
+                updateStatus('modules-status', '⏳ Checking...', 'warning');
+                
+                // Try to fetch modules directory
+                const response = await fetch('./src/modules/');
+                if (response.ok) {
+                    updateStatus('modules-status', '✅ Accessible', 'success');
+                } else {
+                    updateStatus('modules-status', '⚠️ Limited Access', 'warning');
+                }
+            } catch (error) {
+                updateStatus('modules-status', '⚠️ File Protocol', 'warning');
+                console.log('ℹ️ Cannot fetch modules directory (this is normal for file:// protocol)');
+            }
+        }
+        
+        // Initialize testing
+        async function initializeTesting() {
+            console.log('🧪 Initializing testing environment...');
+            
+            // Check CSS loading
+            setTimeout(checkCSSLoading, 100);
+            
+            // Check modules status
+            await checkModulesStatus();
+            
+            // Load the app
+            await loadApp();
+            
+            // Set up periodic checks
+            setInterval(() => {
+                checkFirebaseStatus();
+                checkAppObjectStatus();
+            }, 2000);
+        }
+        
+        // Test functions
+        window.testApp = function() {
+            console.log('🧪 Testing app functionality...');
+            try {
+                if (checkAppObjectStatus()) {
+                    console.log('✅ App object found:', window.app);
+                    console.log('🔧 App state:', window.app.state);
+                    console.log('📊 Managers loaded:', {
+                        auth: !!window.app.authManager,
+                        registration: !!window.app.registrationManager,
+                        fixtures: !!window.app.fixturesManager,
+                        scores: !!window.app.scoresManager,
+                        ui: !!window.app.uiManager
+                    });
+                } else {
+                    console.log('ℹ️ App object not found, checking for other global objects...');
+                    const globalObjects = Object.keys(window).filter(key => 
+                        !key.startsWith('_') && 
+                        !key.startsWith('webkit') && 
+                        !key.startsWith('moz') &&
+                        typeof window[key] === 'object' &&
+                        window[key] !== null
+                    );
+                    console.log('🌐 Global objects:', globalObjects.slice(0, 20)); // Show first 20
+                }
+            } catch (error) {
+                console.error('❌ Error testing app:', error);
+            }
+        };
+        
+        window.checkModules = function() {
+            console.log('🔍 Checking module loading...');
+            checkModulesStatus();
+        };
+        
+        window.checkFirebase = function() {
+            console.log('🔥 Checking Firebase status...');
+            checkFirebaseStatus();
+        };
+        
+        window.clearConsole = function() {
+            console.clear();
+            const errorLog = document.getElementById('error-log');
+            if (errorLog) {
+                errorLog.innerHTML = '';
+                errorLog.style.display = 'none';
+            }
+            console.log('🧹 Console cleared');
+        };
+        
+        // Start testing
+        initializeTesting();
+        
+    </script>
+    
+    <script>
+        // Additional testing utilities
+        console.log('🧪 Direct testing environment initialized');
+        console.log('💡 Use the test controls above to test functionality');
+        console.log('🔍 Check the console for detailed loading information');
+    </script>
+</body>
+</html>
