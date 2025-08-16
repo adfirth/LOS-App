@@ -539,15 +539,17 @@ class UIManager {
         try {
             // Ensure database is available before proceeding
             if (!this.db) {
-                console.warn('Database not available yet, skipping registration window display update');
+                console.warn('Database not available yet, showing default registration window');
+                this.showDefaultRegistrationWindow();
                 this.isUpdatingRegistrationWindow = false;
                 return;
             }
             
             // Ensure registration manager is available
             if (!window.registrationManager) {
-                console.warn('Registration manager not available yet, retrying in 1 second...');
-                setTimeout(() => this.updateRegistrationWindowDisplay(), 1000);
+                console.warn('Registration manager not available yet, showing default registration window');
+                this.showDefaultRegistrationWindow();
+                this.isUpdatingRegistrationWindow = false;
                 return;
             }
             
@@ -555,8 +557,8 @@ class UIManager {
             
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${window.currentActiveEdition || 1}`).get();
             if (!settingsDoc.exists) {
-                this.hideRegistrationCountdowns();
-                this.showRegisterButton(false);
+                console.log('No registration settings found, showing default registration window');
+                this.showDefaultRegistrationWindow();
                 return;
             }
 
@@ -573,7 +575,7 @@ class UIManager {
                     if (endDate) {
                         this.showRegistrationCountdown(endDate);
                     } else {
-                        this.hideRegistrationCountdowns();
+                        this.showDefaultRegistrationWindow();
                     }
                     this.showRegisterButton(true);
                 } else {
@@ -582,22 +584,42 @@ class UIManager {
                     if (nextStartDate && nextStartDate > now) {
                         this.showNextRegistrationCountdown(nextStartDate);
                     } else {
-                        this.hideRegistrationCountdowns();
+                        this.showDefaultRegistrationWindow();
                     }
                     this.showRegisterButton(false);
                 }
             } else {
                 console.warn('Registration manager checkRegistrationWindow function not available');
-                this.hideRegistrationCountdowns();
+                this.showDefaultRegistrationWindow();
                 this.showRegisterButton(false);
             }
         } catch (error) {
             console.error('Error updating registration window display:', error);
-            this.hideRegistrationCountdowns();
+            this.showDefaultRegistrationWindow();
             this.showRegisterButton(false);
         } finally {
             // Always reset the flag
             this.isUpdatingRegistrationWindow = false;
+        }
+    }
+
+    // Show default registration window when settings are not available
+    showDefaultRegistrationWindow() {
+        const countdownDiv = document.querySelector('#registration-countdown');
+        const nextCountdownDiv = document.querySelector('#next-registration-countdown');
+        
+        if (countdownDiv && nextCountdownDiv) {
+            // Show the current registration window with a default message
+            countdownDiv.style.display = 'block';
+            nextCountdownDiv.style.display = 'none';
+            
+            const timerSpan = document.querySelector('#countdown-timer');
+            if (timerSpan) {
+                timerSpan.textContent = 'Registration Open';
+            }
+            
+            // Show the register button
+            this.showRegisterButton(true);
         }
     }
 
