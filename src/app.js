@@ -498,6 +498,13 @@ class App {
                     console.log('🔧 Initializing admin management...');
                     this.adminManagementManager.initializeAdminPage();
                 }
+                // Initialize registration window display for admin page
+                if (this.uiManager) {
+                    console.log('🔧 Initializing admin page registration window display...');
+                    setTimeout(() => {
+                        this.uiManager.initializeRegistrationWindowDisplay();
+                    }, 500);
+                }
                 break;
             case 'dashboard':
                 console.log('🔧 Initializing dashboard features...');

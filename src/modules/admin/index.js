@@ -952,10 +952,50 @@ export class AdminManager {
     initializeAdminApiIntegration() {
         console.log('🔧 Initializing admin API integration...');
         
-        // This would initialize API integration for the admin interface
-        // Implementation depends on your specific API requirements
+        // Set up import button event listeners
+        this.setupImportButtonEventListeners();
         
         console.log('✅ Admin API integration initialized');
+    }
+
+    // Setup import button event listeners
+    setupImportButtonEventListeners() {
+        console.log('🔧 Setting up import button event listeners...');
+        
+        // Select All Fixtures button
+        const selectAllBtn = document.querySelector('#select-all-fixtures-btn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.selectAllFixtures();
+                }
+            });
+            console.log('✅ Select All Fixtures button event listener attached');
+        }
+        
+        // Deselect All Fixtures button
+        const deselectAllBtn = document.querySelector('#deselect-all-fixtures-btn');
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', () => {
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.deselectAllFixtures();
+                }
+            });
+            console.log('✅ Deselect All Fixtures button event listener attached');
+        }
+        
+        // Import Selected Fixtures button
+        const importSelectedBtn = document.querySelector('#import-selected-fixtures-btn');
+        if (importSelectedBtn) {
+            importSelectedBtn.addEventListener('click', async () => {
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    await window.app.apiManager.footballWebPagesAPI.importSelectedFixtures();
+                }
+            });
+            console.log('✅ Import Selected Fixtures button event listener attached');
+        }
+        
+        console.log('✅ Import button event listeners setup complete');
     }
 
     // Initialize enhanced vidiprinter
