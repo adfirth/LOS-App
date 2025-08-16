@@ -223,15 +223,7 @@ class AdminManagementManager {
             this.initializeFixtureManagement();
         }
         
-        // Load initial fixtures for the current edition
-        if (typeof window.loadFixturesForGameweek === 'function') {
-            window.loadFixturesForGameweek();
-        }
-        
-        // Load initial scores for the current edition
-        if (typeof window.loadScoresForGameweek === 'function') {
-            window.loadScoresForGameweek();
-        }
+
         
         // Initialize registration management
         if (!this.registrationManagementInitialized) {
@@ -254,13 +246,7 @@ class AdminManagementManager {
             this.initializeFixtureManagement();
         }
         
-        // Load initial data
-        if (typeof window.loadFixturesForGameweek === 'function') {
-            window.loadFixturesForGameweek();
-        }
-        if (typeof window.loadScoresForGameweek === 'function') {
-            window.loadScoresForGameweek();
-        }
+
     }
     
     // Save competition settings
@@ -1652,7 +1638,6 @@ class AdminManagementManager {
         
         // Load initial data
         this.fixturesManager.loadFixturesForGameweek();
-        this.scoresManager.loadScoresForGameweek();
     }
 
     // Registration Management Functions

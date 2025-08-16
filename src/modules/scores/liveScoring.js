@@ -90,7 +90,12 @@ export class LiveScoring {
                     const fixtures = await this.loadScoresContent(gameweek, container);
                     resolve(fixtures);
                 } catch (error) {
+                    // Reset loading flag on error
+                    this.isLoadingScores = false;
                     reject(error);
+                } finally {
+                    // Ensure loading flag is always reset
+                    this.isLoadingScores = false;
                 }
             }, 10);
         });
