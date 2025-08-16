@@ -524,6 +524,18 @@ class App {
                 if (this.authManager) {
                     this.authManager.initializeLoginPage();
                 }
+                // Initialize registration management for login page first
+                if (this.registrationManager) {
+                    console.log('🔧 Initializing login page registration management...');
+                    this.registrationManager.initializeRegistrationManagement();
+                }
+                // Initialize registration window display for login page after a short delay to ensure managers are ready
+                if (this.uiManager) {
+                    console.log('🔧 Initializing login page registration window display...');
+                    setTimeout(() => {
+                        this.uiManager.initializeRegistrationWindowDisplay();
+                    }, 500);
+                }
                 break;
             default:
                 console.log('🔧 Initializing general page features...');

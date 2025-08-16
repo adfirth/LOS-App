@@ -523,12 +523,22 @@ class UIManager {
     }
 
     async updateRegistrationWindowDisplay() {
+        console.log('🔧 updateRegistrationWindowDisplay called');
         try {
             // Ensure database is available before proceeding
             if (!this.db) {
                 console.warn('Database not available yet, skipping registration window display update');
                 return;
             }
+            
+            // Ensure registration manager is available
+            if (!window.registrationManager) {
+                console.warn('Registration manager not available yet, retrying in 1 second...');
+                setTimeout(() => this.updateRegistrationWindowDisplay(), 1000);
+                return;
+            }
+            
+            console.log('🔧 Registration manager available, proceeding with update...');
             
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${window.currentActiveEdition || 1}`).get();
             if (!settingsDoc.exists) {
@@ -541,8 +551,8 @@ class UIManager {
             const now = new Date();
             
             // Check if registration is currently open
-            if (typeof checkRegistrationWindow === 'function') {
-                const isCurrentlyOpen = await checkRegistrationWindow();
+            if (typeof window.registrationManager.checkRegistrationWindow === 'function') {
+                const isCurrentlyOpen = await window.registrationManager.checkRegistrationWindow();
                 
                 if (isCurrentlyOpen) {
                     // Registration is open - show countdown to end
@@ -563,6 +573,10 @@ class UIManager {
                     }
                     this.showRegisterButton(false);
                 }
+            } else {
+                console.warn('Registration manager checkRegistrationWindow function not available');
+                this.hideRegistrationCountdowns();
+                this.showRegisterButton(false);
             }
         } catch (error) {
             console.error('Error updating registration window display:', error);
@@ -665,9 +679,12 @@ class UIManager {
     }
 
     showRegisterButton(show) {
+        console.log('🔧 showRegisterButton called with show:', show);
         const registerButton = document.querySelector('#register-now-button');
+        console.log('🔧 Found register button:', !!registerButton);
         if (registerButton) {
             registerButton.style.display = show ? 'inline-block' : 'none';
+            console.log('🔧 Set register button display to:', show ? 'inline-block' : 'none');
         }
     }
 

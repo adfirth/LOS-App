@@ -21,6 +21,22 @@
         <main>
             <section class="intro">
                 <h2>Player Login</h2>
+                
+                <!-- Registration Window Status -->
+                <div id="registration-window-status" class="registration-status">
+                    <div id="registration-countdown" style="display: none;">
+                        <h3>Registration Window</h3>
+                        <p><strong>Time remaining to register:</strong> <span id="countdown-timer">--</span></p>
+                        <div class="registration-button-container">
+                            <a href="/pages/register.html" class="cta-button" id="register-now-button">Register Now</a>
+                        </div>
+                    </div>
+                    <div id="next-registration-countdown" style="display: none;">
+                        <h3>Next Registration Window</h3>
+                        <p><strong>Registration opens in:</strong> <span id="next-countdown-timer">--</span></p>
+                    </div>
+                </div>
+                
                 <form id="login-form">
                     <div class="form-group">
                         <label for="login-email">Email Address</label>
@@ -35,6 +51,9 @@
                 </form>
                 <div class="sub-links">
                     <p>Don't have an account? <a href="/pages/register.html">Register here</a></p>
+                    <div class="registration-button-container" style="margin-top: 1rem; text-align: center;">
+                        <a href="/pages/register.html" class="cta-button" style="display: inline-block;">Register Now</a>
+                    </div>
                 </div>
             </section>
         </main>

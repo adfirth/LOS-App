@@ -219,7 +219,7 @@ export class FootballWebPagesAPI {
             console.log('API key status: Configured successfully');
             console.log('🔑 API Key value:', this.config.RAPIDAPI_KEY.substring(0, 10) + '...');
             
-            // Enable buttons
+            // Enable fetch buttons
             if (testApiBtn) {
                 testApiBtn.disabled = false;
                 console.log('✅ Test API button enabled');
@@ -232,13 +232,16 @@ export class FootballWebPagesAPI {
                 fetchAllBtn.disabled = false;
                 console.log('✅ Fetch All button enabled');
             }
+            
+            // Import buttons should remain disabled until fixtures are fetched
+            this.updateImportButtonStates(false);
         } else {
             statusElement.textContent = 'API key missing - retrying...';
             statusElement.className = 'status-indicator error';
             console.log('API key status: Missing - configuration may still be loading');
             console.log('🔍 Current config state:', this.config);
             
-            // Disable buttons
+            // Disable fetch buttons
             if (testApiBtn) {
                 testApiBtn.disabled = true;
                 console.log('❌ Test API button disabled');
@@ -251,6 +254,9 @@ export class FootballWebPagesAPI {
                 fetchAllBtn.disabled = true;
                 console.log('❌ Fetch All button disabled');
             }
+            
+            // Disable import buttons when API key is missing
+            this.updateImportButtonStates(false);
             
             // If we don't have the config yet, try to load it again
             if (!this.config) {
@@ -502,15 +508,23 @@ export class FootballWebPagesAPI {
                     }
                     fixturesHtml += '</div>';
                     
-                    statusElement.innerHTML = fixturesHtml;
-                    statusElement.className = 'status-message success';
-                    console.log(`✅ Date range fixtures fetched successfully: ${filteredFixtures.length} fixtures for ${startDate} to ${endDate}`);
-                    
-                    // Show the import controls
-                    const importControls = document.querySelector('#import-controls');
-                    if (importControls) {
-                        importControls.style.display = 'block';
-                        console.log('✅ Import controls displayed');
+                    // Use the displayFixtures method to properly handle the fixtures and enable import buttons
+                    const fixturesContainer = document.querySelector('#fixtures-container');
+                    if (fixturesContainer) {
+                        this.displayFixtures(filteredFixtures, fixturesContainer);
+                        console.log(`✅ Date range fixtures displayed using displayFixtures: ${filteredFixtures.length} fixtures for ${startDate} to ${endDate}`);
+                    } else {
+                        // Fallback to the old method if fixtures container is not available
+                        statusElement.innerHTML = fixturesHtml;
+                        statusElement.className = 'status-message success';
+                        console.log(`✅ Date range fixtures fetched successfully: ${filteredFixtures.length} fixtures for ${startDate} to ${endDate}`);
+                        
+                        // Show the import controls
+                        const importControls = document.querySelector('#import-controls');
+                        if (importControls) {
+                            importControls.style.display = 'block';
+                            console.log('✅ Import controls displayed');
+                        }
                     }
                 } else {
                     statusElement.textContent = 'No fixtures found for the selected date range';
@@ -562,24 +576,39 @@ export class FootballWebPagesAPI {
 
     // Display fixtures in the container
     displayFixtures(fixtures, container) {
+        console.log(`🔧 displayFixtures called with ${fixtures?.length || 0} fixtures`);
+        
         if (!Array.isArray(fixtures) || fixtures.length === 0) {
             container.innerHTML = '<p>No fixtures found</p>';
+            console.log('🔧 No fixtures available, disabling import buttons');
+            // Disable import buttons when no fixtures are available
+            this.updateImportButtonStates(false);
             return;
         }
         
+        console.log('🔧 Displaying fixtures, enabling import buttons');
         container.innerHTML = '';
         
         fixtures.forEach((fixture, index) => {
             const fixtureElement = document.createElement('div');
             fixtureElement.className = 'fixture-item';
+            
+            // Handle different API response formats
+            const homeTeam = fixture['home-team']?.name || fixture.homeTeam || fixture.home || fixture.homeTeamName || fixture.home_team || fixture.home_team_name || fixture.team1 || fixture.team1Name || 'TBD';
+            const awayTeam = fixture['away-team']?.name || fixture.awayTeam || fixture.away || fixture.awayTeamName || fixture.away_team || fixture.away_team_name || fixture.team2 || fixture.team2Name || 'TBD';
+            const matchDate = fixture.date || fixture.matchDate || fixture.fixtureDate || fixture.match_date || fixture.fixture_date || fixture.dateTime || fixture.date_time || 'TBD';
+            
             fixtureElement.innerHTML = `
-                <input type="checkbox" id="fixture-${index}" value="${index}" class="fixture-checkbox">
+                <input type="checkbox" id="fixture-${index}" value="${index}" class="fixture-checkbox" data-fixture='${JSON.stringify(fixture)}'>
                 <label for="fixture-${index}">
-                    ${fixture.homeTeam} vs ${fixture.awayTeam} - ${fixture.date}
+                    ${homeTeam} vs ${awayTeam} - ${matchDate}
                 </label>
             `;
             container.appendChild(fixtureElement);
         });
+        
+        // Enable import buttons when fixtures are available
+        this.updateImportButtonStates(true);
     }
 
     // Select all fixtures
@@ -596,6 +625,36 @@ export class FootballWebPagesAPI {
         const checkboxes = document.querySelectorAll('.fixture-checkbox');
         checkboxes.forEach(checkbox => checkbox.checked = false);
         console.log(`❌ Deselected ${checkboxes.length} fixtures`);
+    }
+
+    // Update import button states
+    updateImportButtonStates(enable) {
+        console.log(`🔧 updateImportButtonStates called with enable: ${enable}`);
+        
+        const importSelectedFixturesBtn = document.querySelector('#import-selected-fixtures-btn');
+        const selectAllFixturesBtn = document.querySelector('#select-all-fixtures-btn');
+        const deselectAllFixturesBtn = document.querySelector('#deselect-all-fixtures-btn');
+        
+        console.log('🔧 Found import buttons:', {
+            importSelectedFixturesBtn: !!importSelectedFixturesBtn,
+            selectAllFixturesBtn: !!selectAllFixturesBtn,
+            deselectAllFixturesBtn: !!deselectAllFixturesBtn
+        });
+        
+        if (importSelectedFixturesBtn) {
+            importSelectedFixturesBtn.disabled = !enable;
+            console.log(`🔧 Import Selected Fixtures button ${enable ? 'enabled' : 'disabled'}`);
+        }
+        
+        if (selectAllFixturesBtn) {
+            selectAllFixturesBtn.disabled = !enable;
+            console.log(`🔧 Select All Fixtures button ${enable ? 'enabled' : 'disabled'}`);
+        }
+        
+        if (deselectAllFixturesBtn) {
+            deselectAllFixturesBtn.disabled = !enable;
+            console.log(`🔧 Deselect All Fixtures button ${enable ? 'enabled' : 'disabled'}`);
+        }
     }
 
     // Import selected fixtures to a game week
