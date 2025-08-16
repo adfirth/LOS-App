@@ -1362,6 +1362,64 @@
                     console.log('❌ API key status checking not available yet');
                     console.log('🔍 Available window properties:', Object.keys(window).filter(key => key.includes('API') || key.includes('api')));
                 }
+                
+                // Set up button event handlers for the fixtures tab
+                setTimeout(() => {
+                    console.log('🔧 Setting up fixtures tab button event handlers...');
+                    
+                    // Test API Connection button
+                    const testApiBtn = document.querySelector('#test-api-connection');
+                    if (testApiBtn) {
+                        console.log('🔧 Setting up Test API Connection button...');
+                        testApiBtn.onclick = function() {
+                            console.log('🧪 Test API Connection button clicked');
+                            if (typeof window.apiManager !== 'undefined' && window.apiManager.footballWebPagesAPI && window.apiManager.footballWebPagesAPI.testApiConnection) {
+                                window.apiManager.footballWebPagesAPI.testApiConnection();
+                            } else if (typeof window.footballWebPagesAPI !== 'undefined' && window.footballWebPagesAPI.testApiConnection) {
+                                window.footballWebPagesAPI.testApiConnection();
+                            } else {
+                                console.error('❌ testApiConnection method not available');
+                            }
+                        };
+                        console.log('✅ Test API Connection button event handler attached');
+                    }
+                    
+                    // Fetch Date Range Fixtures button
+                    const fetchDateRangeBtn = document.querySelector('#fetch-date-range-fixtures-btn');
+                    if (fetchDateRangeBtn) {
+                        console.log('🔧 Setting up Fetch Date Range Fixtures button...');
+                        fetchDateRangeBtn.onclick = function() {
+                            console.log('📅 Fetch Date Range Fixtures button clicked');
+                            if (typeof window.apiManager !== 'undefined' && window.apiManager.footballWebPagesAPI && window.apiManager.footballWebPagesAPI.fetchDateRangeFixtures) {
+                                window.apiManager.footballWebPagesAPI.fetchDateRangeFixtures();
+                            } else if (typeof window.footballWebPagesAPI !== 'undefined' && window.footballWebPagesAPI.fetchDateRangeFixtures) {
+                                window.footballWebPagesAPI.fetchDateRangeFixtures();
+                            } else {
+                                console.error('❌ fetchDateRangeFixtures method not available');
+                            }
+                        };
+                        console.log('✅ Fetch Date Range Fixtures button event handler attached');
+                    }
+                    
+                    // Fetch All Fixtures button
+                    const fetchAllBtn = document.querySelector('#fetch-all-fixtures-btn');
+                    if (fetchAllBtn) {
+                        console.log('🔧 Setting up Fetch All Fixtures button...');
+                        fetchAllBtn.onclick = function() {
+                            console.log('📋 Fetch All Fixtures button clicked');
+                            if (typeof window.apiManager !== 'undefined' && window.apiManager.footballWebPagesAPI && window.apiManager.footballWebPagesAPI.fetchAllFixtures) {
+                                window.apiManager.footballWebPagesAPI.fetchAllFixtures();
+                            } else if (typeof window.footballWebPagesAPI !== 'undefined' && window.footballWebPagesAPI.fetchAllFixtures) {
+                                window.footballWebPagesAPI.fetchAllFixtures();
+                            } else {
+                                console.error('❌ fetchAllFixtures method not available');
+                            }
+                        };
+                        console.log('✅ Fetch All Fixtures button event handler attached');
+                    }
+                    
+                    console.log('✅ All fixtures tab button event handlers set up');
+                }, 100);
             }
             
             // Set default gameweek selection for all tabs
