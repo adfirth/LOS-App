@@ -7045,6 +7045,19 @@ a:hover {
     background-color: #f8f9fa;
 }
 
+/* Fixtures Container */
+#fixtures-container {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 20px 0;
+    padding: 15px;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    min-height: 100px;
+}
+
 .fixture-item {
     padding: 8px;
     border-bottom: 1px solid #dee2e6;
@@ -7076,6 +7089,52 @@ a:hover {
     padding: 12px;
     margin-bottom: 16px;
     text-align: center;
+}
+
+/* Registration Window Status */
+.registration-status-section {
+    margin: 20px 0;
+    padding: 15px;
+    border: 2px solid #28a745;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.registration-status {
+    text-align: center;
+}
+
+#registration-countdown, #next-registration-countdown {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 6px;
+    background-color: #e8f5e8;
+    border: 1px solid #c8e6c9;
+}
+
+#registration-countdown h5, #next-registration-countdown h5 {
+    margin: 0 0 10px 0;
+    color: #2e7d32;
+}
+
+.registration-button-container {
+    margin-top: 15px;
+}
+
+#register-now-button {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+#register-now-button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
 }
 
 .fixture-success-message h4 {

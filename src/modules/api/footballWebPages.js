@@ -590,6 +590,7 @@ export class FootballWebPagesAPI {
         console.log(`🔧 displayFixtures called with ${fixtures?.length || 0} fixtures`);
         console.log(`🔧 Container element:`, container);
         console.log(`🔧 Container visibility:`, container.style.display, container.offsetParent !== null);
+        console.log(`🔧 Container computed styles:`, window.getComputedStyle(container));
         
         if (!Array.isArray(fixtures) || fixtures.length === 0) {
             container.innerHTML = '<p>No fixtures found</p>';
@@ -618,6 +619,7 @@ export class FootballWebPagesAPI {
                 </label>
             `;
             container.appendChild(fixtureElement);
+            console.log(`🔧 Added fixture element:`, fixtureElement);
         });
         
         // Add a success message at the top of the container
@@ -625,11 +627,26 @@ export class FootballWebPagesAPI {
         successMessage.className = 'fixture-success-message';
         successMessage.innerHTML = `<h4>✅ ${fixtures.length} Fixtures Loaded Successfully!</h4><p>Select the fixtures you want to import and use the import buttons below.</p>`;
         container.insertBefore(successMessage, container.firstChild);
+        console.log(`🔧 Added success message:`, successMessage);
         
         // Enable import buttons when fixtures are available
         this.updateImportButtonStates(true);
         
+        // Make sure the container is visible
+        container.style.display = 'block';
+        container.style.visibility = 'visible';
+        container.style.opacity = '1';
+        
         console.log(`🔧 Successfully displayed ${fixtures.length} fixtures in container`);
+        console.log(`🔧 Final container HTML:`, container.innerHTML);
+        console.log(`🔧 Final container styles:`, {
+            display: container.style.display,
+            visibility: container.style.visibility,
+            opacity: container.style.opacity,
+            computedDisplay: window.getComputedStyle(container).display,
+            computedVisibility: window.getComputedStyle(container).visibility,
+            computedOpacity: window.getComputedStyle(container).opacity
+        });
     }
 
     // Select all fixtures
