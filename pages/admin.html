@@ -1348,6 +1348,22 @@
                 }
             }
             
+            // Check API key status if Fixtures tab was clicked
+            if (tabName === 'fixtures') {
+                console.log('🔧 Fixtures tab clicked - checking API key status...');
+                // Try to trigger API key status check
+                if (typeof window.footballWebPagesAPI !== 'undefined' && window.footballWebPagesAPI.checkApiKeyStatus) {
+                    console.log('✅ Calling checkApiKeyStatus...');
+                    window.footballWebPagesAPI.checkApiKeyStatus();
+                } else if (typeof window.apiManager !== 'undefined' && window.apiManager.footballWebPagesAPI && window.apiManager.footballWebPagesAPI.checkApiKeyStatus) {
+                    console.log('✅ Calling checkApiKeyStatus via apiManager...');
+                    window.apiManager.footballWebPagesAPI.checkApiKeyStatus();
+                } else {
+                    console.log('❌ API key status checking not available yet');
+                    console.log('🔍 Available window properties:', Object.keys(window).filter(key => key.includes('API') || key.includes('api')));
+                }
+            }
+            
             // Set default gameweek selection for all tabs
             if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.setDefaultSelection) {
                 console.log('ðŸ§ Setting default selection for tab:', tabName);

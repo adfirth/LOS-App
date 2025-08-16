@@ -182,16 +182,20 @@ export class FootballWebPagesAPI {
     // Check API key status
     checkApiKeyStatus() {
         const statusElement = document.querySelector('#api-key-status');
-        if (!statusElement) return;
+        if (!statusElement) {
+            console.log('❌ API key status element not found');
+            return;
+        }
         
-        console.log('checkApiKeyStatus called');
-        console.log('Current config:', this.config);
-        console.log('FOOTBALL_WEBPAGES_CONFIG available:', typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined');
+        console.log('🔍 checkApiKeyStatus called');
+        console.log('🔍 Status element found:', statusElement);
+        console.log('🔍 Current config:', this.config);
+        console.log('🔍 FOOTBALL_WEBPAGES_CONFIG available:', typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined');
         
         // Try to load configuration if not already loaded
         if (!this.config && typeof FOOTBALL_WEBPAGES_CONFIG !== 'undefined') {
             this.config = FOOTBALL_WEBPAGES_CONFIG;
-            console.log('Football Web Pages API configuration loaded during status check');
+            console.log('✅ Football Web Pages API configuration loaded during status check');
         }
         
         // Get buttons that should be enabled/disabled based on API key status
