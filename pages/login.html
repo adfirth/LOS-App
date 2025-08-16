@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Last One Standing</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+    <header>
+        <img src="/assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
+        <div class="header-text">
+            <h1>Altrincham FC Juniors<br>Last One Standing</h1>
+            <h2>The Ultimate National League Challenge</h2>
+        </div>
+        <img src="/assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="intro">
+                <h2>Player Login</h2>
+                
+                <!-- Registration Window Status -->
+                <div id="registration-window-status" class="registration-status">
+                    <div id="registration-countdown" style="display: none;">
+                        <h3>Registration Window</h3>
+                        <p><strong>Time remaining to register:</strong> <span id="countdown-timer">--</span></p>
+                        <div class="registration-button-container">
+                            <a href="/pages/register.html" class="cta-button" id="register-now-button">Register Now</a>
+                        </div>
+                    </div>
+                    <div id="next-registration-countdown" style="display: none;">
+                        <h3>Next Registration Window</h3>
+                        <p><strong>Registration opens in:</strong> <span id="next-countdown-timer">--</span></p>
+                    </div>
+                </div>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="cta-button">Login</button>
+                    <p id="login-error-message" class="error-text"></p>
+                </form>
+                <div class="sub-links">
+                    <p>Don't have an account? <a href="/pages/register.html">Register here</a></p>
+                    <div class="registration-button-container" style="margin-top: 1rem; text-align: center;">
+                        <a href="/pages/register.html" class="cta-button" style="display: inline-block;">Register Now</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <h3>Welcome Back!</h3>
+            <p>Log in to make your pick for the next game week.</p>
+        </aside>
+    </div>
+
+    <footer>
+        <p><a href="https://altrinchamfc.com/pages/altyforall%C2%AE" target="_blank">ALTY for ALL</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/config/firebase-init.js"></script>
+    <script src="/config/env-config.js"></script>
+    <script src="/config/netlify-env.js"></script>
+    <script src="/config/teams-config.js"></script>
+    <script src="/config/football-webpages-config.js"></script>
+    <script type="module" src="/app.bundle.js"></script>
+</body>
+</html>
+

@@ -21,6 +21,117 @@ class AuthManager {
         this.setupAdminPageHandling();
     }
 
+    // Initialize login page functionality
+    initializeLoginPage() {
+        console.log('🔧 Initializing login page functionality...');
+        
+        // Initialize login form handlers
+        this.initializeLoginFormHandlers();
+        
+        // Check if user is already logged in and redirect if necessary
+        this.checkExistingAuthState();
+        
+        console.log('✅ Login page initialization completed');
+    }
+
+    // Initialize login form handlers
+    initializeLoginFormHandlers() {
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLoginSubmit(e));
+        }
+    }
+
+    // Check existing authentication state
+    checkExistingAuthState() {
+        if (this.currentUser) {
+            console.log('🔍 User already logged in, redirecting to dashboard...');
+            // Redirect to dashboard if user is already logged in
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 1000);
+        }
+    }
+
+    // Handle login form submission
+    async handleLoginSubmit(e) {
+        e.preventDefault();
+        console.log('🔧 Handling login form submission...');
+
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const submitButton = document.querySelector('#login-form button[type="submit"]');
+        const errorElement = document.getElementById('login-error-message');
+
+        if (!email || !password) {
+            this.showLoginError('Please enter both email and password', errorElement);
+            return;
+        }
+
+        try {
+            // Disable submit button and show loading state
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Signing in...';
+            }
+
+            // Sign in with Firebase
+            const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            console.log('✅ User signed in successfully:', user.email);
+
+            // Clear any error messages
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+
+            // Redirect to dashboard
+            window.location.href = '/dashboard.html';
+
+        } catch (error) {
+            console.error('❌ Login error:', error);
+            
+            // Re-enable submit button
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign In';
+            }
+
+            // Show error message
+            const errorMessage = this.getLoginErrorMessage(error);
+            this.showLoginError(errorMessage, errorElement);
+        }
+    }
+
+    // Show login error message
+    showLoginError(message, errorElement) {
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Get user-friendly login error message
+    getLoginErrorMessage(error) {
+        if (error.code === 'auth/user-not-found') {
+            return 'No account found with this email address.';
+        } else if (error.code === 'auth/wrong-password') {
+            return 'Incorrect password. Please try again.';
+        } else if (error.code === 'auth/invalid-email') {
+            return 'Please enter a valid email address.';
+        } else if (error.code === 'auth/too-many-requests') {
+            return 'Too many failed attempts. Please try again later.';
+        } else if (error.code === 'auth/user-disabled') {
+            return 'This account has been disabled. Please contact support.';
+        } else {
+            return 'An error occurred during sign in. Please try again.';
+        }
+    }
+
     // Set up Firebase auth state listener
     setupAuthListener() {
         if (!this.auth) {
@@ -59,6 +170,9 @@ class AuthManager {
         const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
         const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
         const onAdminPage = window.location.pathname.endsWith('admin.html');
+
+        // Initialize user logout functionality
+        this.initializeUserLogout();
 
         if (onDashboardPage) {
             // Reset initialization flags when user logs in
@@ -320,6 +434,48 @@ class AuthManager {
         errorMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 2rem; color: #721c24; z-index: 9999; text-align: center;';
         errorMessage.innerHTML = `<i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i><br><strong>Logout failed!</strong><br>${error.message}<br><br><button onclick="this.parentElement.remove()" style="padding: 0.5rem 1rem; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>`;
         document.body.appendChild(errorMessage);
+    }
+
+    // Initialize regular user logout functionality
+    initializeUserLogout() {
+        const logoutBtn = document.querySelector('#logout-button');
+        if (logoutBtn) {
+            logoutBtn.removeEventListener('click', this.handleUserLogout.bind(this));
+            logoutBtn.addEventListener('click', this.handleUserLogout.bind(this));
+            console.log('✅ User logout button initialized');
+        }
+    }
+
+    // Handle regular user logout
+    async handleUserLogout() {
+        console.log('User logout initiated');
+
+        const logoutBtn = document.querySelector('#logout-button');
+        const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
+        
+        if (logoutBtn) {
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = 'Logging out...';
+        }
+
+        try {
+            await this.auth.signOut();
+            console.log('User logged out successfully, redirecting to home page');
+
+            // Show success message and redirect
+            this.showLogoutSuccessMessage();
+            setTimeout(() => {
+                window.location.href = '/index.html';
+            }, 1500);
+
+        } catch (error) {
+            console.error('User logout error:', error);
+            if (logoutBtn) {
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = originalText;
+            }
+            this.handleLogoutError(error, logoutBtn, originalText);
+        }
     }
 
     // Admin token refresh mechanism

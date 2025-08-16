@@ -9,6 +9,7 @@ class UIManager {
         this.vidiprinterData = [];
         this.isVidiprinterRunning = false;
         this.autoScrollEnabled = true;
+        this.processedEvents = new Set(); // Track processed events to prevent duplicates
     }
 
     // Initialize UI management
@@ -23,8 +24,12 @@ class UIManager {
         
         this.setupEventListeners();
         this.initializeTestimonialModal();
-        this.initializeRegistrationWindowDisplay();
+        // Registration window display will be initialized manually after global references are set
         this.initializeVidiprinter();
+        
+        // Initialize tab functionality
+        this.initializeMobileTabs();
+        this.initializeDesktopTabs();
     }
 
     // Set up event listeners for UI functionality
@@ -131,37 +136,45 @@ class UIManager {
         if (targetTab === 'as-it-stands') {
             console.log('As It Stands tab clicked');
             // Run diagnostics first
-            if (typeof diagnoseAsItStandsElements === 'function') {
-                diagnoseAsItStandsElements();
+            if (window.app && window.app.utilitiesManager) {
+                window.app.utilitiesManager.diagnoseAsItStandsElements();
             }
             // Only initialize if not already done
             if (!window.asItStandsInitialized_desktop && !window.asItStandsInitialized_mobile) {
-                if (typeof initializeAsItStandsTab === 'function') {
-                    initializeAsItStandsTab('desktop');
+                if (window.app && window.app.adminManagementManager && window.app.adminManagementManager.teamOperations) {
+                    window.app.adminManagementManager.teamOperations.initializeAsItStandsTab('desktop');
+                } else if (window.app && window.app.teamOperations) {
+                    // Fallback for direct access
+                    window.app.teamOperations.initializeAsItStandsTab('desktop');
                 }
             }
         } else if (targetTab === 'scores') {
-            if (typeof loadPlayerScores === 'function') {
-                loadPlayerScores().then(async fixtures => {
-                    console.log('loadPlayerScores returned:', fixtures);
-                    // Get current gameweek for display
-                    const currentGameweek = getActiveGameweek();
-                    if (typeof renderPlayerScores === 'function') {
-                        await renderPlayerScores(fixtures, currentGameweek);
-                    }
-                    if (typeof renderMobilePlayerScores === 'function') {
-                        renderMobilePlayerScores(fixtures, currentGameweek);
-                    }
-                }).catch(error => {
-                    console.error('Error loading player scores:', error);
-                    if (typeof showNoScoresMessage === 'function') {
-                        showNoScoresMessage();
-                    }
-                });
+            if (window.app && window.app.scoresManager) {
+                try {
+                    const loadMethod = window.app.scoresManager.loadScoresForGameweek.bind(window.app.scoresManager);
+                    loadMethod().then(async fixtures => {
+                        console.log('loadScoresForGameweek returned:', fixtures);
+                        // Get current gameweek for display
+                        const currentGameweek = window.app.currentActiveGameweek;
+                        if (window.app && window.app.scoresManager) {
+                            await window.app.scoresManager.renderPlayerScores(fixtures, currentGameweek);
+                        }
+                        if (window.app && window.app.scoresManager) {
+                            window.app.scoresManager.renderMobilePlayerScores(fixtures, currentGameweek);
+                        }
+                    }).catch(error => {
+                        console.error('Error loading player scores:', error);
+                        if (window.app && window.app.scoresManager) {
+                            window.app.scoresManager.showNoScoresMessage();
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error calling loadScoresForGameweek:', error);
+                }
             }
         } else if (targetTab === 'vidiprinter') {
-            if (typeof initializePlayerVidiprinter === 'function') {
-                initializePlayerVidiprinter();
+            if (window.app && window.app.apiManager) {
+                window.app.apiManager.initializePlayerVidiprinter();
             }
         }
     }
@@ -179,8 +192,8 @@ class UIManager {
         console.log('Dashboard rendered, running As It Stands diagnostics...');
         setTimeout(() => {
             console.log('Running delayed diagnostics...');
-            if (typeof diagnoseAsItStandsElements === 'function') {
-                diagnoseAsItStandsElements();
+            if (window.app && window.app.utilitiesManager) {
+                window.app.utilitiesManager.diagnoseAsItStandsElements();
             }
         }, 1000);
         
@@ -190,8 +203,8 @@ class UIManager {
             const userData = userDoc.data();
             const userEdition = this.getUserEdition(userData);
             const allGameweeks = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'tiebreak'];
-            if (typeof batchCheckDeadlines === 'function') {
-                await batchCheckDeadlines(allGameweeks, userEdition);
+            if (window.app && window.app.gameLogicManager) {
+                await window.app.gameLogicManager.batchCheckDeadlines(allGameweeks, userEdition);
             }
         }
         
@@ -244,24 +257,24 @@ class UIManager {
                 this.updateLivesDisplay(userData, livesRemaining, mobileLivesRemaining, desktopLivesRemaining);
 
                 // Render pick history for desktop, mobile, and legacy (only if containers exist)
-                if (typeof renderPickHistory === 'function') {
+                if (window.app && window.app.gameLogicManager) {
                     if (picksHistoryContainer) {
-                        await renderPickHistory(userData.picks || {}, picksHistoryContainer, user.uid, userData);
+                        await window.app.gameLogicManager.renderPickHistory(userData.picks || {}, picksHistoryContainer, user.uid, userData);
                     }
                     if (mobilePicksHistoryContainer) {
-                        await renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, user.uid, userData);
+                        await window.app.gameLogicManager.renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, user.uid, userData);
                     }
                     if (desktopPicksHistoryContainer) {
-                        await renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, user.uid, userData);
+                        await window.app.gameLogicManager.renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, user.uid, userData);
                     }
                 }
                 
                 // Initialize gameweek navigation for both desktop and mobile
-                if (typeof initializeGameweekNavigation === 'function') {
-                    initializeGameweekNavigation(currentGameWeek, userData, user.uid);
+                if (window.app && window.app.gameLogicManager) {
+                    window.app.gameLogicManager.initializeGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
-                if (typeof initializeMobileGameweekNavigation === 'function') {
-                    initializeMobileGameweekNavigation(currentGameWeek, userData, user.uid);
+                if (window.app && window.app.gameLogicManager) {
+                    window.app.gameLogicManager.initializeMobileGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
                 
                 // Check for auto-picks needed
@@ -504,23 +517,48 @@ class UIManager {
 
     // Registration window display functionality
     async initializeRegistrationWindowDisplay() {
+        // Clear any existing timer to prevent duplicates
+        if (this.registrationUpdateTimer) {
+            clearInterval(this.registrationUpdateTimer);
+        }
+        
         await this.updateRegistrationWindowDisplay();
-        // Update every minute
-        setInterval(() => this.updateRegistrationWindowDisplay(), 60000);
+        // Update every 5 minutes to reduce load
+        this.registrationUpdateTimer = setInterval(() => this.updateRegistrationWindowDisplay(), 300000);
     }
 
     async updateRegistrationWindowDisplay() {
+        // Prevent multiple simultaneous calls
+        if (this.isUpdatingRegistrationWindow) {
+            console.log('Registration window update already in progress, skipping...');
+            return;
+        }
+        
+        this.isUpdatingRegistrationWindow = true;
+        
         try {
             // Ensure database is available before proceeding
             if (!this.db) {
-                console.warn('Database not available yet, skipping registration window display update');
+                console.warn('Database not available yet, showing default registration window');
+                this.showDefaultRegistrationWindow();
+                this.isUpdatingRegistrationWindow = false;
                 return;
             }
             
+            // Ensure registration manager is available
+            if (!window.registrationManager) {
+                console.warn('Registration manager not available yet, showing default registration window');
+                this.showDefaultRegistrationWindow();
+                this.isUpdatingRegistrationWindow = false;
+                return;
+            }
+            
+            console.log('✅ Registration manager is now available, proceeding with update...');
+            
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${window.currentActiveEdition || 1}`).get();
             if (!settingsDoc.exists) {
-                this.hideRegistrationCountdowns();
-                this.showRegisterButton(false);
+                console.log('No registration settings found, showing default registration window');
+                this.showDefaultRegistrationWindow();
                 return;
             }
 
@@ -528,8 +566,8 @@ class UIManager {
             const now = new Date();
             
             // Check if registration is currently open
-            if (typeof checkRegistrationWindow === 'function') {
-                const isCurrentlyOpen = await checkRegistrationWindow();
+            if (typeof window.registrationManager.checkRegistrationWindow === 'function') {
+                const isCurrentlyOpen = await window.registrationManager.checkRegistrationWindow();
                 
                 if (isCurrentlyOpen) {
                     // Registration is open - show countdown to end
@@ -537,7 +575,7 @@ class UIManager {
                     if (endDate) {
                         this.showRegistrationCountdown(endDate);
                     } else {
-                        this.hideRegistrationCountdowns();
+                        this.showDefaultRegistrationWindow();
                     }
                     this.showRegisterButton(true);
                 } else {
@@ -546,15 +584,54 @@ class UIManager {
                     if (nextStartDate && nextStartDate > now) {
                         this.showNextRegistrationCountdown(nextStartDate);
                     } else {
-                        this.hideRegistrationCountdowns();
+                        this.showDefaultRegistrationWindow();
                     }
                     this.showRegisterButton(false);
                 }
+            } else {
+                console.warn('Registration manager checkRegistrationWindow function not available');
+                this.showDefaultRegistrationWindow();
+                this.showRegisterButton(false);
             }
         } catch (error) {
             console.error('Error updating registration window display:', error);
-            this.hideRegistrationCountdowns();
+            this.showDefaultRegistrationWindow();
             this.showRegisterButton(false);
+        } finally {
+            // Always reset the flag
+            this.isUpdatingRegistrationWindow = false;
+        }
+    }
+
+    // Show default registration window when settings are not available
+    showDefaultRegistrationWindow() {
+        const countdownDiv = document.querySelector('#registration-countdown');
+        const nextCountdownDiv = document.querySelector('#next-registration-countdown');
+        
+        if (countdownDiv && nextCountdownDiv) {
+            // Show the current registration window with a default message
+            countdownDiv.style.display = 'block';
+            nextCountdownDiv.style.display = 'none';
+            
+            const timerSpan = document.querySelector('#countdown-timer');
+            if (timerSpan) {
+                timerSpan.textContent = 'Registration Open';
+            }
+            
+            // Show the register button
+            this.showRegisterButton(true);
+        }
+    }
+
+    // Cleanup method to clear timers
+    cleanupRegistrationTimers() {
+        if (this.registrationUpdateTimer) {
+            clearInterval(this.registrationUpdateTimer);
+            this.registrationUpdateTimer = null;
+        }
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
         }
     }
 
@@ -576,8 +653,7 @@ class UIManager {
                     // Registration window has ended
                     this.hideRegistrationCountdowns();
                     this.showRegisterButton(false);
-                    // Refresh the display to check for next window
-                    setTimeout(() => this.updateRegistrationWindowDisplay(), 1000);
+                    // Don't call updateRegistrationWindowDisplay here - let the interval handle it
                     return;
                 }
                 
@@ -596,8 +672,12 @@ class UIManager {
             };
             
             updateCountdown();
+            // Clear any existing countdown timer
+            if (this.countdownTimer) {
+                clearInterval(this.countdownTimer);
+            }
             // Update every second
-            setInterval(updateCountdown, 1000);
+            this.countdownTimer = setInterval(updateCountdown, 1000);
         }
     }
 
@@ -638,8 +718,12 @@ class UIManager {
             };
             
             updateCountdown();
+            // Clear any existing countdown timer
+            if (this.countdownTimer) {
+                clearInterval(this.countdownTimer);
+            }
             // Update every second
-            setInterval(updateCountdown, 1000);
+            this.countdownTimer = setInterval(updateCountdown, 1000);
         }
     }
 
@@ -710,15 +794,87 @@ class UIManager {
                 }
             });
         }
+        
+        // Add a test button if it doesn't exist
+        const testBtn = document.querySelector('#test-vidiprinter-btn');
+        if (testBtn) {
+            testBtn.addEventListener('click', () => this.testVidiprinterConnection());
+        }
+        
+        // Log the initialization status
+        console.log('📺 Vidiprinter initialization complete');
+        console.log('📺 System ready check:', this.isVidiprinterReady());
+        
+        // Show initial status
+        this.addVidiprinterEntry('Vidiprinter system initialized and ready', 'status');
+        this.showVidiprinterStatus();
+        
+        // Auto-start the vidiprinter for better user experience
+        setTimeout(() => {
+            if (this.isVidiprinterReady() && !this.isVidiprinterRunning) {
+                console.log('📺 Auto-starting vidiprinter...');
+                this.startVidiprinter();
+            }
+        }, 1000);
+    }
+    
+    // Test vidiprinter connection
+    async testVidiprinterConnection() {
+        console.log('📺 Testing vidiprinter connection...');
+        
+        if (!this.isVidiprinterReady()) {
+            this.addVidiprinterEntry('System not ready for testing', 'error');
+            return;
+        }
+        
+        try {
+            this.addVidiprinterEntry('Testing connection...', 'status');
+            const data = await window.fetchVidiprinterData();
+            console.log('📺 Test connection result:', data);
+            
+            if (data && Array.isArray(data) && data.length > 0) {
+                this.addVidiprinterEntry(`Connection successful! Found ${data.length} events`, 'status');
+            } else {
+                this.addVidiprinterEntry('Connection successful but no events found', 'status');
+            }
+        } catch (error) {
+            console.error('📺 Test connection failed:', error);
+            this.addVidiprinterEntry(`Test failed: ${error.message}`, 'error');
+        }
+    }
+    
+    // Manual vidiprinter update
+    async manualVidiprinterUpdate() {
+        console.log('📺 Manual vidiprinter update requested...');
+        
+        if (!this.isVidiprinterRunning) {
+            this.addVidiprinterEntry('Vidiprinter not running. Please start it first.', 'status');
+            return;
+        }
+        
+        try {
+            await this.performVidiprinterUpdate();
+            this.addVidiprinterEntry('Manual update completed', 'status');
+        } catch (error) {
+            console.error('📺 Manual update failed:', error);
+            this.addVidiprinterEntry(`Manual update failed: ${error.message}`, 'error');
+        }
     }
 
     async startVidiprinter() {
         if (this.isVidiprinterRunning) {
-            console.log('Vidiprinter is already running');
+            console.log('📺 Vidiprinter is already running');
             return;
         }
 
-        console.log('Starting vidiprinter...');
+        // Check if the system is ready
+        if (!this.isVidiprinterReady()) {
+            console.error('📺 Vidiprinter system not ready');
+            this.addVidiprinterEntry('Cannot start vidiprinter - system not ready. Please refresh the page.', 'error');
+            return;
+        }
+
+        console.log('📺 Starting vidiprinter...');
         this.isVidiprinterRunning = true;
 
         const startBtn = document.querySelector('#start-vidiprinter-btn');
@@ -726,6 +882,12 @@ class UIManager {
         
         if (startBtn) startBtn.disabled = true;
         if (stopBtn) stopBtn.disabled = false;
+
+        // Clear processed events when starting fresh
+        this.processedEvents.clear();
+        
+        // Clear the feed when starting
+        this.clearVidiprinterFeed();
 
         // Start the vidiprinter update loop
         this.vidiprinterInterval = setInterval(async () => {
@@ -736,6 +898,9 @@ class UIManager {
             }
         }, 30000); // Update every 30 seconds
 
+        // Show system status
+        this.addVidiprinterEntry('Vidiprinter system started successfully', 'status');
+        
         // Perform initial update
         await this.performVidiprinterUpdate();
     }
@@ -759,18 +924,42 @@ class UIManager {
         
         if (startBtn) startBtn.disabled = false;
         if (stopBtn) stopBtn.disabled = true;
+        
+        // Show system status
+        this.addVidiprinterEntry('Vidiprinter system stopped', 'status');
     }
 
     async performVidiprinterUpdate() {
         try {
-            if (typeof fetchVidiprinterData === 'function') {
-                const data = await fetchVidiprinterData();
-                if (data && data.length > 0) {
-                    this.processVidiprinterData(data);
+            // Check if API calls are suspended
+            if (typeof window.isApiSuspended === 'function') {
+                const isSuspended = await window.isApiSuspended();
+                if (isSuspended) {
+                    console.log('📺 API calls are suspended, skipping vidiprinter update');
+                    this.addVidiprinterEntry('API calls are currently suspended. Manual updates only.', 'status');
+                    return;
                 }
             }
+            
+            // Check if the global function is available
+            if (typeof window.fetchVidiprinterData === 'function') {
+                console.log('📺 Performing vidiprinter update...');
+                const data = await window.fetchVidiprinterData();
+                console.log('📺 Received vidiprinter data:', data);
+                
+                if (data && Array.isArray(data)) {
+                    this.processVidiprinterData(data);
+                } else {
+                    console.warn('📺 Invalid vidiprinter data received:', data);
+                    this.addVidiprinterEntry('Vidiprinter update failed. Please check the console for details.', 'error');
+                }
+            } else {
+                console.warn('📺 fetchVidiprinterData function not available globally');
+                this.addVidiprinterEntry('Vidiprinter system not properly initialized. Please refresh the page.', 'error');
+            }
         } catch (error) {
-            console.error('Error performing vidiprinter update:', error);
+            console.error('❌ Error performing vidiprinter update:', error);
+            this.addVidiprinterEntry(`Vidiprinter error: ${error.message}`, 'error');
         }
     }
 
@@ -780,34 +969,149 @@ class UIManager {
             return;
         }
 
-        console.log(`Processing ${vidiprinterEvents.length} vidiprinter events`);
+        console.log(`📺 Processing ${vidiprinterEvents.length} vidiprinter events`);
 
+        if (vidiprinterEvents.length === 0) {
+            this.addVidiprinterEntry('No live matches currently available. The vidiprinter will update when matches are in progress.', 'status');
+            return;
+        }
+
+        let newEventsCount = 0;
         vidiprinterEvents.forEach(event => {
             if (event && event.text) {
-                this.addVidiprinterEntry(event.text, event.type || 'status');
+                // Skip Attendance events
+                if (event.type === 'Attendance') {
+                    return;
+                }
+                
+                // Create a unique identifier for this event to prevent duplicates
+                const eventId = this.createEventId(event);
+                
+                // Only process if we haven't seen this event before
+                if (!this.processedEvents.has(eventId)) {
+                    this.processedEvents.add(eventId);
+                    this.addVidiprinterEntry(event.text, event.type || 'status', event);
+                    newEventsCount++;
+                }
             }
         });
+        
+        if (newEventsCount > 0) {
+            console.log(`📺 Added ${newEventsCount} new events to vidiprinter`);
+        }
     }
 
-    addVidiprinterEntry(text, type = 'status') {
-        const feed = document.querySelector('#vidiprinter-feed');
+    // Create a unique identifier for an event to prevent duplicates
+    createEventId(event) {
+        // Use timestamp + text + type as unique identifier
+        const timestamp = event['date/time'] || '';
+        const text = event.text || '';
+        const type = event.type || '';
+        return `${timestamp}|${text}|${type}`;
+    }
+
+    addVidiprinterEntry(text, type = 'status', eventData = null) {
+        // Use enhanced vidiprinter feed by default
+        let feed = document.querySelector('#enhanced-vidiprinter-feed');
         if (!feed) {
-            console.warn('Vidiprinter feed element not found');
+            // Fallback to standard feed if enhanced not available
+            feed = document.querySelector('#vidiprinter-feed');
+        }
+        
+        if (!feed) {
+            console.warn('Vidiprinter feed element not found - neither #enhanced-vidiprinter-feed nor #vidiprinter-feed');
             return;
         }
 
         const entry = document.createElement('div');
-        entry.className = `vidiprinter-entry ${type}`;
+        // Use API timestamp if available, otherwise use current time
+        let timestamp;
+        if (eventData && eventData['date/time']) {
+            // Parse the API timestamp format "2025-08-09 15:45:51" and convert to "09-08-2025 15:45:51"
+            const apiDateTime = eventData['date/time'];
+            const dateTimeParts = apiDateTime.split(' ');
+            if (dateTimeParts.length === 2) {
+                const datePart = dateTimeParts[0]; // "2025-08-09"
+                const timePart = dateTimeParts[1]; // "15:45:51"
+                const dateParts = datePart.split('-');
+                if (dateParts.length === 3) {
+                    const day = dateParts[2];
+                    const month = dateParts[1];
+                    const year = dateParts[0];
+                    timestamp = `${day}-${month}-${year} ${timePart}`;
+                } else {
+                    timestamp = apiDateTime;
+                }
+            } else {
+                timestamp = apiDateTime;
+            }
+        } else {
+            // Fallback to current time in DD-MM-YYYY HH:MM:SS format
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const time = now.toLocaleTimeString('en-GB', { 
+                timeZone: 'Europe/London',
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            timestamp = `${day}-${month}-${year} ${time}`;
+        }
         
-        const timestamp = new Date().toLocaleTimeString('en-GB', { 
-            timeZone: 'Europe/London',
-            hour: '2-digit', 
-            minute: '2-digit',
-            second: '2-digit'
-        });
+        // Format display as requested: "DD-MM-YYYY HH:MM:SS - Type [emoji] Text"
+        let displayText = text;
+        let entryClass = `vidiprinter-entry ${type}`;
+        let emoji = '';
         
+        // Add special formatting for different event types
+        if (type === 'goal' || type === 'Goals') {
+            entryClass += ' goal';
+            emoji = '⚽';
+            type = 'GOAL'; // Display as GOAL instead of Goals
+        } else if (type === 'card' || type === 'Cards') {
+            entryClass += ' card';
+            emoji = '🟨';
+        } else if (type === 'substitution' || type === 'Substitutions') {
+            entryClass += ' substitution';
+            emoji = '🔄';
+        } else if (type === 'match' || type === 'Matches') {
+            entryClass += ' match';
+            emoji = '🏟️';
+        } else if (type === 'kick-off' || type === 'Kick-off') {
+            entryClass += ' kickoff';
+            emoji = '📢';
+            type = 'Kick-off';
+        } else if (type === 'half-time' || type === 'Half-time') {
+            entryClass += ' halftime';
+            emoji = '⏸️';
+            type = 'HT'; // Display as HT instead of Half-time
+        } else if (type === 'full-time' || type === 'Full-time') {
+            entryClass += ' fulltime';
+            emoji = '🏁';
+            type = 'FT'; // Display as FT instead of Full-time
+        } else if (type === 'Correction') {
+            entryClass += ' correction';
+            emoji = '🔧';
+            type = 'Error';
+        } else if (type === 'error') {
+            entryClass += ' error';
+            emoji = '❌';
+        } else if (type === 'status') {
+            entryClass += ' status';
+            emoji = 'ℹ️';
+        }
+        
+        // Use enhanced-vidiprinter-entry class for enhanced feed, vidiprinter-entry for standard feed
+        const isEnhancedFeed = feed.id === 'enhanced-vidiprinter-feed';
+        entry.className = isEnhancedFeed ? `enhanced-vidiprinter-entry ${type}` : `vidiprinter-entry ${type}`;
+        
+        // Format: "09-08-2025 15:01:10 [emoji] GOAL Gateshead v Southend United"
         entry.innerHTML = `
             <span class="timestamp">${timestamp}</span>
+            <span class="emoji">${emoji}</span>
+            <span class="type">${type}</span>
             <span class="text">${text}</span>
         `;
 
@@ -823,13 +1127,35 @@ class UIManager {
         while (feed.children.length > maxEntries) {
             feed.removeChild(feed.firstChild);
         }
+        
+        // Add a subtle animation effect for new entries
+        entry.style.opacity = '0';
+        entry.style.transform = 'translateY(-10px)';
+        entry.style.transition = 'all 0.3s ease-in-out';
+        
+        setTimeout(() => {
+            entry.style.opacity = '1';
+            entry.style.transform = 'translateY(0)';
+        }, 10);
     }
 
     clearVidiprinterFeed() {
-        const feed = document.querySelector('#vidiprinter-feed');
-        if (feed) {
-            feed.innerHTML = '';
+        // Clear both regular and enhanced vidiprinter feeds
+        const regularFeed = document.querySelector('#vidiprinter-feed');
+        const enhancedFeed = document.querySelector('#enhanced-vidiprinter-feed');
+        
+        if (regularFeed) {
+            regularFeed.innerHTML = '';
         }
+        
+        if (enhancedFeed) {
+            enhancedFeed.innerHTML = '';
+        }
+        
+        // Also clear the processed events set when clearing the feed
+        this.processedEvents.clear();
+        
+        console.log('📺 Vidiprinter feeds cleared and processed events reset');
     }
 
     toggleAutoScroll() {
@@ -845,6 +1171,29 @@ class UIManager {
                 feed.scrollTop = feed.scrollHeight;
             }
         }
+    }
+
+    // Show vidiprinter system status
+    showVidiprinterStatus() {
+        const status = this.isVidiprinterRunning ? 'Running' : 'Stopped';
+        const lastUpdate = this.lastUpdateTime ? new Date(this.lastUpdateTime).toLocaleTimeString() : 'Never';
+        const globalFunctionAvailable = typeof window.fetchVidiprinterData === 'function';
+        
+        this.addVidiprinterEntry(`System Status: ${status} | Last Update: ${lastUpdate} | API: ${globalFunctionAvailable ? 'Available' : 'Not Available'}`, 'status');
+    }
+    
+    // Check if vidiprinter system is ready
+    isVidiprinterReady() {
+        const hasGlobalFunction = typeof window.fetchVidiprinterData === 'function';
+        const hasFeedElement = document.querySelector('#enhanced-vidiprinter-feed') || document.querySelector('#vidiprinter-feed');
+        
+        console.log('📺 Vidiprinter system check:', {
+            globalFunction: hasGlobalFunction,
+            feedElement: hasFeedElement,
+            isRunning: this.isVidiprinterRunning
+        });
+        
+        return hasGlobalFunction && hasFeedElement;
     }
 
     // Cleanup resources

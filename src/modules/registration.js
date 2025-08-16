@@ -2,8 +2,9 @@
 // Handles user registration, edition management, and registration settings
 
 class RegistrationManager {
-    constructor(db) {
+    constructor(db, auth) {
         this.db = db;
+        this.auth = auth;
         this.currentActiveEdition = 1;
         this.currentEditionName = "Edition 1";
         this.registrationManagementInitialized = false;
@@ -30,9 +31,536 @@ class RegistrationManager {
             refreshStatsBtn.addEventListener('click', this.refreshRegistrationStats.bind(this));
         }
 
+        // Initialize registration page functionality
+        this.initializeRegistrationPage();
+
         // Load current settings
         this.loadRegistrationSettings();
         this.refreshRegistrationStats();
+    }
+
+    // Initialize main page functionality (index.html)
+    initializeMainPage() {
+        console.log('🔧 Initializing main page functionality...');
+        
+        // Check registration window status
+        console.log('🔧 Checking registration window status...');
+        this.checkRegistrationWindow();
+        
+        // Initialize any other main page features
+        console.log('🔧 Initializing main page features...');
+        this.initializeMainPageFeatures();
+        
+        console.log('✅ Main page initialization completed');
+    }
+
+    // Initialize main page features
+    initializeMainPageFeatures() {
+        console.log('🔧 Setting up main page event listeners...');
+        
+        // Set up any main page specific event listeners
+        // This could include navigation, testimonials, etc.
+        
+        console.log('✅ Main page features initialized');
+    }
+
+    // Initialize registration page functionality
+    initializeRegistrationPage() {
+        console.log('🔧 Initializing registration page functionality...');
+        console.log('🔍 Current page URL:', window.location.href);
+        console.log('🔍 Document ready state:', document.readyState);
+        
+        // Initialize age verification buttons
+        console.log('🔧 Step 1: Initializing age verification...');
+        this.initializeAgeVerification();
+        
+        // Initialize form submission handlers
+        console.log('🔧 Step 2: Initializing form handlers...');
+        this.initializeFormHandlers();
+        
+        // Initialize edition selection change handler
+        console.log('🔧 Step 3: Initializing edition selection...');
+        this.initializeEditionSelection();
+        
+        // Initialize form toggle handlers
+        console.log('🔧 Step 4: Initializing form toggles...');
+        this.initializeFormToggles();
+        
+        // Load current edition and update displays
+        console.log('🔧 Step 5: Loading current edition...');
+        this.loadCurrentEditionForRegistration();
+        
+        // Check registration window status
+        console.log('🔧 Step 6: Checking registration window...');
+        this.checkRegistrationWindow();
+        
+        console.log('✅ Registration page initialization completed');
+    }
+
+    // Initialize age verification buttons
+    initializeAgeVerification() {
+        console.log('🔍 Initializing age verification buttons...');
+        
+        const ageYesBtn = document.getElementById('age-yes-btn');
+        const ageNoBtn = document.getElementById('age-no-btn');
+        const ageVerifiedInput = document.getElementById('register-age-verified');
+
+        console.log('🔍 Age verification elements found:', {
+            ageYesBtn: !!ageYesBtn,
+            ageNoBtn: !!ageNoBtn,
+            ageVerifiedInput: !!ageVerifiedInput
+        });
+
+        if (ageYesBtn && ageNoBtn && ageVerifiedInput) {
+            console.log('✅ All age verification elements found, adding event listeners...');
+            
+            ageYesBtn.addEventListener('click', () => {
+                console.log('✅ Age Yes button clicked');
+                // Remove selected class from both buttons
+                ageYesBtn.classList.remove('selected');
+                ageNoBtn.classList.remove('selected');
+                
+                // Add selected class to yes button
+                ageYesBtn.classList.add('selected');
+                
+                // Set the hidden input value
+                ageVerifiedInput.value = 'yes';
+                
+                console.log('Age verification: Yes selected');
+            });
+
+            ageNoBtn.addEventListener('click', () => {
+                console.log('✅ Age No button clicked');
+                // Remove selected class from both buttons
+                ageYesBtn.classList.remove('selected');
+                ageNoBtn.classList.remove('selected');
+                
+                // Add selected class to no button
+                ageNoBtn.classList.add('selected');
+                
+                // Set the hidden input value
+                ageVerifiedInput.value = 'no';
+                
+                console.log('Age verification: No selected');
+            });
+            
+            console.log('✅ Age verification event listeners added successfully');
+        } else {
+            console.error('❌ Some age verification elements not found:', {
+                ageYesBtn: !!ageYesBtn,
+                ageNoBtn: !!ageNoBtn,
+                ageVerifiedInput: !!ageVerifiedInput
+            });
+        }
+    }
+
+    // Initialize form submission handlers
+    initializeFormHandlers() {
+        const registerForm = document.getElementById('register-form');
+        const reRegisterForm = document.getElementById('re-register-form');
+
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => this.handleRegistrationSubmit(e));
+        }
+
+        if (reRegisterForm) {
+            reRegisterForm.addEventListener('submit', (e) => this.handleReRegistrationSubmit(e));
+        }
+    }
+
+    // Initialize edition selection change handler
+    initializeEditionSelection() {
+        const editionSelection = document.getElementById('edition-selection');
+        if (editionSelection) {
+            editionSelection.addEventListener('change', () => {
+                this.updateEditionDisplay();
+            });
+        }
+    }
+
+    // Initialize form toggle handlers
+    initializeFormToggles() {
+        const showReRegister = document.getElementById('show-re-register');
+        const showNewRegister = document.getElementById('show-new-register');
+        const registerForm = document.getElementById('register-form');
+        const reRegisterForm = document.getElementById('re-register-form');
+
+        if (showReRegister && showNewRegister && registerForm && reRegisterForm) {
+            showReRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                registerForm.style.display = 'none';
+                reRegisterForm.style.display = 'block';
+                showReRegister.style.display = 'none';
+                showNewRegister.style.display = 'inline';
+            });
+
+            showNewRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                reRegisterForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                showNewRegister.style.display = 'none';
+                showReRegister.style.display = 'inline';
+            });
+        }
+    }
+
+    // Handle main registration form submission
+    async handleRegistrationSubmit(e) {
+        e.preventDefault();
+        console.log('Handling registration form submission...');
+
+        // Get form data
+        const formData = {
+            firstName: document.getElementById('register-firstname').value.trim(),
+            surname: document.getElementById('register-surname').value.trim(),
+            ageVerified: document.getElementById('register-age-verified').value,
+            email: document.getElementById('register-email').value.trim(),
+            mobile: document.getElementById('register-mobile').value.trim(),
+            password: document.getElementById('register-password').value,
+            confirmPassword: document.getElementById('register-confirm-password').value,
+            paymentMethod: document.getElementById('register-payment').value,
+            emailConsent: document.getElementById('register-email-consent').checked,
+            whatsappConsent: document.getElementById('register-whatsapp-consent').checked,
+            termsAccepted: document.getElementById('register-terms').checked,
+            edition: document.getElementById('edition-selection').value
+        };
+
+        // Validate form data
+        const validationResult = this.validateRegistrationForm(formData);
+        if (!validationResult.isValid) {
+            this.showRegistrationError(validationResult.message);
+            return;
+        }
+
+        try {
+            // Create user account
+            const userCredential = await this.auth.createUserWithEmailAndPassword(
+                formData.email, 
+                formData.password
+            );
+
+            const user = userCredential.user;
+            console.log('User account created:', user.uid);
+
+            // Save user data to Firestore
+            await this.saveUserRegistrationData(user.uid, formData);
+
+            // Show success message
+            this.showRegistrationSuccess('Registration successful! You can now log in.');
+
+            // Clear form
+            this.clearRegistrationForm();
+
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Registration error:', error);
+            this.showRegistrationError(this.getRegistrationErrorMessage(error));
+        }
+    }
+
+    // Handle re-registration form submission
+    async handleReRegistrationSubmit(e) {
+        e.preventDefault();
+        console.log('Handling re-registration form submission...');
+
+        // Get form data
+        const formData = {
+            email: document.getElementById('re-register-email').value.trim(),
+            password: document.getElementById('re-register-password').value,
+            paymentMethod: document.getElementById('re-register-payment').value,
+            emailConsent: document.getElementById('re-register-email-consent').checked,
+            whatsappConsent: document.getElementById('re-register-whatsapp-consent').checked,
+            termsAccepted: document.getElementById('re-register-terms').checked,
+            edition: document.getElementById('edition-selection').value
+        };
+
+        // Validate form data
+        const validationResult = this.validateReRegistrationForm(formData);
+        if (!validationResult.isValid) {
+            this.showReRegistrationError(validationResult.message);
+            return;
+        }
+
+        try {
+            // Sign in existing user
+            const userCredential = await this.auth.signInWithEmailAndPassword(
+                formData.email, 
+                formData.password
+            );
+
+            const user = userCredential.user;
+            console.log('User signed in for re-registration:', user.uid);
+
+            // Update user registration data
+            await this.updateUserRegistrationData(user.uid, formData);
+
+            // Show success message
+            this.showReRegistrationSuccess('Re-registration successful! Welcome back.');
+
+            // Clear form
+            this.clearReRegistrationForm();
+
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Re-registration error:', error);
+            this.showReRegistrationError(this.getRegistrationErrorMessage(error));
+        }
+    }
+
+    // Validate registration form data
+    validateRegistrationForm(formData) {
+        if (!formData.firstName) {
+            return { isValid: false, message: 'First name is required' };
+        }
+        if (!formData.surname) {
+            return { isValid: false, message: 'Surname is required' };
+        }
+        if (!formData.ageVerified) {
+            return { isValid: false, message: 'Please verify your age' };
+        }
+        if (formData.ageVerified === 'no') {
+            return { isValid: false, message: 'You must be 16 or older to register' };
+        }
+        if (!formData.email) {
+            return { isValid: false, message: 'Email address is required' };
+        }
+        if (!formData.mobile) {
+            return { isValid: false, message: 'Mobile number is required' };
+        }
+        if (!formData.password) {
+            return { isValid: false, message: 'Password is required' };
+        }
+        if (formData.password.length < 6) {
+            return { isValid: false, message: 'Password must be at least 6 characters' };
+        }
+        if (formData.password !== formData.confirmPassword) {
+            return { isValid: false, message: 'Passwords do not match' };
+        }
+        if (!formData.paymentMethod) {
+            return { isValid: false, message: 'Please select a payment method' };
+        }
+        if (!formData.emailConsent) {
+            return { isValid: false, message: 'Email consent is required' };
+        }
+        if (!formData.termsAccepted) {
+            return { isValid: false, message: 'You must accept the terms and conditions' };
+        }
+        if (!formData.edition) {
+            return { isValid: false, message: 'Please select an edition' };
+        }
+
+        return { isValid: true };
+    }
+
+    // Validate re-registration form data
+    validateReRegistrationForm(formData) {
+        if (!formData.email) {
+            return { isValid: false, message: 'Email address is required' };
+        }
+        if (!formData.password) {
+            return { isValid: false, message: 'Password is required' };
+        }
+        if (!formData.paymentMethod) {
+            return { isValid: false, message: 'Please select a payment method' };
+        }
+        if (!formData.emailConsent) {
+            return { isValid: false, message: 'Email consent is required' };
+        }
+        if (!formData.termsAccepted) {
+            return { isValid: false, message: 'You must accept the terms and conditions' };
+        }
+        if (!formData.edition) {
+            return { isValid: false, message: 'Please select an edition' };
+        }
+
+        return { isValid: true };
+    }
+
+    // Show registration error message
+    showRegistrationError(message) {
+        const errorElement = document.getElementById('error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Show registration success message
+    showRegistrationSuccess(message) {
+        // Create a temporary success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.textContent = message;
+        successDiv.style.cssText = `
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: bold;
+        `;
+
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.parentNode.insertBefore(successDiv, registerForm.nextSibling);
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+    }
+
+    // Show re-registration error message
+    showReRegistrationError(message) {
+        const errorElement = document.getElementById('re-register-error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Show re-registration success message
+    showReRegistrationSuccess(message) {
+        // Create a temporary success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.textContent = message;
+        successDiv.style.cssText = `
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: bold;
+        `;
+
+        const reRegisterForm = document.getElementById('re-register-form');
+        if (reRegisterForm) {
+            reRegisterForm.parentNode.insertBefore(successDiv, reRegisterForm.nextSibling);
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+    }
+
+    // Clear registration form
+    clearRegistrationForm() {
+        const form = document.getElementById('register-form');
+        if (form) {
+            form.reset();
+            // Clear age verification selection
+            const ageYesBtn = document.getElementById('age-yes-btn');
+            const ageNoBtn = document.getElementById('age-no-btn');
+            const ageVerifiedInput = document.getElementById('register-age-verified');
+            
+            if (ageYesBtn) ageYesBtn.classList.remove('selected');
+            if (ageNoBtn) ageNoBtn.classList.remove('selected');
+            if (ageVerifiedInput) ageVerifiedInput.value = '';
+        }
+    }
+
+    // Clear re-registration form
+    clearReRegistrationForm() {
+        const form = document.getElementById('re-register-form');
+        if (form) {
+            form.reset();
+        }
+    }
+
+    // Get user-friendly error message
+    getRegistrationErrorMessage(error) {
+        if (error.code === 'auth/email-already-in-use') {
+            return 'An account with this email already exists. Please use the re-registration form instead.';
+        } else if (error.code === 'auth/weak-password') {
+            return 'Password is too weak. Please choose a stronger password.';
+        } else if (error.code === 'auth/invalid-email') {
+            return 'Please enter a valid email address.';
+        } else if (error.code === 'auth/user-not-found') {
+            return 'No account found with this email. Please use the main registration form instead.';
+        } else if (error.code === 'auth/wrong-password') {
+            return 'Incorrect password. Please try again.';
+        } else {
+            return 'An error occurred during registration. Please try again.';
+        }
+    }
+
+    // Save user registration data to Firestore
+    async saveUserRegistrationData(userId, formData) {
+        const editionKey = `edition${formData.edition}`;
+        const editionName = formData.edition === 'test' ? 'Test Weeks' : `Edition ${formData.edition}`;
+
+        const userData = {
+            uid: userId,
+            firstName: formData.firstName,
+            surname: formData.surname,
+            email: formData.email,
+            mobile: formData.mobile,
+            paymentMethod: formData.paymentMethod,
+            emailConsent: formData.emailConsent,
+            whatsappConsent: formData.whatsappConsent,
+            termsAccepted: formData.termsAccepted,
+            status: 'active',
+            lives: 3, // Start with 3 lives
+            preferredEdition: formData.edition,
+            registrations: {
+                [editionKey]: {
+                    edition: formData.edition,
+                    editionName: editionName,
+                    registrationDate: new Date(),
+                    paymentMethod: formData.paymentMethod,
+                    emailConsent: formData.emailConsent,
+                    whatsappConsent: formData.whatsappConsent,
+                    termsAccepted: formData.termsAccepted
+                }
+            },
+            createdAt: new Date(),
+            lastUpdated: new Date()
+        };
+
+        await this.db.collection('users').doc(userId).set(userData);
+        console.log('User registration data saved to Firestore');
+    }
+
+    // Update user registration data for re-registration
+    async updateUserRegistrationData(userId, formData) {
+        const editionKey = `edition${formData.edition}`;
+        const editionName = formData.edition === 'test' ? 'Test Weeks' : `Edition ${formData.edition}`;
+
+        const updateData = {
+            paymentMethod: formData.paymentMethod,
+            emailConsent: formData.emailConsent,
+            whatsappConsent: formData.whatsappConsent,
+            termsAccepted: formData.termsAccepted,
+            preferredEdition: formData.edition,
+            lastUpdated: new Date,
+            [`registrations.${editionKey}`]: {
+                edition: formData.edition,
+                editionName: editionName,
+                registrationDate: new Date(),
+                paymentMethod: formData.paymentMethod,
+                emailConsent: formData.emailConsent,
+                whatsappConsent: formData.whatsappConsent,
+                termsAccepted: formData.termsAccepted
+            }
+        };
+
+        await this.db.collection('users').doc(userId).update(updateData);
+        console.log('User re-registration data updated in Firestore');
     }
 
     // Load registration settings
@@ -49,7 +577,7 @@ class RegistrationManager {
     async loadEditionRegistrationSettings() {
         try {
             const editionForSettings = document.querySelector('#edition-for-settings');
-            const editionNumber = editionForSettings ? parseInt(editionForSettings.value) : 1;
+            const editionNumber = editionForSettings ? editionForSettings.value : '1';
 
             const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${editionNumber}`).get();
 
@@ -105,11 +633,16 @@ class RegistrationManager {
     // Load overview of all editions
     async loadAllEditionsOverview() {
         try {
+            console.log('🔧 Loading all editions overview...');
             const editions = [1, 2, 3, 4, 'test'];
             for (const edition of editions) {
                 const statusCard = document.querySelector(`#edition-${edition}-status`);
-                if (!statusCard) continue;
+                if (!statusCard) {
+                    console.log(`⚠️ Status card not found for edition ${edition}`);
+                    continue;
+                }
 
+                console.log(`🔍 Loading settings for edition ${edition}...`);
                 const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${edition}`).get();
 
                 if (settingsDoc.exists) {
@@ -124,7 +657,7 @@ class RegistrationManager {
                         const startDate = new Date(settings.startDate.toDate());
                         const endDate = new Date(settings.endDate.toDate());
 
-                        dateRange = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+                        dateRange = `${startDate.toLocaleDateString('en-GB')} - ${endDate.toLocaleDateString('en-GB')}`;
 
                         if (now >= startDate && now <= endDate) {
                             statusText = 'Registration Open';
@@ -141,10 +674,12 @@ class RegistrationManager {
                     statusCard.className = `edition-status-card ${statusClass}`;
                     statusCard.querySelector('.status-text').textContent = statusText;
                     statusCard.querySelector('.date-range').textContent = dateRange;
+                    console.log(`✅ Updated edition ${edition} status: ${statusText} (${dateRange})`);
                 } else {
                     statusCard.className = 'edition-status-card';
                     statusCard.querySelector('.status-text').textContent = 'Not configured';
                     statusCard.querySelector('.date-range').textContent = 'No dates set';
+                    console.log(`⚠️ Edition ${edition} has no settings - showing as Not configured`);
                 }
             }
         } catch (error) {
@@ -217,7 +752,8 @@ class RegistrationManager {
             let previousEditionsRegistrations = 0;
             let activePlayers = 0;
 
-            const currentEdition = this.currentActiveEdition;
+            const currentEdition = window.currentActiveEdition || this.currentActiveEdition;
+            console.log('refreshRegistrationStats - currentEdition:', currentEdition, 'window.currentActiveEdition:', window.currentActiveEdition, 'this.currentActiveEdition:', this.currentActiveEdition);
 
             let archivedUsers = 0;
             let activeUsers = 0;
@@ -237,8 +773,11 @@ class RegistrationManager {
 
                 if (userData.registrations) {
                     // Only count current edition registrations for active users
-                    if (userData.registrations[`edition${currentEdition}`] && userData.status !== 'archived') {
+                    const editionKey = `edition${currentEdition}`;
+                    console.log(`Checking user ${userData.firstName} ${userData.surname} for edition key: ${editionKey}, has registration: ${!!userData.registrations[editionKey]}, status: ${userData.status}`);
+                    if (userData.registrations[editionKey] && userData.status !== 'archived') {
                         currentEditionRegistrations++;
+                        console.log(`✅ Counted user ${userData.firstName} ${userData.surname} for edition ${currentEdition}`);
                     }
 
                     // Count registrations from previous editions (excluding archived users)
@@ -286,38 +825,55 @@ class RegistrationManager {
     // Update registration list
     async updateRegistrationList() {
         try {
-            const usersSnapshot = await this.db.collection('users').orderBy('firstName').limit(20).get();
+            const currentEdition = window.currentActiveEdition || this.currentActiveEdition;
+            console.log('updateRegistrationList - filtering for edition:', currentEdition);
+            console.log('updateRegistrationList - window.currentActiveEdition:', window.currentActiveEdition);
+            console.log('updateRegistrationList - this.currentActiveEdition:', this.currentActiveEdition);
+            
+            const usersSnapshot = await this.db.collection('users').orderBy('firstName').limit(50).get();
             const tbody = document.querySelector('#registration-list-body');
 
             if (!tbody) return;
 
             tbody.innerHTML = '';
 
+            let displayedCount = 0;
+            const editionKey = `edition${currentEdition}`;
+
             usersSnapshot.forEach(doc => {
                 const userData = doc.data();
+                
+                console.log(`Checking user: ${userData.firstName} ${userData.surname}`);
+                console.log(`  - Has registrations: ${!!userData.registrations}`);
+                console.log(`  - Looking for edition key: ${editionKey}`);
+                console.log(`  - Available editions:`, userData.registrations ? Object.keys(userData.registrations) : 'none');
+                console.log(`  - Has ${editionKey}: ${!!(userData.registrations && userData.registrations[editionKey])}`);
+                console.log(`  - Status: ${userData.status}`);
+                
+                // Only show users registered for the current edition
+                if (!userData.registrations || !userData.registrations[editionKey] || userData.status === 'archived') {
+                    console.log(`  ❌ Skipping user ${userData.firstName} ${userData.surname} - not registered for ${editionKey}`);
+                    return; // Skip this user
+                }
+                
+                console.log(`  ✅ Including user ${userData.firstName} ${userData.surname} for ${editionKey}`);
+
                 const row = document.createElement('tr');
+                displayedCount++;
 
                 const name = `${userData.firstName || ''} ${userData.surname || ''}`.trim();
                 const email = userData.email || '';
                 const paymentMethod = userData.paymentMethod || 'Not specified';
 
-                // Get latest registration
-                let latestEdition = 'None';
-                let registrationDate = 'N/A';
-
-                if (userData.registrations) {
-                    const editions = Object.keys(userData.registrations);
-                    if (editions.length > 0) {
-                        const latest = editions.sort().pop();
-                        latestEdition = latest.replace('edition', 'Edition ');
-                        registrationDate = userData.registrations[latest].registrationDate.toDate().toLocaleDateString();
-                    }
-                }
+                // Get registration info for current edition
+                const currentEditionReg = userData.registrations[editionKey];
+                const editionName = currentEdition === 'test' ? 'Test Weeks' : `Edition ${currentEdition}`;
+                const registrationDate = currentEditionReg.registrationDate ? currentEditionReg.registrationDate.toDate().toLocaleDateString('en-GB') : 'N/A';
 
                 row.innerHTML = `
                     <td>${name}</td>
                     <td>${email}</td>
-                    <td>${latestEdition}</td>
+                    <td>${editionName}</td>
                     <td>${registrationDate}</td>
                     <td>${paymentMethod}</td>
                     <td>
@@ -327,6 +883,8 @@ class RegistrationManager {
 
                 tbody.appendChild(row);
             });
+
+            console.log(`updateRegistrationList - displayed ${displayedCount} users for edition ${currentEdition}`);
 
         } catch (error) {
             console.error('Error updating registration list:', error);
@@ -407,7 +965,7 @@ class RegistrationManager {
         Object.keys(registrations).sort().forEach(edition => {
             const reg = registrations[edition];
             const editionName = edition.replace('edition', 'Edition ');
-            const date = reg.registrationDate ? reg.registrationDate.toDate().toLocaleDateString() : 'N/A';
+            const date = reg.registrationDate ? reg.registrationDate.toDate().toLocaleDateString('en-GB') : 'N/A';
             html += `
                 <div class="registration-item">
                     <strong>${editionName}:</strong> ${date}
@@ -540,13 +1098,13 @@ class RegistrationManager {
 
                 if (startDate && now < startDate) {
                     const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
-                    this.showRegistrationClosed(`${editionText} registration opens on ` + startDate.toLocaleDateString());
+                    this.showRegistrationClosed(`${editionText} registration opens on ` + startDate.toLocaleDateString('en-GB'));
                     return false;
                 }
 
                 if (endDate && now > endDate) {
                     const editionText = editionToCheck === 'test' ? 'Test Weeks' : `Edition ${editionToCheck}`;
-                    this.showRegistrationClosed(`${editionText} registration closed on ` + endDate.toLocaleDateString());
+                    this.showRegistrationClosed(`${editionText} registration closed on ` + endDate.toLocaleDateString('en-GB'));
                     return false;
                 }
 
@@ -745,6 +1303,10 @@ class RegistrationManager {
     setCurrentActiveEdition(edition) {
         this.currentActiveEdition = edition;
         this.currentEditionName = edition === 'test' ? 'Test Weeks' : `Edition ${edition}`;
+        // Also update the global value to keep everything in sync
+        if (window.currentActiveEdition !== edition) {
+            window.currentActiveEdition = edition;
+        }
     }
 }
 

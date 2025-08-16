@@ -1,0 +1,1116 @@
+// Main Admin Manager
+// Orchestrates all admin functionality modules
+
+import { UserManagement } from './userManagement.js';
+import { TeamOperations } from './teamOperations.js';
+import { Scheduling } from './scheduling.js';
+import { Audit } from './audit.js';
+
+export class AdminManager {
+    constructor(db, fixturesManager = null, scoresManager = null) {
+        this.db = db;
+        this.fixturesManager = fixturesManager;
+        this.scoresManager = scoresManager;
+        
+        // Initialize module instances
+        this.userManagement = new UserManagement(db);
+        this.teamOperations = new TeamOperations(db);
+        this.scheduling = new Scheduling(db);
+        this.audit = new Audit(db);
+        
+        // State tracking
+        this.adminManagementInitialized = false;
+        this.adminDashboardInitialized = false;
+        this.adminTabsInitialized = false;
+        this.fixtureManagementInitialized = false;
+        this.registrationManagementInitialized = false;
+        this.competitionSettingsInitialized = false;
+        this.eventListenersInitialized = false;
+        this.playerManagementEventListenersInitialized = false;
+        
+        // Current active edition and gameweek
+        this.currentActiveEdition = 1;
+        this.currentActiveGameweek = '1';
+        
+        // Method to update the current active edition
+        this.updateCurrentActiveEdition = (edition) => {
+            this.currentActiveEdition = edition;
+            this.userManagement.updateCurrentActiveEdition(edition);
+            this.teamOperations.updateCurrentActiveEdition(edition);
+            this.scheduling.updateCurrentActiveEdition(edition);
+            console.log(`AdminManager: Updated currentActiveEdition to ${edition}`);
+        };
+        
+        // Method to update the current active gameweek
+        this.updateCurrentActiveGameweek = (gameweek) => {
+            this.currentActiveGameweek = gameweek;
+            this.teamOperations.updateCurrentActiveGameweek(gameweek);
+            this.scheduling.updateCurrentActiveGameweek(gameweek);
+            console.log(`AdminManager: Updated currentActiveGameweek to ${gameweek}`);
+        };
+    }
+
+    // Initialize admin management
+    initializeAdminManagement() {
+        if (this.adminManagementInitialized) {
+            console.log('Admin management already initialized, skipping...');
+            return;
+        }
+        
+        console.log('Initializing admin management...');
+        this.adminManagementInitialized = true;
+        
+        // Event listeners are now set up in initializeAdminPage() to avoid duplicates
+    }
+
+    // Initialize admin page
+    initializeAdminPage() {
+        console.log('🚀 Initializing admin page...');
+        
+        // Initialize competition settings
+        this.scheduling.initializeCompetitionSettings();
+        
+        // Build admin dashboard to ensure all functions are exposed
+        this.buildAdminDashboard();
+        
+        // Set up event listeners
+        this.setupEventListeners();
+        
+        // Ensure Save Settings button is properly enabled and has event listener
+        this.ensureSaveSettingsButtonReady();
+        
+        // Initialize Football Web Pages API integration for admin interface
+        this.initializeAdminApiIntegration();
+        
+        // Initialize audit functionality
+        this.audit.initializeAudit();
+        
+        // Initialize Player Picks v2 functionality
+        this.initializePlayerPicksV2();
+        
+        console.log('✅ Admin page initialization complete');
+    }
+
+    // Initialize Player Picks v2 functionality
+    initializePlayerPicksV2() {
+        console.log('🚀 Initializing Player Picks v2...');
+        
+        // Get DOM elements
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const gameweekSelect = document.querySelector('#picks-v2-gameweek-select');
+        const refreshBtn = document.querySelector('#picks-v2-refresh-btn');
+        const exportBtn = document.querySelector('#picks-v2-export-btn');
+        
+        if (!editionSelect || !gameweekSelect || !refreshBtn) {
+            console.error('❌ Player Picks v2 elements not found');
+            return;
+        }
+        
+        // Set up event listeners
+        editionSelect.addEventListener('change', () => this.loadPlayerPicksV2());
+        gameweekSelect.addEventListener('change', () => this.loadPlayerPicksV2());
+        refreshBtn.addEventListener('click', () => this.loadPlayerPicksV2());
+        exportBtn.addEventListener('click', () => this.exportPlayerPicksV2());
+        
+        // Load initial data
+        this.loadPlayerPicksV2();
+        
+        console.log('✅ Player Picks v2 initialized');
+    }
+
+    // Load player picks for v2 tab
+    async loadPlayerPicksV2() {
+        console.log('🔄 Loading Player Picks v2...');
+        
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const gameweekSelect = document.querySelector('#picks-v2-gameweek-select');
+        const tableBody = document.querySelector('#picks-v2-table-body');
+        const loadingDiv = document.querySelector('#picks-v2-loading');
+        
+        if (!editionSelect || !gameweekSelect || !tableBody) {
+            console.error('❌ Player Picks v2 elements not found');
+            return;
+        }
+        
+        const selectedEdition = editionSelect.value;
+        const selectedGameweek = gameweekSelect.value;
+        
+        // Show loading
+        loadingDiv.style.display = 'block';
+        tableBody.innerHTML = '';
+        
+        try {
+            console.log(`🔍 Fetching picks for edition: ${selectedEdition}, gameweek: ${selectedGameweek}`);
+            
+            // Query picks collection
+            const picksQuery = this.db.collection('picks')
+                .where('edition', '==', selectedEdition)
+                .where('gameweek', '==', selectedGameweek)
+                .where('isActive', '==', true);
+            
+            const picksSnapshot = await picksQuery.get();
+            console.log(`✅ Found ${picksSnapshot.size} picks`);
+            
+
+            
+            // Update stats
+            this.updatePlayerPicksV2Stats(picksSnapshot);
+            
+            // Render table
+            this.renderPlayerPicksV2Table(picksSnapshot, tableBody);
+            
+        } catch (error) {
+            console.error('❌ Error loading Player Picks v2:', error);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        Error loading picks: ${error.message}
+                    </td>
+                </tr>
+            `;
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    // Update Player Picks v2 statistics
+    updatePlayerPicksV2Stats(picksSnapshot) {
+        const totalCount = document.querySelector('#picks-v2-total-count');
+        const playersCount = document.querySelector('#picks-v2-players-count');
+        const teamsCount = document.querySelector('#picks-v2-teams-count');
+        
+        if (!totalCount || !playersCount || !teamsCount) return;
+        
+        const picks = picksSnapshot.docs.map(doc => doc.data());
+        const uniquePlayers = new Set(picks.map(pick => pick.userId)).size;
+        const uniqueTeams = new Set(picks.map(pick => pick.teamPicked)).size;
+        
+
+        
+        totalCount.textContent = picksSnapshot.size;
+        playersCount.textContent = uniquePlayers;
+        teamsCount.textContent = uniqueTeams;
+    }
+
+    // Render Player Picks v2 table
+    renderPlayerPicksV2Table(picksSnapshot, tableBody) {
+        if (picksSnapshot.empty) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No picks found for this edition and game week
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        const rows = picksSnapshot.docs.map(doc => {
+            const pickData = doc.data();
+            return `
+                <tr>
+                    <td>
+                        <strong>${pickData.userFirstName} ${pickData.userSurname}</strong>
+                    </td>
+                    <td>
+                        <span class="team-badge">${pickData.teamPicked}</span>
+                    </td>
+                    <td>${pickData.gameweek}</td>
+                    <td>${pickData.edition}</td>
+                    <td>
+                        <span class="status-badge status-active">Active</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        tableBody.innerHTML = rows;
+    }
+
+    // Export Player Picks v2 data
+    exportPlayerPicksV2() {
+        console.log('📤 Exporting Player Picks v2...');
+        
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const gameweekSelect = document.querySelector('#picks-v2-gameweek-select');
+        
+        if (!editionSelect || !gameweekSelect) return;
+        
+        const selectedEdition = editionSelect.value;
+        const selectedGameweek = gameweekSelect.value;
+        
+        // This would implement CSV export functionality
+        alert(`Export functionality for ${selectedEdition} - Game Week ${selectedGameweek} would be implemented here.`);
+    }
+
+    // Ensure Save Settings button is ready
+    ensureSaveSettingsButtonReady() {
+        console.log('🔧 Ensuring Save Settings button is ready...');
+        
+        const saveSettingsBtn = document.querySelector('#save-settings-btn');
+        if (!saveSettingsBtn) {
+            console.error('Save Settings button not found');
+            return;
+        }
+        
+        // Force enable the button
+        saveSettingsBtn.disabled = false;
+        saveSettingsBtn.style.pointerEvents = 'auto';
+        saveSettingsBtn.style.opacity = '1';
+        saveSettingsBtn.style.cursor = 'pointer';
+        saveSettingsBtn.style.backgroundColor = 'var(--alty-yellow)';
+        saveSettingsBtn.style.color = 'var(--dark-text)';
+        saveSettingsBtn.classList.remove('disabled');
+        saveSettingsBtn.removeAttribute('disabled');
+        
+        // Remove any existing event listeners and re-attach
+        saveSettingsBtn.removeEventListener('click', (e) => this.scheduling.saveCompetitionSettings(e));
+        saveSettingsBtn.addEventListener('click', (e) => this.scheduling.saveCompetitionSettings(e));
+        
+        console.log('✅ Save Settings button is ready and enabled');
+        console.log('Button disabled state:', saveSettingsBtn.disabled);
+        console.log('Button pointer-events:', saveSettingsBtn.style.pointerEvents);
+        console.log('Button opacity:', saveSettingsBtn.style.opacity);
+        console.log('Button cursor:', saveSettingsBtn.style.cursor);
+        console.log('Button background color:', saveSettingsBtn.style.backgroundColor);
+        console.log('Button text color:', saveSettingsBtn.style.textColor);
+        console.log('Button classes:', saveSettingsBtn.className);
+        console.log('Button attributes:', Array.from(saveSettingsBtn.attributes).map(attr => `${attr.name}="${attr.value}"`));
+    }
+
+    // Setup event listeners
+    setupEventListeners() {
+        if (this.eventListenersInitialized) {
+            console.log('🔧 Event listeners already initialized, skipping...');
+            return;
+        }
+        
+        console.log('🔧 Setting up admin management event listeners...');
+        
+        // Set up settings event listeners
+        this.setupSettingsEventListeners();
+        
+        // Set up API suspension event listeners
+        this.setupApiSuspensionEventListeners();
+        
+        // Set up quick edition selector
+        this.scheduling.setupQuickEditionSelector();
+        
+        // Set up As It Stands functionality
+        this.teamOperations.setupAsItStandsFunctionality();
+        
+        // Set up admin tabs
+        this.setupAdminTabs();
+        
+        // Set up player management event listeners
+        this.setupPlayerManagementEventListeners();
+        
+        this.eventListenersInitialized = true;
+        console.log('✅ Admin management event listeners setup complete');
+    }
+
+    // Setup settings event listeners
+    setupSettingsEventListeners() {
+        console.log('🔧 Setting up settings event listeners...');
+        
+        // Set up save settings button monitoring
+        this.setupSaveSettingsButtonMonitoring();
+        
+        console.log('✅ Settings event listeners setup complete');
+    }
+
+    // Setup API suspension event listeners
+    setupApiSuspensionEventListeners() {
+        console.log('🔧 Setting up API suspension event listeners...');
+        
+        const apiSuspensionContainer = document.querySelector('#api-suspension-container');
+        if (!apiSuspensionContainer) {
+            console.log('API suspension container not found');
+            return;
+        }
+        
+        // Load current API suspension settings
+        this.loadApiSuspensionSettings();
+        
+        // Set up form submission
+        const form = document.querySelector('#api-suspension-form');
+        if (form) {
+            form.addEventListener('submit', (e) => this.saveApiSuspensionSettings(e));
+        }
+        
+        console.log('✅ API suspension event listeners setup complete');
+    }
+
+    // Setup save settings button monitoring
+    setupSaveSettingsButtonMonitoring() {
+        console.log('🔧 Setting up save settings button monitoring...');
+        
+        // Monitor for changes in competition settings form
+        const competitionForm = document.querySelector('#competition-settings-form');
+        if (competitionForm) {
+            const formElements = competitionForm.querySelectorAll('input, select, textarea');
+            
+            formElements.forEach(element => {
+                element.addEventListener('change', () => {
+                    this.enableSaveSettingsButton();
+                });
+                
+                element.addEventListener('input', () => {
+                    this.enableSaveSettingsButton();
+                });
+            });
+        }
+        
+        console.log('✅ Save settings button monitoring setup complete');
+    }
+
+    // Setup player management event listeners
+    setupPlayerManagementEventListeners() {
+        if (this.playerManagementEventListenersInitialized) {
+            console.log('🔧 Player management event listeners already initialized, skipping...');
+            return;
+        }
+        
+        console.log('🔧 Setting up player management event listeners...');
+        
+        // Player management stat cards
+        const totalRegistrationsCard = document.querySelector('#total-registrations-card');
+        const currentEditionCard = document.querySelector('#current-edition-card');
+        const archivedPlayersCard = document.querySelector('#archived-players-card');
+        
+        if (totalRegistrationsCard) {
+            // Remove existing event listeners to prevent duplicates
+            const newTotalCard = totalRegistrationsCard.cloneNode(true);
+            totalRegistrationsCard.parentNode.replaceChild(newTotalCard, totalRegistrationsCard);
+            
+            newTotalCard.addEventListener('click', () => {
+                this.userManagement.showPlayerManagement('total');
+            });
+        }
+        
+        if (currentEditionCard) {
+            // Remove existing event listeners to prevent duplicates
+            const newCurrentCard = currentEditionCard.cloneNode(true);
+            currentEditionCard.parentNode.replaceChild(newCurrentCard, currentEditionCard);
+            
+            newCurrentCard.addEventListener('click', () => {
+                this.userManagement.showPlayerManagement('current');
+            });
+        }
+        
+        if (archivedPlayersCard) {
+            // Remove existing event listeners to prevent duplicates
+            const newArchivedCard = archivedPlayersCard.cloneNode(true);
+            archivedPlayersCard.parentNode.replaceChild(newArchivedCard, archivedPlayersCard);
+            
+            newArchivedCard.addEventListener('click', () => {
+                this.userManagement.showPlayerManagement('archived');
+            });
+        }
+        
+        // Check orphaned accounts button
+        const checkOrphanedAccountsBtn = document.querySelector('#check-orphaned-accounts');
+        if (checkOrphanedAccountsBtn) {
+            checkOrphanedAccountsBtn.addEventListener('click', () => {
+                this.userManagement.checkOrphanedAccounts();
+            });
+        }
+        
+        // Firebase Auth help button
+        const firebaseAuthHelpBtn = document.querySelector('#firebase-auth-help');
+        if (firebaseAuthHelpBtn) {
+            firebaseAuthHelpBtn.addEventListener('click', () => {
+                this.userManagement.showFirebaseAuthDeletionInstructions();
+            });
+        }
+        
+        // Close player management modal
+        const closePlayerManagementBtn = document.querySelector('#close-player-management');
+        if (closePlayerManagementBtn) {
+            closePlayerManagementBtn.addEventListener('click', () => {
+                this.userManagement.closePlayerManagement();
+            });
+        }
+        
+        // Search players button
+        const searchPlayersBtn = document.querySelector('#search-players-btn');
+        if (searchPlayersBtn) {
+            searchPlayersBtn.addEventListener('click', () => {
+                this.userManagement.searchPlayers();
+            });
+        }
+        
+        // Close player edit modal
+        const closePlayerEditBtn = document.querySelector('#close-player-edit');
+        if (closePlayerEditBtn) {
+            closePlayerEditBtn.addEventListener('click', () => {
+                this.userManagement.closePlayerEdit();
+            });
+        }
+        
+        // Cancel player edit button
+        const cancelPlayerEditBtn = document.querySelector('#cancel-player-edit');
+        if (cancelPlayerEditBtn) {
+            cancelPlayerEditBtn.addEventListener('click', () => {
+                this.userManagement.closePlayerEdit();
+            });
+        }
+        
+        // Reload page button
+        const reloadPageBtn = document.querySelector('#reload-page-btn');
+        if (reloadPageBtn) {
+            reloadPageBtn.addEventListener('click', () => {
+                location.reload();
+            });
+        }
+        
+        this.playerManagementEventListenersInitialized = true;
+        console.log('✅ Player management event listeners setup complete');
+    }
+
+    // Enable save settings button
+    enableSaveSettingsButton() {
+        const saveSettingsBtn = document.querySelector('#save-settings-btn');
+        if (saveSettingsBtn) {
+            saveSettingsBtn.disabled = false;
+            saveSettingsBtn.style.opacity = '1';
+            saveSettingsBtn.style.cursor = 'pointer';
+            saveSettingsBtn.classList.remove('disabled');
+        }
+    }
+
+    // Load API suspension settings
+    async loadApiSuspensionSettings() {
+        try {
+            console.log('Loading API suspension settings...');
+            
+            const settingsDoc = await this.db.collection('settings').doc('apiSuspension').get();
+            
+            if (settingsDoc.exists) {
+                const settings = settingsDoc.data();
+                this.updateApiSuspensionDisplay(settings);
+                console.log('✅ API suspension settings loaded');
+            } else {
+                console.log('No API suspension settings found, using defaults');
+                this.updateApiSuspensionDisplay({
+                    footballWebPages: false,
+                    theSportsDb: false,
+                    reason: '',
+                    suspendedUntil: null
+                });
+            }
+            
+        } catch (error) {
+            console.error('❌ Error loading API suspension settings:', error);
+            this.updateApiSuspensionDisplay({
+                footballWebPages: false,
+                theSportsDb: false,
+                reason: '',
+                suspendedUntil: null
+            });
+        }
+    }
+
+    // Update API suspension display
+    updateApiSuspensionDisplay(settings) {
+        const footballWebPagesCheckbox = document.querySelector('#football-web-pages-suspended');
+        if (footballWebPagesCheckbox) {
+            footballWebPagesCheckbox.checked = settings.footballWebPages || false;
+        }
+        
+        const theSportsDbCheckbox = document.querySelector('#the-sports-db-suspended');
+        if (theSportsDbCheckbox) {
+            theSportsDbCheckbox.checked = settings.theSportsDb || false;
+        }
+        
+        const reasonInput = document.querySelector('#api-suspension-reason');
+        if (reasonInput) {
+            reasonInput.value = settings.reason || '';
+        }
+        
+        const suspendedUntilInput = document.querySelector('#api-suspended-until');
+        if (suspendedUntilInput && settings.suspendedUntil) {
+            suspendedUntilInput.value = settings.suspendedUntil;
+        }
+    }
+
+    // Save API suspension settings
+    async saveApiSuspensionSettings(event) {
+        if (event) event.preventDefault();
+        
+        try {
+            console.log('🔧 Saving API suspension settings...');
+            
+            const settings = {
+                footballWebPages: document.querySelector('#football-web-pages-suspended')?.checked || false,
+                theSportsDb: document.querySelector('#the-sports-db-suspended')?.checked || false,
+                reason: document.querySelector('#api-suspension-reason')?.value || '',
+                suspendedUntil: document.querySelector('#api-suspended-until')?.value || null,
+                lastUpdated: new Date()
+            };
+            
+            // Save to database
+            await this.db.collection('settings').doc('apiSuspension').set(settings);
+            
+            console.log('✅ API suspension settings saved successfully');
+            alert('API suspension settings saved successfully!');
+            
+            // Log the action
+            await this.audit.logAdminAction('API suspension settings updated', settings);
+            
+        } catch (error) {
+            console.error('❌ Error saving API suspension settings:', error);
+            alert('Error saving API suspension settings: ' + error.message);
+        }
+    }
+
+    // Check if API is suspended
+    async isApiSuspended(apiName) {
+        try {
+            const settingsDoc = await this.db.collection('settings').doc('apiSuspension').get();
+            
+            if (settingsDoc.exists) {
+                const settings = settingsDoc.data();
+                
+                if (apiName === 'footballWebPages' && settings.footballWebPages) {
+                    return this.checkSuspensionExpiry(settings.suspendedUntil);
+                }
+                
+                if (apiName === 'theSportsDb' && settings.theSportsDb) {
+                    return this.checkSuspensionExpiry(settings.suspendedUntil);
+                }
+            }
+            
+            return false;
+            
+        } catch (error) {
+            console.error('Error checking API suspension status:', error);
+            return false;
+        }
+    }
+
+    // Check suspension expiry
+    checkSuspensionExpiry(suspendedUntil) {
+        if (!suspendedUntil) return true; // Suspended indefinitely
+        
+        const expiryDate = new Date(suspendedUntil);
+        const now = new Date();
+        
+        return now < expiryDate;
+    }
+
+    // Build admin dashboard
+    buildAdminDashboard(settings) {
+        console.log('🔧 Building admin dashboard...');
+        
+        const adminDashboard = document.querySelector('#admin-dashboard');
+        if (!adminDashboard) {
+            console.error('Admin dashboard container not found');
+            return;
+        }
+        
+        // Build dashboard content
+        this.buildDashboardContent(adminDashboard, settings);
+        
+        console.log('✅ Admin dashboard built successfully');
+    }
+
+    // Build dashboard content
+    buildDashboardContent(container, settings) {
+        // This method would build the actual dashboard content
+        // Implementation depends on your specific dashboard requirements
+        console.log('Building dashboard content...');
+    }
+
+    // Load registration data for the registration tab
+    async loadRegistrationData() {
+        try {
+            console.log('🔧 Loading registration data...');
+            
+            // Initialize registration settings functionality for admin page
+            this.initializeRegistrationSettingsForAdmin();
+            
+            // Load registration settings
+            if (window.registrationManager) {
+                await window.registrationManager.loadRegistrationSettings();
+            }
+            
+            // Load registration statistics
+            await this.loadRegistrationStatistics();
+            
+            // Load all editions overview (this populates the "All Editions Registration Status" cards)
+            if (window.registrationManager) {
+                await window.registrationManager.loadAllEditionsOverview();
+            }
+            
+            console.log('✅ Registration data loaded successfully');
+            
+        } catch (error) {
+            console.error('❌ Error loading registration data:', error);
+        }
+    }
+
+    // Initialize registration settings functionality for admin page
+    initializeRegistrationSettingsForAdmin() {
+        try {
+            console.log('🔧 Initializing registration settings for admin page...');
+            
+            // Set up save registration settings button
+            const saveRegistrationSettingsBtn = document.querySelector('#save-registration-settings');
+            if (saveRegistrationSettingsBtn) {
+                // Remove existing event listeners to avoid duplicates
+                const newBtn = saveRegistrationSettingsBtn.cloneNode(true);
+                saveRegistrationSettingsBtn.parentNode.replaceChild(newBtn, saveRegistrationSettingsBtn);
+                
+                // Add new event listener
+                newBtn.addEventListener('click', async () => {
+                    if (window.registrationManager) {
+                        await window.registrationManager.saveRegistrationSettings();
+                        
+                        // Also refresh the overview from admin management to ensure UI updates
+                        if (window.registrationManager) {
+                            await window.registrationManager.loadAllEditionsOverview();
+                        }
+                        
+                        // Refresh registration statistics as well
+                        await this.loadRegistrationStatistics();
+                    }
+                });
+                
+                console.log('✅ Save registration settings button initialized');
+            }
+            
+            // Set up refresh registration stats button
+            const refreshStatsBtn = document.querySelector('#refresh-registration-stats');
+            if (refreshStatsBtn) {
+                // Remove existing event listeners to avoid duplicates
+                const newRefreshBtn = refreshStatsBtn.cloneNode(true);
+                refreshStatsBtn.parentNode.replaceChild(newRefreshBtn, refreshStatsBtn);
+                
+                // Add new event listener
+                newRefreshBtn.addEventListener('click', async () => {
+                    await this.refreshRegistrationStatistics();
+                });
+                
+                console.log('✅ Refresh registration stats button initialized');
+            }
+            
+            console.log('✅ Registration settings for admin page initialized successfully');
+            
+        } catch (error) {
+            console.error('❌ Error initializing registration settings for admin page:', error);
+        }
+    }
+
+    // Refresh registration statistics when edition changes
+    async refreshRegistrationStatistics() {
+        try {
+            console.log('🔄 Refreshing registration statistics for edition change...');
+            await this.loadRegistrationStatistics();
+        } catch (error) {
+            console.error('❌ Error refreshing registration statistics:', error);
+        }
+    }
+
+    // Load registration statistics
+    async loadRegistrationStatistics() {
+        try {
+            console.log('🔧 Loading registration statistics...');
+            
+            // Get all users and filter in memory to avoid composite index requirements
+            const allUsersQuery = await this.db.collection('users').get();
+            const currentEdition = this.getCurrentActiveEdition();
+            
+            let totalActive = 0;
+            let currentEditionCount = 0;
+            let archivedCount = 0;
+            
+            console.log(`🔍 Checking ${allUsersQuery.size} users for active status...`);
+            
+            allUsersQuery.forEach(doc => {
+                const userData = doc.data();
+                const userName = userData.displayName || userData.firstName || 'Unknown';
+                
+                // Check if user is active (has no status field or status is 'active' - case-insensitive)
+                const status = userData.status;
+                const isActive = !status || status.toLowerCase() === 'active';
+                
+                console.log(`👤 ${userName}: status="${status}", isActive=${isActive}`);
+                
+                if (isActive) {
+                    totalActive++;
+                    
+                    // Check if user is registered for current edition using the registrations object
+                    if (userData.registrations && userData.registrations[`edition${currentEdition}`]) {
+                        currentEditionCount++;
+                        console.log(`✅ ${userName} counted for current edition (${currentEdition})`);
+                    } else {
+                        console.log(`⏭️ ${userName} active but not registered for current edition (${currentEdition})`);
+                    }
+                } else if (userData.status === 'archived') {
+                    archivedCount++;
+                    console.log(`📦 ${userName} is archived`);
+                } else {
+                    console.log(`❌ ${userName} not active (status: "${status}")`);
+                }
+            });
+            
+            // Update the UI
+            const totalRegistrationsElement = document.querySelector('#total-registrations');
+            const currentEditionElement = document.querySelector('#current-edition-registrations');
+            const archivedElement = document.querySelector('#archived-players-count');
+            
+            if (totalRegistrationsElement) {
+                totalRegistrationsElement.textContent = totalActive;
+            }
+            
+            if (currentEditionElement) {
+                currentEditionElement.textContent = currentEditionCount;
+            }
+            
+            if (archivedElement) {
+                archivedElement.textContent = archivedCount;
+            }
+            
+            console.log(`✅ Registration statistics loaded: ${totalActive} active, ${currentEditionCount} current edition (${currentEdition}), ${archivedCount} archived`);
+            
+        } catch (error) {
+            console.error('❌ Error loading registration statistics:', error);
+        }
+    }
+
+    // Get current active edition
+    getCurrentActiveEdition() {
+        // Get the current active edition from the edition selector
+        const editionSelector = document.querySelector('#edition-selector');
+        if (editionSelector) {
+            return editionSelector.value;
+        }
+        
+        // Fallback to checking window.currentActiveEdition
+        if (window.currentActiveEdition) {
+            return window.currentActiveEdition;
+        }
+        
+        // Default fallback
+        return 1;
+    }
+
+    // Setup admin tabs
+    setupAdminTabs() {
+        console.log('🔧 Setting up admin tabs...');
+        
+        const tabContainer = document.querySelector('#admin-tabs');
+        if (!tabContainer) {
+            console.log('Admin tabs container not found');
+            return;
+        }
+        
+        // Set up tab switching
+        this.setupTabSwitching();
+        
+        // Set up tab content
+        this.setupTabContent();
+        
+        console.log('✅ Admin tabs setup complete');
+    }
+
+    // Setup tab switching
+    setupTabSwitching() {
+        const tabs = document.querySelectorAll('.admin-tab');
+        const tabContents = document.querySelectorAll('.admin-tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-tab');
+                this.switchTab(targetTab);
+            });
+        });
+    }
+
+    // Switch tab
+    switchTab(targetTab) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.admin-tab-content');
+        tabContents.forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        // Remove active class from all tabs
+        const tabs = document.querySelectorAll('.admin-tab');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show target tab content
+        const targetContent = document.querySelector(`#${targetTab}-content`);
+        if (targetContent) {
+            targetContent.style.display = 'block';
+        }
+        
+        // Add active class to target tab
+        const targetTabElement = document.querySelector(`[data-tab="${targetTab}"]`);
+        if (targetTabElement) {
+            targetTabElement.classList.add('active');
+        }
+        
+        // Load tab-specific content
+        this.loadTabContent(targetTab);
+    }
+
+    // Load tab content
+    loadTabContent(tabName) {
+        switch (tabName) {
+            case 'user-management':
+                this.userManagement.showPlayerManagement('total');
+                break;
+            case 'team-operations':
+                this.teamOperations.loadStandings();
+                break;
+            case 'scheduling':
+                this.scheduling.loadCurrentCompetitionSettings();
+                break;
+            case 'audit':
+                this.audit.loadAuditLogs();
+                break;
+            default:
+                console.log(`No specific content for tab: ${tabName}`);
+        }
+    }
+
+    // Setup tab content
+    setupTabContent() {
+        // Initialize default tab
+        this.switchTab('user-management');
+    }
+
+    // Initialize fixture management
+    initializeFixtureManagement() {
+        if (this.fixtureManagementInitialized) {
+            console.log('Fixture management already initialized, skipping...');
+            return;
+        }
+        
+        console.log('Initializing fixture management...');
+        this.fixtureManagementInitialized = true;
+        
+        // Set up fixture management event listeners
+        this.setupFixtureManagementEventListeners();
+        
+        console.log('✅ Fixture management initialized');
+    }
+
+    // Setup fixture management event listeners
+    setupFixtureManagementEventListeners() {
+        console.log('🔧 Setting up fixture management event listeners...');
+        
+        const addFixtureBtn = document.querySelector('#add-fixture-btn');
+        if (addFixtureBtn) {
+            addFixtureBtn.addEventListener('click', () => this.fixturesManager.addFixtureRow());
+        }
+        
+        const saveFixturesBtn = document.querySelector('#save-fixtures-btn');
+        if (saveFixturesBtn) {
+            saveFixturesBtn.addEventListener('click', () => this.fixturesManager.saveFixtures());
+        }
+        
+        const checkFixturesBtn = document.querySelector('#check-fixtures-btn');
+        if (checkFixturesBtn) {
+            checkFixturesBtn.addEventListener('click', () => this.fixturesManager.checkFixtures());
+        }
+        
+        console.log('✅ Fixture management event listeners setup complete');
+    }
+
+    // Initialize registration management
+    initializeRegistrationManagement() {
+        if (this.registrationManagementInitialized) {
+            console.log('Registration management already initialized, skipping...');
+            return;
+        }
+        
+        console.log('Initializing registration management...');
+        this.registrationManagementInitialized = true;
+        
+        // Set up registration management functionality
+        this.setupRegistrationManagement();
+        
+        console.log('✅ Registration management initialized');
+    }
+
+    // Setup registration management
+    setupRegistrationManagement() {
+        console.log('🔧 Setting up registration management...');
+        
+        // This would set up registration management functionality
+        // Implementation depends on your specific requirements
+        
+        console.log('✅ Registration management setup complete');
+    }
+
+    // Initialize admin API integration
+    initializeAdminApiIntegration() {
+        console.log('🔧 Initializing admin API integration...');
+        
+        // Set up import button event listeners
+        this.setupImportButtonEventListeners();
+        
+        console.log('✅ Admin API integration initialized');
+    }
+
+    // Setup import button event listeners
+    setupImportButtonEventListeners() {
+        console.log('🔧 Setting up import button event listeners...');
+        
+        // Select All Fixtures button
+        const selectAllBtn = document.querySelector('#select-all-fixtures-btn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.selectAllFixtures();
+                }
+            });
+            console.log('✅ Select All Fixtures button event listener attached');
+        }
+        
+        // Deselect All Fixtures button
+        const deselectAllBtn = document.querySelector('#deselect-all-fixtures-btn');
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', () => {
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.deselectAllFixtures();
+                }
+            });
+            console.log('✅ Deselect All Fixtures button event listener attached');
+        }
+        
+        // Import Selected Fixtures button
+        const importSelectedBtn = document.querySelector('#import-selected-fixtures-btn');
+        if (importSelectedBtn) {
+            importSelectedBtn.addEventListener('click', async () => {
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    await window.app.apiManager.footballWebPagesAPI.importSelectedFixtures();
+                }
+            });
+            console.log('✅ Import Selected Fixtures button event listener attached');
+        }
+        
+        console.log('✅ Import button event listeners setup complete');
+    }
+
+    // Initialize enhanced vidiprinter
+    initializeEnhancedVidiprinter() {
+        console.log('🔧 Initializing enhanced vidiprinter...');
+        
+        // This would initialize the enhanced vidiprinter functionality
+        // Implementation depends on your specific vidiprinter requirements
+        
+        console.log('✅ Enhanced vidiprinter initialized');
+    }
+
+    // Start enhanced vidiprinter
+    async startEnhancedVidiprinter() {
+        console.log('🔧 Starting enhanced vidiprinter...');
+        
+        // This would start the enhanced vidiprinter
+        // Implementation depends on your specific vidiprinter requirements
+        
+        console.log('✅ Enhanced vidiprinter started');
+    }
+
+    // Stop enhanced vidiprinter
+    stopEnhancedVidiprinter() {
+        console.log('🔧 Stopping enhanced vidiprinter...');
+        
+        // This would stop the enhanced vidiprinter
+        // Implementation depends on your specific vidiprinter requirements
+        
+        console.log('✅ Enhanced vidiprinter stopped');
+    }
+
+    // Clear enhanced vidiprinter feed
+    clearEnhancedVidiprinterFeed() {
+        console.log('🔧 Clearing enhanced vidiprinter feed...');
+        
+        // This would clear the enhanced vidiprinter feed
+        // Implementation depends on your specific vidiprinter requirements
+        
+        console.log('✅ Enhanced vidiprinter feed cleared');
+    }
+
+    // Reset test edition players to 2 lives
+    async resetTestLives() {
+        if (!confirm('Are you sure you want to reset all TEST EDITION players to 2 lives? This will only affect players in the test edition.')) return;
+        
+        try {
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = 'Resetting test players...';
+                statusElement.style.color = '#007bff';
+            }
+            
+            const usersSnapshot = await this.db.collection('users').get();
+            const batch = this.db.batch();
+            let resetCount = 0;
+            let skippedCount = 0;
+            
+            console.log('🔍 Checking users for test edition reset...');
+            
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                const userName = userData.displayName || userData.firstName || 'Unknown';
+                
+                // Check if user is registered for test edition using the registrations object
+                const isTestEditionPlayer = userData.registrations && userData.registrations.editiontest;
+                
+                console.log(`👤 ${userName}: status=${userData.status}, registrations.editiontest=${isTestEditionPlayer}`);
+                
+                if (userData.status === 'active' && isTestEditionPlayer) {
+                    batch.update(doc.ref, {
+                        lives: 2,
+                        lastUpdated: new Date()
+                    });
+                    resetCount++;
+                    console.log(`✅ Will reset ${userName} to 2 lives`);
+                } else {
+                    skippedCount++;
+                    console.log(`⏭️ Skipping ${userName} - not active or not in test edition`);
+                }
+            });
+            
+            await batch.commit();
+            
+            if (statusElement) {
+                statusElement.textContent = `✅ Reset ${resetCount} test edition players to 2 lives successfully! (Skipped ${skippedCount})`;
+                statusElement.style.color = '#28a745';
+            } else {
+                alert(`✅ Reset ${resetCount} test edition players to 2 lives successfully! (Skipped ${skippedCount})`);
+            }
+            
+            console.log(`✅ Reset ${resetCount} test edition players to 2 lives (Skipped ${skippedCount})`);
+            
+        } catch (error) {
+            console.error('Error resetting test player lives:', error);
+            const statusElement = document.querySelector('#reset-status');
+            if (statusElement) {
+                statusElement.textContent = `❌ Error: ${error.message}`;
+                statusElement.style.color = '#dc3545';
+            } else {
+                alert('Error resetting test player lives: ' + error.message);
+            }
+        }
+    }
+
+    // Cleanup method
+    cleanup() {
+        console.log('🧹 AdminManager cleanup started');
+        
+        // Cleanup all modules
+        this.userManagement.cleanup();
+        this.teamOperations.cleanup();
+        this.scheduling.cleanup();
+        this.audit.cleanup();
+        
+        console.log('🧹 AdminManager cleanup completed');
+    }
+}

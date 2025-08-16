@@ -1,5 +1,0 @@
-[33m91d9614[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Update app.js, dashboard.html, and style.css with latest changes
-[33m56978d9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add new game week status: Locked (Matches are complete) when all matches finish but before final completion
-[33m48dc368[m Fix Firebase database initialization issue in admin page
-[33m21e4fb6[m Fix admin player picks display - use correct pick key format (gw1, gw2) instead of edition-prefixed keys
-[33mba83990[m Update admin interface and app functionality

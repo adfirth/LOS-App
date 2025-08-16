@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Fixtures Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .debug-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .debug-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .fixture-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .fixture-item h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .fixture-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+        }
+        .detail-item {
+            background: white;
+            padding: 5px 8px;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #6c757d;
+            word-break: break-all;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+        .raw-data {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .collection-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .collection-item {
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .collection-item:hover {
+            background: #dee2e6;
+        }
+        .collection-item.selected {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Firebase Fixtures Debug Tool</h1>
+        <p>This tool helps inspect Firebase fixtures data and identify any issues with the data structure.</p>
+        
+        <div class="debug-section">
+            <h3>📊 Firebase Connection Status</h3>
+            <div id="firebase-status">Checking Firebase connection...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🗂️ Available Collections</h3>
+            <div id="collections-list">Loading collections...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>⚙️ Settings Collection</h3>
+            <div id="settings-collection">Loading settings...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🎯 Fixtures Collection Inspector</h3>
+            <div>
+                <label for="edition-select">Edition:</label>
+                <select id="edition-select">
+                    <option value="test">Test Weeks</option>
+                    <option value="1">Edition 1</option>
+                    <option value="2">Edition 2</option>
+                </select>
+                
+                <label for="gameweek-select">Game Week:</label>
+                <select id="gameweek-select">
+                    <option value="1">Game Week 1</option>
+                    <option value="2">Game Week 2</option>
+                    <option value="3">Game Week 3</option>
+                    <option value="4">Game Week 4</option>
+                    <option value="5">Game Week 5</option>
+                    <option value="6">Game Week 6</option>
+                    <option value="7">Game Week 7</option>
+                    <option value="8">Game Week 8</option>
+                    <option value="9">Game Week 9</option>
+                    <option value="10">Game Week 10</option>
+                    <option value="tiebreak">Tiebreak</option>
+                </select>
+                
+                <button onclick="loadFixturesData()">Load Fixtures Data</button>
+                <button onclick="loadAllFixtures()">Load All Fixtures</button>
+            </div>
+            
+            <div id="fixtures-data">
+                <p class="loading">Select edition and gameweek, then click "Load Fixtures Data"</p>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔧 Data Analysis</h3>
+            <div id="data-analysis">
+                <p>Data analysis will appear here after loading fixtures...</p>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>📝 Raw Firebase Data</h3>
+            <div id="raw-data-display">
+                <p>Raw data will appear here after loading fixtures...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="config/firebase-init.js"></script>
+    
+    <script>
+        let db = null;
+        let currentFixturesData = null;
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            try {
+                // Wait for Firebase to be available
+                if (typeof firebase === 'undefined') {
+                    setTimeout(initializeFirebase, 100);
+                    return;
+                }
+
+                // Initialize Firestore
+                db = firebase.firestore();
+                
+                // Test connection by trying to access a collection
+                const testSnapshot = await db.collection('test').limit(1).get();
+                
+                document.getElementById('firebase-status').innerHTML = 
+                    '<div class="success">✅ Firebase connected successfully!</div>';
+                
+                // Load collections
+                await loadCollections();
+                
+            } catch (error) {
+                document.getElementById('firebase-status').innerHTML = 
+                    `<div class="error">❌ Firebase connection failed: ${error.message}</div>`;
+                console.error('Firebase initialization error:', error);
+            }
+        }
+
+        // Load available collections
+        async function loadCollections() {
+            try {
+                // Since we can't list collections directly, let's show common collections
+                const commonCollections = ['fixtures', 'users', 'settings', 'picks', 'scores'];
+                const collectionsList = document.getElementById('collections-list');
+                
+                let html = '<div class="collection-list">';
+                html += '<h4>Common Collections (click to inspect):</h4>';
+                commonCollections.forEach(collectionName => {
+                    html += `<div class="collection-item" onclick="inspectCollection('${collectionName}')">
+                        📁 ${collectionName}
+                    </div>`;
+                });
+                html += '</div>';
+                
+                collectionsList.innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('collections-list').innerHTML = 
+                    `<div class="error">❌ Error loading collections: ${error.message}</div>`;
+            }
+        }
+
+        // Inspect a specific collection
+        async function inspectCollection(collectionName) {
+            try {
+                const snapshot = await db.collection(collectionName).limit(10).get();
+                const documents = [];
+                
+                snapshot.forEach(doc => {
+                    documents.push({
+                        id: doc.id,
+                        data: doc.data()
+                    });
+                });
+                
+                const rawDataDisplay = document.getElementById('raw-data-display');
+                rawDataDisplay.innerHTML = `
+                    <h4>Collection: ${collectionName}</h4>
+                    <div class="raw-data">${JSON.stringify(documents, null, 2)}</div>
+                `;
+                
+            } catch (error) {
+                document.getElementById('raw-data-display').innerHTML = 
+                    `<div class="error">❌ Error inspecting collection: ${error.message}</div>`;
+            }
+        }
+
+        // Load fixtures data for specific edition and gameweek
+        async function loadFixturesData() {
+            if (!db) {
+                alert('Firebase not initialized');
+                return;
+            }
+
+            const edition = document.getElementById('edition-select').value;
+            const gameweek = document.getElementById('gameweek-select').value;
+            
+            const fixturesData = document.getElementById('fixtures-data');
+            fixturesData.innerHTML = '<p class="loading">Loading fixtures data...</p>';
+
+            try {
+                // Construct document key
+                const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+                const editionGameweekKey = `edition${edition}_${gameweekKey}`;
+                
+                console.log(`🔍 Loading fixtures for: ${editionGameweekKey}`);
+                
+                const doc = await db.collection('fixtures').doc(editionGameweekKey).get();
+                
+                if (!doc.exists) {
+                    fixturesData.innerHTML = `
+                        <div class="warning">⚠️ No fixtures found for ${editionGameweekKey}</div>
+                        <p>This means either:</p>
+                        <ul>
+                            <li>No fixtures have been saved for this edition/gameweek combination</li>
+                            <li>The document key format is different than expected</li>
+                            <li>The fixtures are stored in a different collection</li>
+                        </ul>
+                    `;
+                    return;
+                }
+
+                const data = doc.data();
+                currentFixturesData = data;
+                
+                // Display fixtures
+                displayFixturesData(data, editionGameweekKey);
+                
+                // Analyze data
+                analyzeFixturesData(data);
+                
+                // Show raw data
+                document.getElementById('raw-data-display').innerHTML = `
+                    <h4>Raw Data for ${editionGameweekKey}</h4>
+                    <div class="raw-data">${JSON.stringify(data, null, 2)}</div>
+                `;
+                
+            } catch (error) {
+                fixturesData.innerHTML = `
+                    <div class="error">❌ Error loading fixtures: ${error.message}</div>
+                `;
+                console.error('Error loading fixtures:', error);
+            }
+        }
+
+        // Load all fixtures
+        async function loadAllFixtures() {
+            if (!db) {
+                alert('Firebase not initialized');
+                return;
+            }
+
+            const fixturesData = document.getElementById('fixtures-data');
+            fixturesData.innerHTML = '<p class="loading">Loading all fixtures...</p>';
+
+            try {
+                const snapshot = await db.collection('fixtures').get();
+                const allFixtures = [];
+                
+                snapshot.forEach(doc => {
+                    allFixtures.push({
+                        id: doc.id,
+                        data: doc.data()
+                    });
+                });
+                
+                // Display all fixtures
+                let html = '<h4>All Fixtures in Database</h4>';
+                
+                if (allFixtures.length === 0) {
+                    html += '<div class="warning">⚠️ No fixtures found in the database</div>';
+                } else {
+                    allFixtures.forEach(fixture => {
+                        html += `
+                            <div class="fixture-item">
+                                <h4>📄 Document: ${fixture.id}</h4>
+                                <div class="fixture-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Edition:</span>
+                                        <span class="detail-value">${fixture.data.edition || 'N/A'}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Gameweek:</span>
+                                        <span class="detail-value">${fixture.data.gameweek || 'N/A'}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Fixtures Count:</span>
+                                        <span class="detail-value">${fixture.data.fixtures ? fixture.data.fixtures.length : 0}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Last Updated:</span>
+                                        <span class="detail-value">${fixture.data.lastUpdated ? fixture.data.lastUpdated.toDate().toLocaleString() : 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                fixturesData.innerHTML = html;
+                
+                // Show raw data
+                document.getElementById('raw-data-display').innerHTML = `
+                    <h4>All Fixtures Raw Data</h4>
+                    <div class="raw-data">${JSON.stringify(allFixtures, null, 2)}</div>
+                `;
+                
+            } catch (error) {
+                fixturesData.innerHTML = `
+                    <div class="error">❌ Error loading all fixtures: ${error.message}</div>
+                `;
+                console.error('Error loading all fixtures:', error);
+            }
+        }
+
+        // Display fixtures data
+        function displayFixturesData(data, documentKey) {
+            const fixturesData = document.getElementById('fixtures-data');
+            
+            let html = `
+                <div class="success">✅ Fixtures found for ${documentKey}</div>
+                <div class="fixture-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Edition:</span>
+                        <span class="detail-value">${data.edition || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Gameweek:</span>
+                        <span class="detail-value">${data.gameweek || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Fixtures Count:</span>
+                        <span class="detail-value">${data.fixtures ? data.fixtures.length : 0}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Last Updated:</span>
+                        <span class="detail-value">${data.lastUpdated ? data.lastUpdated.toDate().toLocaleString() : 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+            
+            if (data.fixtures && data.fixtures.length > 0) {
+                html += '<h4>Fixtures:</h4>';
+                data.fixtures.forEach((fixture, index) => {
+                    // Format date for display
+                    let dateDisplay = 'N/A';
+                    if (fixture.date) {
+                        try {
+                            const dateObj = new Date(fixture.date);
+                            dateDisplay = dateObj.toLocaleDateString('en-GB', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+                        } catch (e) {
+                            dateDisplay = fixture.date;
+                        }
+                    }
+                    
+                    html += `
+                        <div class="fixture-item">
+                            <h4>Fixture ${index + 1}</h4>
+                            <div class="fixture-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Home Team:</span>
+                                    <span class="detail-value">${fixture.homeTeam || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Away Team:</span>
+                                    <span class="detail-value">${fixture.awayTeam || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Date:</span>
+                                    <span class="detail-value">${dateDisplay}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Raw Date:</span>
+                                    <span class="detail-value">${fixture.date || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Kick Off Time:</span>
+                                    <span class="detail-value">${fixture.kickOffTime || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Venue:</span>
+                                    <span class="detail-value">${fixture.venue || 'N/A'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Status:</span>
+                                    <span class="detail-value">${fixture.status || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<div class="warning">⚠️ No fixtures array found in document</div>';
+            }
+            
+            fixturesData.innerHTML = html;
+        }
+
+        // Analyze fixtures data for potential issues
+        function analyzeFixturesData(data) {
+            const analysisDiv = document.getElementById('data-analysis');
+            let analysis = '<h4>Data Analysis Results:</h4>';
+            let issues = [];
+            let warnings = [];
+            let successes = [];
+            
+            // Check if fixtures array exists
+            if (!data.fixtures) {
+                issues.push('❌ No fixtures array found in document');
+            } else {
+                successes.push(`✅ Fixtures array found with ${data.fixtures.length} items`);
+                
+                // Check each fixture
+                data.fixtures.forEach((fixture, index) => {
+                    if (!fixture.homeTeam) {
+                        issues.push(`❌ Fixture ${index + 1}: Missing home team`);
+                    }
+                    if (!fixture.awayTeam) {
+                        issues.push(`❌ Fixture ${index + 1}: Missing away team`);
+                    }
+                    if (!fixture.date) {
+                        issues.push(`❌ Fixture ${index + 1}: Missing date`);
+                    } else {
+                        // Validate date format
+                        try {
+                            const dateObj = new Date(fixture.date);
+                            if (isNaN(dateObj.getTime())) {
+                                issues.push(`❌ Fixture ${index + 1}: Invalid date format: ${fixture.date}`);
+                            } else {
+                                successes.push(`✅ Fixture ${index + 1}: Valid date format`);
+                            }
+                        } catch (e) {
+                            issues.push(`❌ Fixture ${index + 1}: Date parsing error: ${fixture.date}`);
+                        }
+                    }
+                    
+                    if (!fixture.kickOffTime && !fixture.time) {
+                        warnings.push(`⚠️ Fixture ${index + 1}: No kick-off time specified`);
+                    }
+                });
+            }
+            
+            // Check document structure
+            if (!data.edition) {
+                warnings.push('⚠️ No edition field in document');
+            }
+            if (!data.gameweek) {
+                warnings.push('⚠️ No gameweek field in document');
+            }
+            if (!data.lastUpdated) {
+                warnings.push('⚠️ No lastUpdated field in document');
+            }
+            
+            // Display analysis
+            if (issues.length > 0) {
+                analysis += '<div class="error"><strong>Issues Found:</strong><ul>';
+                issues.forEach(issue => analysis += `<li>${issue}</li>`);
+                analysis += '</ul></div>';
+            }
+            
+            if (warnings.length > 0) {
+                analysis += '<div class="warning"><strong>Warnings:</strong><ul>';
+                warnings.forEach(warning => analysis += `<li>${warning}</li>`);
+                analysis += '</ul></div>';
+            }
+            
+            if (successes.length > 0) {
+                analysis += '<div class="success"><strong>Successes:</strong><ul>';
+                successes.forEach(success => analysis += `<li>${success}</li>`);
+                analysis += '</ul></div>';
+            }
+            
+            if (issues.length === 0 && warnings.length === 0) {
+                analysis += '<div class="success">✅ No issues found! Data structure looks good.</div>';
+            }
+            
+            analysisDiv.innerHTML = analysis;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

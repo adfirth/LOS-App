@@ -52,7 +52,7 @@ exports.handler = async (event, context) => {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef',
+        'X-RapidAPI-Key': process.env.VITE_RAPIDAPI_KEY || '2e08ed83camsh44dc27a6c439f8dp1c388ajsn65cd74585fef',
         'X-RapidAPI-Host': 'football-web-pages1.p.rapidapi.com'
       }
     });
