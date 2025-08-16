@@ -523,15 +523,24 @@ class UIManager {
         }
         
         await this.updateRegistrationWindowDisplay();
-        // Update every minute
-        this.registrationUpdateTimer = setInterval(() => this.updateRegistrationWindowDisplay(), 60000);
+        // Update every 5 minutes to reduce load
+        this.registrationUpdateTimer = setInterval(() => this.updateRegistrationWindowDisplay(), 300000);
     }
 
     async updateRegistrationWindowDisplay() {
+        // Prevent multiple simultaneous calls
+        if (this.isUpdatingRegistrationWindow) {
+            console.log('Registration window update already in progress, skipping...');
+            return;
+        }
+        
+        this.isUpdatingRegistrationWindow = true;
+        
         try {
             // Ensure database is available before proceeding
             if (!this.db) {
                 console.warn('Database not available yet, skipping registration window display update');
+                this.isUpdatingRegistrationWindow = false;
                 return;
             }
             
@@ -586,6 +595,9 @@ class UIManager {
             console.error('Error updating registration window display:', error);
             this.hideRegistrationCountdowns();
             this.showRegisterButton(false);
+        } finally {
+            // Always reset the flag
+            this.isUpdatingRegistrationWindow = false;
         }
     }
 
@@ -619,8 +631,7 @@ class UIManager {
                     // Registration window has ended
                     this.hideRegistrationCountdowns();
                     this.showRegisterButton(false);
-                    // Refresh the display to check for next window
-                    setTimeout(() => this.updateRegistrationWindowDisplay(), 1000);
+                    // Don't call updateRegistrationWindowDisplay here - let the interval handle it
                     return;
                 }
                 
