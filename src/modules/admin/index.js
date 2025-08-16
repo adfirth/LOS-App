@@ -974,29 +974,42 @@ export class AdminManager {
             const usersSnapshot = await this.db.collection('users').get();
             const batch = this.db.batch();
             let resetCount = 0;
+            let skippedCount = 0;
+            
+            console.log('🔍 Checking users for test edition reset...');
             
             usersSnapshot.forEach(doc => {
                 const userData = doc.data();
-                // Only reset players in test edition
-                if (userData.status === 'active' && userData.edition === 'test') {
+                const userName = userData.displayName || userData.firstName || 'Unknown';
+                
+                // Check if user is registered for test edition using the registrations object
+                const isTestEditionPlayer = userData.registrations && userData.registrations.editiontest;
+                
+                console.log(`👤 ${userName}: status=${userData.status}, registrations.editiontest=${isTestEditionPlayer}`);
+                
+                if (userData.status === 'active' && isTestEditionPlayer) {
                     batch.update(doc.ref, {
                         lives: 2,
                         lastUpdated: new Date()
                     });
                     resetCount++;
+                    console.log(`✅ Will reset ${userName} to 2 lives`);
+                } else {
+                    skippedCount++;
+                    console.log(`⏭️ Skipping ${userName} - not active or not in test edition`);
                 }
             });
             
             await batch.commit();
             
             if (statusElement) {
-                statusElement.textContent = `✅ Reset ${resetCount} test edition players to 2 lives successfully!`;
+                statusElement.textContent = `✅ Reset ${resetCount} test edition players to 2 lives successfully! (Skipped ${skippedCount})`;
                 statusElement.style.color = '#28a745';
             } else {
-                alert(`✅ Reset ${resetCount} test edition players to 2 lives successfully!`);
+                alert(`✅ Reset ${resetCount} test edition players to 2 lives successfully! (Skipped ${skippedCount})`);
             }
             
-            console.log(`✅ Reset ${resetCount} test edition players to 2 lives`);
+            console.log(`✅ Reset ${resetCount} test edition players to 2 lives (Skipped ${skippedCount})`);
             
         } catch (error) {
             console.error('Error resetting test player lives:', error);
