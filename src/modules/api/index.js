@@ -89,6 +89,11 @@ export class ApiManager {
         // Check API key status on initialization
         this.footballWebPagesAPI.checkApiKeyStatus();
         
+        // Check again after a delay to ensure buttons are enabled once config is loaded
+        setTimeout(() => {
+            this.footballWebPagesAPI.checkApiKeyStatus();
+        }, 1000);
+        
         if (testApiConnectionBtn) {
             testApiConnectionBtn.addEventListener('click', () => this.footballWebPagesAPI.testApiConnection());
         }

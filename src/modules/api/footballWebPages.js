@@ -124,7 +124,7 @@ export class FootballWebPagesAPI {
         console.log('🧪 Testing Football Web Pages API connection...');
         
         const statusElement = document.querySelector('#api-key-status');
-        const testBtn = document.querySelector('#test-api-btn');
+        const testBtn = document.querySelector('#test-api-connection');
         
         if (!statusElement || !testBtn) {
             console.error('Required elements not found for API test');
@@ -194,14 +194,59 @@ export class FootballWebPagesAPI {
             console.log('Football Web Pages API configuration loaded during status check');
         }
         
+        // Get buttons that should be enabled/disabled based on API key status
+        const testApiBtn = document.querySelector('#test-api-connection');
+        const fetchDateRangeBtn = document.querySelector('#fetch-date-range-fixtures-btn');
+        const fetchAllBtn = document.querySelector('#fetch-all-fixtures-btn');
+        
+        console.log('🔍 Button elements found:', {
+            testApiBtn: !!testApiBtn,
+            fetchDateRangeBtn: !!fetchDateRangeBtn,
+            fetchAllBtn: !!fetchAllBtn
+        });
+        
+        if (testApiBtn) console.log('🔍 Test API button disabled state:', testApiBtn.disabled);
+        if (fetchDateRangeBtn) console.log('🔍 Fetch Date Range button disabled state:', fetchDateRangeBtn.disabled);
+        if (fetchAllBtn) console.log('🔍 Fetch All button disabled state:', fetchAllBtn.disabled);
+        
         if (this.config && this.config.RAPIDAPI_KEY) {
             statusElement.textContent = 'API key configured';
             statusElement.className = 'status-indicator success';
             console.log('API key status: Configured successfully');
+            console.log('🔑 API Key value:', this.config.RAPIDAPI_KEY.substring(0, 10) + '...');
+            
+            // Enable buttons
+            if (testApiBtn) {
+                testApiBtn.disabled = false;
+                console.log('✅ Test API button enabled');
+            }
+            if (fetchDateRangeBtn) {
+                fetchDateRangeBtn.disabled = false;
+                console.log('✅ Fetch Date Range button enabled');
+            }
+            if (fetchAllBtn) {
+                fetchAllBtn.disabled = false;
+                console.log('✅ Fetch All button enabled');
+            }
         } else {
             statusElement.textContent = 'API key missing - retrying...';
             statusElement.className = 'status-indicator error';
             console.log('API key status: Missing - configuration may still be loading');
+            console.log('🔍 Current config state:', this.config);
+            
+            // Disable buttons
+            if (testApiBtn) {
+                testApiBtn.disabled = true;
+                console.log('❌ Test API button disabled');
+            }
+            if (fetchDateRangeBtn) {
+                fetchDateRangeBtn.disabled = true;
+                console.log('❌ Fetch Date Range button disabled');
+            }
+            if (fetchAllBtn) {
+                fetchAllBtn.disabled = true;
+                console.log('❌ Fetch All button disabled');
+            }
             
             // If we don't have the config yet, try to load it again
             if (!this.config) {
