@@ -208,24 +208,29 @@ class AuthManager {
     // Handle authentication state changes
     async handleAuthStateChange(user) {
         try {
+            // Prevent multiple auth state change handling during redirects
+            if (this.redirectingToDashboard) {
+                console.log('⏳ Already redirecting to dashboard, skipping auth state change handling');
+                return;
+            }
+            
             console.log('🔄 Auth state change detected:', user ? `User: ${user.email}` : 'No user');
             console.log('🔄 Current page:', window.location.pathname);
             console.log('🔄 Current redirect flags - redirectingToDashboard:', this.redirectingToDashboard, 'isLoggingIn:', this.isLoggingIn);
             
             if (user) {
-                // Only handle sign in if we're not already redirecting
-                if (!this.redirectingToDashboard) {
-                    console.log('🔄 Processing sign in for user:', user.email);
-                    await this.handleUserSignIn(user);
-                } else {
-                    console.log('⏳ Already redirecting to dashboard, skipping sign in handling');
-                }
+                // Set redirect flag to prevent multiple handling
+                this.redirectingToDashboard = true;
+                console.log('🔄 Processing sign in for user:', user.email);
+                await this.handleUserSignIn(user);
             } else {
                 console.log('🔄 Processing sign out');
                 this.handleUserSignOut();
             }
         } catch (error) {
             console.error('Error in auth state change handler:', error);
+            // Reset redirect flag on error
+            this.redirectingToDashboard = false;
         }
     }
 
@@ -255,11 +260,19 @@ class AuthManager {
         this.initializeUserLogout();
 
         if (onLoginPage) {
-            console.log('🔧 User signed in from login page, redirecting to dashboard...');
-            // User successfully signed in from login page, redirect to dashboard
+            console.log('🔧 User signed in from login page, redirecting to dashboard immediately...');
+            // User successfully signed in from login page, redirect to dashboard immediately
+            // Don't wait for other operations that might block the redirect
+            
+            // Set a backup timeout to ensure redirect happens
             setTimeout(() => {
-                window.location.href = '/dashboard.html';
-            }, 500);
+                if (window.location.pathname.includes('login.html')) {
+                    console.log('⚠️ Backup redirect triggered - forcing redirect to dashboard');
+                    window.location.href = '/dashboard.html';
+                }
+            }, 2000); // 2 second backup
+            
+            window.location.href = '/dashboard.html';
             return;
         }
 
@@ -282,9 +295,7 @@ class AuthManager {
         if (onIndexPage) {
             console.log('🔧 User signed in on index page, redirecting to dashboard...');
             // User signed in on main page, redirect to dashboard
-            setTimeout(() => {
-                window.location.href = '/dashboard.html';
-            }, 500);
+            window.location.href = '/dashboard.html';
         }
     }
 
