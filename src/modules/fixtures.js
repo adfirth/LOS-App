@@ -1207,13 +1207,23 @@ class FixturesManager {
             // Update deadline display
             if (deadlineDate && earliestFixture.date) {
                 const deadlineDateObj = new Date(earliestFixture.date);
-                const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
+                // Format the date without timezone conversion to preserve the original time
+                const year = deadlineDateObj.getFullYear();
+                const month = deadlineDateObj.getMonth();
+                const day = deadlineDateObj.getDate();
+                const hours = deadlineDateObj.getHours();
+                const minutes = deadlineDateObj.getMinutes();
+                
+                // Create a new date object in the user's local timezone but preserve the original time
+                const localDeadlineDate = new Date(year, month, day, hours, minutes);
+                
+                const formattedDeadline = localDeadlineDate.toLocaleDateString('en-GB', {
+                    weekday: 'short',
+                    month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Europe/London' // Force UK timezone
                 });
                 deadlineDate.textContent = formattedDeadline;
             }
@@ -1260,12 +1270,23 @@ class FixturesManager {
             let fixturesHTML = '<div class="fixtures-list">';
             fixtures.forEach((fixture, index) => {
                 const fixtureDate = new Date(fixture.date);
-                const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                // Format the date without timezone conversion to preserve the original time
+                const year = fixtureDate.getFullYear();
+                const month = fixtureDate.getMonth();
+                const day = fixtureDate.getDate();
+                const hours = fixtureDate.getHours();
+                const minutes = fixtureDate.getMinutes();
+                
+                // Create a new date object in the user's local timezone but preserve the original time
+                const localFixtureDate = new Date(year, month, day, hours, minutes);
+                
+                const formattedDate = localFixtureDate.toLocaleDateString('en-GB', {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Europe/London' // Force UK timezone
                 });
                 
                 let statusClass = 'fixture-status';
@@ -1383,12 +1404,23 @@ class FixturesManager {
             // Update deadline display
             if (deadlineDate && earliestFixture.date) {
                 const deadlineDateObj = new Date(earliestFixture.date);
-                const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+                // Format the date without timezone conversion to preserve the original time
+                const year = deadlineDateObj.getFullYear();
+                const month = deadlineDateObj.getMonth();
+                const day = deadlineDateObj.getDate();
+                const hours = deadlineDateObj.getHours();
+                const minutes = deadlineDateObj.getMinutes();
+                
+                // Create a new date object in the user's local timezone but preserve the original time
+                const localDeadlineDate = new Date(year, month, day, hours, minutes);
+                
+                const formattedDeadline = localDeadlineDate.toLocaleDateString('en-GB', {
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Europe/London' // Force UK timezone
                 });
                 deadlineDate.textContent = formattedDeadline;
             }
@@ -1435,11 +1467,22 @@ class FixturesManager {
             let fixturesHTML = '<div class="mobile-fixtures-list">';
             fixtures.forEach((fixture, index) => {
                 const fixtureDate = new Date(fixture.date);
-                const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                // Format the date without timezone conversion to preserve the original time
+                const year = fixtureDate.getFullYear();
+                const month = fixtureDate.getMonth();
+                const day = fixtureDate.getDate();
+                const hours = fixtureDate.getHours();
+                const minutes = fixtureDate.getMinutes();
+                
+                // Create a new date object in the user's local timezone but preserve the original time
+                const localFixtureDate = new Date(year, month, day, hours, minutes);
+                
+                const formattedDate = localFixtureDate.toLocaleDateString('en-GB', {
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Europe/London' // Force UK timezone
                 });
                 
                 let statusClass = 'mobile-fixture-status';
