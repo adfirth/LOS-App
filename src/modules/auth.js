@@ -70,7 +70,7 @@ class AuthManager {
             console.log('🔍 User already logged in, redirecting to dashboard...');
             // Redirect to dashboard if user is already logged in
             setTimeout(() => {
-                window.location.href = '/dashboard.html';
+                window.location.href = '/pages/dashboard.html';
             }, 1000);
         } else {
             console.log('🔍 No existing authentication found');
@@ -289,7 +289,7 @@ class AuthManager {
                 console.log('🔄 Attempting redirect method 1: window.location.href');
                 console.log('🔄 Current location before redirect:', window.location.href);
                 console.log('🔄 Current pathname before redirect:', window.location.pathname);
-                window.location.href = '/dashboard.html';
+                window.location.href = '/pages/dashboard.html';
                 console.log('🔄 Redirect command executed');
                 
                 // Method 2: Backup with location.replace (more aggressive)
@@ -297,7 +297,7 @@ class AuthManager {
                     if (window.location.pathname.includes('login')) {
                         console.log('🔄 Attempting redirect method 2: window.location.replace');
                         console.log('🔄 Current pathname before replace:', window.location.pathname);
-                        window.location.replace('/dashboard.html');
+                        window.location.replace('/pages/dashboard.html');
                         console.log('🔄 Replace command executed');
                     }
                 }, 100);
@@ -307,7 +307,7 @@ class AuthManager {
                     if (window.location.pathname.includes('login')) {
                         console.log('🔄 Attempting redirect method 3: window.location.assign');
                         console.log('🔄 Current pathname before assign:', window.location.pathname);
-                        window.location.assign('/dashboard.html');
+                        window.location.assign('/pages/dashboard.html');
                         console.log('🔄 Assign command executed');
                     }
                 }, 500);
@@ -319,7 +319,7 @@ class AuthManager {
                         console.log('🔄 Current pathname before programmatic navigation:', window.location.pathname);
                         // Try to navigate programmatically
                         const dashboardLink = document.createElement('a');
-                        dashboardLink.href = '/dashboard.html';
+                        dashboardLink.href = '/pages/dashboard.html';
                         dashboardLink.style.display = 'none';
                         document.body.appendChild(dashboardLink);
                         dashboardLink.click();
@@ -331,7 +331,7 @@ class AuthManager {
             } catch (redirectError) {
                 console.error('❌ Redirect error:', redirectError);
                 // Fallback to simple redirect
-                window.location.href = '/dashboard.html';
+                window.location.href = '/pages/dashboard.html';
             }
             
             return;
@@ -363,7 +363,7 @@ class AuthManager {
             console.log('🔧 User signed in on index page, redirecting to dashboard...');
             // User signed in on main page, redirect to dashboard
             this.redirectingToDashboard = true;
-            window.location.href = '/dashboard.html';
+            window.location.href = '/pages/dashboard.html';
         }
         
         // Reset login flag for other cases

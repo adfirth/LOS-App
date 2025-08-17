@@ -538,7 +538,7 @@ class App {
                             this.initializeDashboardForUser(this.authManager.auth.currentUser);
                         } else {
                             console.log('❌ No authenticated user found after timeout, redirecting to login...');
-                            window.location.href = '/login.html';
+                            window.location.href = '/pages/login.html';
                         }
                         return;
                     }
