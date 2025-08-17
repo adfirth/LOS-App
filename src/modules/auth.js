@@ -1053,6 +1053,21 @@ class AuthManager {
         console.log('🔍 Authentication check - firebaseUser:', firebaseUser ? firebaseUser.email : 'null');
         console.log('🔍 Authentication check - authManagerUser:', authManagerUser ? authManagerUser.email : 'null');
         console.log('🔍 Authentication check - isAuthenticated:', isAuthenticated);
+        console.log('🔍 Authentication check - auth object available:', !!this.auth);
+        
+        // If Firebase auth says we have a user but our currentUser is null, sync them
+        if (firebaseUser && !authManagerUser) {
+            console.log('🔄 Syncing auth state - Firebase has user but currentUser is null');
+            this.currentUser = firebaseUser;
+            return true;
+        }
+        
+        // If our currentUser says we have a user but Firebase doesn't, trust Firebase
+        if (!firebaseUser && authManagerUser) {
+            console.log('🔄 Syncing auth state - currentUser has user but Firebase doesn\'t');
+            this.currentUser = null;
+            return false;
+        }
         
         return isAuthenticated;
     }

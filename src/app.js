@@ -522,37 +522,44 @@ class App {
                     return;
                 }
                 
-                // Use the auth manager's authentication check methods
-                if (!this.authManager.isUserAuthenticated()) {
-                    console.log('⏳ No authenticated user found, waiting for auth state...');
-                    // Wait for auth state to be properly initialized
-                    const checkAuth = () => {
-                        if (this.authManager.isUserAuthenticated()) {
-                            console.log('✅ Firebase auth ready, initializing dashboard...');
-                            this.initializePageSpecificFeatures();
-                        } else {
-                            setTimeout(checkAuth, 100);
-                        }
-                    };
-                    checkAuth();
-                    return;
-                }
+                // Wait for auth state to be properly initialized with a longer timeout
+                const maxAuthWaitTime = 5000; // 5 seconds max wait
+                const startTime = Date.now();
                 
-                // Dashboard-specific initialization
-                const authenticatedUser = this.authManager.getAuthenticatedUser();
-                if (authenticatedUser) {
-                    console.log('🔧 User authenticated, initializing dashboard for:', authenticatedUser.email);
-                    // Initialize dashboard for authenticated user
-                    if (this.uiManager && typeof this.uiManager.renderDashboard === 'function') {
-                        await this.uiManager.renderDashboard(authenticatedUser);
+                const waitForAuth = () => {
+                    const elapsed = Date.now() - startTime;
+                    
+                    // Check if we've waited too long
+                    if (elapsed > maxAuthWaitTime) {
+                        console.log('⚠️ Auth wait timeout reached, checking current state...');
+                        // Force check current auth state
+                        if (this.authManager.auth.currentUser) {
+                            console.log('✅ Found authenticated user after timeout:', this.authManager.auth.currentUser.email);
+                            this.initializeDashboardForUser(this.authManager.auth.currentUser);
+                        } else {
+                            console.log('❌ No authenticated user found after timeout, redirecting to login...');
+                            window.location.href = '/login.html';
+                        }
+                        return;
                     }
-                } else {
-                    console.log('🔧 No authenticated user found, redirecting to login...');
-                    // Redirect to login if not authenticated
-                    setTimeout(() => {
-                        window.location.href = '/login.html';
-                    }, 1000);
-                }
+                    
+                    // Check if user is authenticated
+                    if (this.authManager.isUserAuthenticated()) {
+                        console.log('✅ User authenticated, initializing dashboard...');
+                        const authenticatedUser = this.authManager.getAuthenticatedUser();
+                        if (authenticatedUser) {
+                            this.initializeDashboardForUser(authenticatedUser);
+                        } else {
+                            console.log('⚠️ isUserAuthenticated returned true but getAuthenticatedUser returned null, waiting...');
+                            setTimeout(waitForAuth, 100);
+                        }
+                    } else {
+                        console.log('⏳ Waiting for authentication... (elapsed: ' + elapsed + 'ms)');
+                        setTimeout(waitForAuth, 100);
+                    }
+                };
+                
+                waitForAuth();
                 break;
             case 'register':
                 console.log('🔧 Initializing registration page features...');
@@ -602,6 +609,14 @@ class App {
         if (path.includes('register') || url.includes('register')) return 'register';
         if (path.includes('login') || url.includes('login')) return 'login';
         return 'general';
+    }
+
+    // Initialize dashboard for a specific user
+    async initializeDashboardForUser(user) {
+        console.log('🔧 Initializing dashboard for user:', user.email);
+        if (this.uiManager && typeof this.uiManager.renderDashboard === 'function') {
+            await this.uiManager.renderDashboard(user);
+        }
     }
 
     // Cleanup method
