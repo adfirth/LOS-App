@@ -172,7 +172,7 @@ class App {
 
     // Set up global functions for backward compatibility
     setupGlobalFunctions() {
-        // Fixtures-related functions - REMOVED: Now handled by FixturesManager event listeners
+        // Fixtures-related functions - REMOVED: Now handled by FixturesManager directly
         // window.initializeFixtureManagement = () => this.fixturesManager.initializeFixtureManagement();
         // window.addFixtureRow = () => this.fixturesManager.addFixtureRow();
         // window.removeFixtureRow = (button) => this.fixturesManager.removeFixtureRow(button);
@@ -183,7 +183,7 @@ class App {
         // window.loadFixturesForGameweek = () => this.fixturesManager.loadFixturesForGameweek();
         // window.reallocateFixtures = () => this.fixturesManager.reallocateFixtures();
         // window.deleteAllFixtures = () => this.fixturesManager.deleteAllFixtures();
-        // window.loadFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadFixturesForDeadline(gameweek, userData, userId);
+        window.loadFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadFixturesForDeadline(gameweek, userData, userId);
         // window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
         // window.switchToFixturesTab = () => this.fixturesManager.switchToFixturesTab();
         // window.renderFixturesDisplay = (fixtures, userData, gameweek, userId) => this.fixturesManager.renderFixturesDisplay(fixtures, userData, gameweek, userId);
@@ -192,7 +192,7 @@ class App {
         // window.loadCurrentGameweekFixtures = () => this.fixturesManager.loadCurrentGameweekFixtures();
         // window.saveFootballWebPagesSettings = () => this.fixturesManager.saveFootballWebPagesSettings();
         
-                       // Scores-related functions - REMOVED: Now handled by ScoresManager event listeners
+                       // Scores-related functions - REMOVED: Now handled by ScoresManager directly
                // window.loadScoresForGameweek = () => this.scoresManager.loadScoresForGameweek();
                // window.saveScores = () => this.scoresManager.saveScores();
                // window.renderPlayerScores = (fixtures, gameweek) => this.scoresManager.renderPlayerScores(fixtures, gameweek);
@@ -208,6 +208,8 @@ class App {
                // window.importScoresFromFootballWebPages = (gameweek) => this.scoresManager.importScoresFromFootballWebPages(gameweek);
                // window.importScoresFromFile = (file, gameweek) => this.scoresManager.importScoresFromFile(file, gameweek);
                // window.testFootballWebPagesAPI = () => this.scoresManager.testFootballWebPagesAPI();
+        window.loadPlayerScores = () => this.scoresManager.loadPlayerScores();
+        window.loadScoresForGameweek = () => this.scoresManager.loadScoresForGameweek();
                
                        // UI-related functions - REMOVED: Now handled by UIManager event listeners
         // window.showModal = (content) => this.uiManager.showModal(content);
@@ -263,7 +265,7 @@ class App {
         
         // Mobile Navigation-related functions - REMOVED: Now handled by MobileNavigationManager directly
         window.initializeMobileTabs = () => this.mobileNavigationManager.initializeMobileTabs();
-        window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.mobileNavigationManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
+        window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
         window.renderMobileFixturesDisplay = (fixtures, userData, currentGameWeek, userId) => this.mobileNavigationManager.renderMobileFixturesDisplay(fixtures, userData, currentGameWeek, userId);
         window.updateMobilePickStatusHeader = (gameweek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(gameweek, userData, userId);
         window.initializeMobileGameweekNavigation = (currentGameWeek, userData, userId) => this.mobileNavigationManager.initializeMobileGameweekNavigation(currentGameWeek, userData, userId);
