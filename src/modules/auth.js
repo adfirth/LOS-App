@@ -222,7 +222,14 @@ class AuthManager {
                 // Set redirect flag to prevent multiple handling
                 this.redirectingToDashboard = true;
                 console.log('🔄 Processing sign in for user:', user.email);
-                await this.handleUserSignIn(user);
+                
+                // Handle sign in without waiting for it to complete
+                // This prevents the auth state change handler from getting stuck
+                this.handleUserSignIn(user).catch(error => {
+                    console.error('Error in handleUserSignIn:', error);
+                    // Reset redirect flag on error
+                    this.redirectingToDashboard = false;
+                });
             } else {
                 console.log('🔄 Processing sign out');
                 this.handleUserSignOut();
@@ -256,7 +263,7 @@ class AuthManager {
         const onAdminPage = window.location.pathname.endsWith('admin.html');
         const onLoginPage = window.location.pathname.includes('login.html');
 
-        // Initialize user logout functionality
+        // Initialize user logout functionality (non-blocking)
         this.initializeUserLogout();
 
         if (onLoginPage) {
@@ -272,6 +279,8 @@ class AuthManager {
                 }
             }, 2000); // 2 second backup
             
+            // Redirect immediately
+            console.log('🔄 Redirecting to dashboard now...');
             window.location.href = '/dashboard.html';
             return;
         }
