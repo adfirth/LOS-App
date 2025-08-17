@@ -237,8 +237,8 @@ class App {
         window.navigateToGameweek = (gameweek, userData, userId) => this.gameLogicManager.navigateToGameweek(gameweek, userData, userId);
         window.navigateGameweek = (currentGameWeek, direction, userData, userId) => this.gameLogicManager.navigateGameweek(currentGameWeek, direction, userData, userId);
         window.checkAndAssignAutoPicks = (userData, currentGameWeek, userId) => this.gameLogicManager.checkAndAssignAutoPicks(userData, currentGameWeek, userId);
-        window.updatePickStatusHeader = (currentGameWeek, userData, userId) => this.gameLogicManager.updatePickStatusHeader(currentGameWeek, userData, userId);
-        window.updateMobilePickStatusHeader = (currentGameWeek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(currentGameWeek, userData, userId);
+        // window.updatePickStatusHeader = (currentGameWeek, userData, userId) => this.gameLogicManager.updatePickStatusHeader(currentGameWeek, userData, userId);
+        // window.updateMobilePickStatusHeader = (currentGameWeek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(currentGameWeek, userData, userId);
         window.startDeadlineChecker = () => this.gameLogicManager.startDeadlineChecker();
         window.initializeEnhancedVidiprinter = () => this.gameLogicManager.initializeEnhancedVidiprinter();
         window.updateNavigationButtons = (currentGameWeek, prevButton, nextButton) => this.gameLogicManager.updateNavigationButtons(currentGameWeek, prevButton, nextButton);

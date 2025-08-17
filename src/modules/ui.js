@@ -293,12 +293,13 @@ class UIManager {
                 }
                 
                 // Update pick status headers for both desktop and mobile
-                if (typeof updatePickStatusHeader === 'function') {
-                    updatePickStatusHeader(currentGameWeek, userData, user.uid);
-                }
-                if (typeof updateMobilePickStatusHeader === 'function') {
-                    updateMobilePickStatusHeader(currentGameWeek, userData, user.uid);
-                }
+                // TODO: Implement these functions if needed
+                // if (typeof updatePickStatusHeader === 'function') {
+                //     updatePickStatusHeader(currentGameWeek, userData, user.uid);
+                // }
+                // if (typeof updateMobilePickStatusHeader === 'function') {
+                //     updateMobilePickStatusHeader(currentGameWeek, userData, user.uid);
+                // }
                 
                 // Load player scores for current gameweek
                 if (typeof loadPlayerScores === 'function') {
