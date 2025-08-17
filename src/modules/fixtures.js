@@ -1144,57 +1144,167 @@ class FixturesManager {
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
             const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
+            console.log('Loading fixtures for deadline:', editionGameweekKey);
+            
             // Load edition-specific fixtures only
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
                 if (fixtures && fixtures.length > 0) {
-                    // Find the earliest fixture (deadline)
-                    const earliestFixture = fixtures.reduce((earliest, fixture) => {
-                        const fixtureDate = new Date(fixture.date);
-                        const earliestDate = new Date(earliest.date);
-                        return fixtureDate < earliestDate ? fixture : earliest;
-                    });
-
-                    const deadlineDateObj = new Date(earliestFixture.date);
-                    const now = new Date();
-                    const timeUntilDeadline = deadlineDateObj.getTime() - now.getTime();
-
-                    // Check if all fixtures in this gameweek are completed
-                    const allFixturesCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-
-                    // Check if all fixtures have finished (have a status) but may not be fully completed
-                    const allFixturesFinished = fixtures.every(fixture =>
-                        fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
-                    );
-
-                    if (allFixturesCompleted) {
-                        // All fixtures completed, show final results
-                        fixturesDisplay.innerHTML = '<p>All fixtures completed for this gameweek</p>';
-                    } else if (allFixturesFinished && timeUntilDeadline <= 0) {
-                        // All fixtures finished but not fully processed
-                        fixturesDisplay.innerHTML = '<p>All fixtures finished, processing results...</p>';
-                    } else {
-                        // Display fixtures
-                        this.renderFixturesDisplay(fixtures, userData, gameweek, userId);
-                        fixturesDisplayContainer.style.display = 'block';
-                    }
+                    console.log('Found fixtures:', fixtures.length);
+                    
+                    // Always render fixtures - let the render method handle status display
+                    this.renderFixturesDisplay(fixtures, userData, gameweek, userId);
+                    fixturesDisplayContainer.style.display = 'block';
                 } else {
-                    fixturesDisplayContainer.style.display = 'none';
+                    console.log('No fixtures found for gameweek');
+                    fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                    fixturesDisplayContainer.style.display = 'block';
                 }
+            } else {
+                console.log('No fixtures document found for:', editionGameweekKey);
+                fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                fixturesDisplayContainer.style.display = 'block';
             }
         } catch (error) {
             console.error('Error loading fixtures for deadline:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+            fixturesDisplayContainer.style.display = 'block';
         }
     }
 
     // Render fixtures display
     async renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
-        // Implementation of fixtures display rendering
-        // This would contain the logic to display fixtures in the UI
+        const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
+        const fixturesDisplay = document.querySelector('#fixtures-display');
+        const deadlineDate = document.querySelector('#deadline-date');
+        const deadlineStatus = document.querySelector('#deadline-status');
+        const pickStatusDisplay = document.querySelector('#pick-status-display');
+        
+        if (!fixturesDisplayContainer || !fixturesDisplay) {
+            console.warn('Fixtures display containers not found');
+            return;
+        }
+        
         console.log('Rendering fixtures display for', fixtures.length, 'fixtures');
+        
+        try {
+            // Show the container
+            fixturesDisplayContainer.style.display = 'block';
+            
+            if (!fixtures || fixtures.length === 0) {
+                fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                return;
+            }
+            
+            // Find the earliest fixture (deadline)
+            const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                const fixtureDate = new Date(fixture.date);
+                const earliestDate = new Date(earliest.date);
+                return fixtureDate < earliestDate ? fixture : earliest;
+            });
+            
+            // Update deadline display
+            if (deadlineDate && earliestFixture.date) {
+                const deadlineDateObj = new Date(earliestFixture.date);
+                const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                deadlineDate.textContent = formattedDeadline;
+            }
+            
+            // Check if all fixtures are completed
+            const allFixturesCompleted = fixtures.every(fixture =>
+                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+            );
+            
+            // Check if all fixtures have finished
+            const allFixturesFinished = fixtures.every(fixture =>
+                fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
+            );
+            
+            // Update status display
+            if (deadlineStatus) {
+                if (allFixturesCompleted) {
+                    deadlineStatus.textContent = 'All fixtures completed';
+                    deadlineStatus.style.color = '#28a745';
+                } else if (allFixturesFinished) {
+                    deadlineStatus.textContent = 'All fixtures finished, processing results...';
+                    deadlineStatus.style.color = '#ffc107';
+                } else {
+                    deadlineStatus.textContent = 'Fixtures in progress';
+                    deadlineStatus.style.color = '#007bff';
+                }
+            }
+            
+            // Update pick status
+            if (pickStatusDisplay && userData && userData.picks) {
+                const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
+                const userPick = userData.picks[gameweekKey];
+                
+                if (userPick) {
+                    pickStatusDisplay.textContent = `Pick made: ${userPick.team}`;
+                    pickStatusDisplay.style.color = '#28a745';
+                } else {
+                    pickStatusDisplay.textContent = 'No pick made yet';
+                    pickStatusDisplay.style.color = '#dc3545';
+                }
+            }
+            
+            // Render fixtures
+            let fixturesHTML = '<div class="fixtures-list">';
+            fixtures.forEach((fixture, index) => {
+                const fixtureDate = new Date(fixture.date);
+                const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                let statusClass = 'fixture-status';
+                let statusText = fixture.status || 'NS';
+                
+                if (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+                    statusClass += ' completed';
+                } else if (fixture.status === '1H' || fixture.status === 'HT' || fixture.status === '2H') {
+                    statusClass += ' in-progress';
+                } else if (fixture.status === 'NS') {
+                    statusClass += ' not-started';
+                }
+                
+                fixturesHTML += `
+                    <div class="fixture-item">
+                        <div class="fixture-header">
+                            <span class="fixture-date">${formattedDate}</span>
+                            <span class="${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="fixture-teams">
+                            <span class="team home-team">${fixture.homeTeam}</span>
+                            <span class="vs">v</span>
+                            <span class="team away-team">${fixture.awayTeam}</span>
+                        </div>
+                        ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 
+                            `<div class="fixture-score">${fixture.homeScore} - ${fixture.awayScore}</div>` : 
+                            '<div class="fixture-score">-</div>'
+                        }
+                    </div>
+                `;
+            });
+            
+            fixturesHTML += '</div>';
+            fixturesDisplay.innerHTML = fixturesHTML;
+            
+        } catch (error) {
+            console.error('Error rendering fixtures display:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+        }
     }
 
     // Load mobile fixtures for deadline
@@ -1210,56 +1320,165 @@ class FixturesManager {
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
             const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
             
+            console.log('Loading mobile fixtures for deadline:', editionGameweekKey);
+            
             // Load edition-specific fixtures only
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
                 if (fixtures && fixtures.length > 0) {
-                    // Find the earliest fixture (deadline)
-                    const earliestFixture = fixtures.reduce((earliest, fixture) => {
-                        const fixtureDate = new Date(fixture.date);
-                        const earliestDate = new Date(earliest.date);
-                        return fixtureDate < earliestDate ? fixture : earliest;
-                    });
-
-                    const deadlineDateObj = new Date(earliestFixture.date);
-                    const now = new Date();
-                    const timeUntilDeadline = deadlineDateObj.getTime() - now.getTime();
-
-                    // Check if all fixtures in this gameweek are completed
-                    const allFixturesCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-
-                    // Check if all fixtures have finished (have a status) but may not be fully completed
-                    const allFixturesFinished = fixtures.every(fixture =>
-                        fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
-                    );
-
-                    if (allFixturesCompleted) {
-                        // All fixtures completed, show final results
-                        fixturesDisplay.innerHTML = '<p>All fixtures completed for this gameweek</p>';
-                    } else if (allFixturesFinished && timeUntilDeadline <= 0) {
-                        // All fixtures finished but not fully processed
-                        fixturesDisplay.innerHTML = '<p>All fixtures finished, processing results...</p>';
-                    } else {
-                        // Display fixtures
-                        this.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
-                        fixturesDisplayContainer.style.display = 'block';
-                    }
+                    console.log('Found mobile fixtures:', fixtures.length);
+                    
+                    // Always render fixtures - let the render method handle status display
+                    this.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
+                    fixturesDisplayContainer.style.display = 'block';
                 } else {
-                    fixturesDisplayContainer.style.display = 'none';
+                    console.log('No mobile fixtures found for gameweek');
+                    fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                    fixturesDisplayContainer.style.display = 'block';
                 }
+            } else {
+                console.log('No mobile fixtures document found for:', editionGameweekKey);
+                fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                fixturesDisplayContainer.style.display = 'block';
             }
         } catch (error) {
             console.error('Error loading mobile fixtures for deadline:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+            fixturesDisplayContainer.style.display = 'block';
         }
     }
 
     // Render mobile fixtures display
     async renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
-        // Implementation of mobile fixtures display rendering
+        const fixturesDisplayContainer = document.querySelector('#mobile-fixtures-display-container');
+        const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
+        const deadlineDate = document.querySelector('#mobile-deadline-date');
+        const deadlineStatus = document.querySelector('#mobile-deadline-status');
+        const pickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+        
+        if (!fixturesDisplayContainer || !fixturesDisplay) {
+            console.warn('Mobile fixtures display containers not found');
+            return;
+        }
+        
         console.log('Rendering mobile fixtures display for', fixtures.length, 'fixtures');
+        
+        try {
+            // Show the container
+            fixturesDisplayContainer.style.display = 'block';
+            
+            if (!fixtures || fixtures.length === 0) {
+                fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                return;
+            }
+            
+            // Find the earliest fixture (deadline)
+            const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                const fixtureDate = new Date(fixture.date);
+                const earliestDate = new Date(earliest.date);
+                return fixtureDate < earliestDate ? fixture : earliest;
+            });
+            
+            // Update deadline display
+            if (deadlineDate && earliestFixture.date) {
+                const deadlineDateObj = new Date(earliestFixture.date);
+                const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                deadlineDate.textContent = formattedDeadline;
+            }
+            
+            // Check if all fixtures are completed
+            const allFixturesCompleted = fixtures.every(fixture =>
+                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+            );
+            
+            // Check if all fixtures have finished
+            const allFixturesFinished = fixtures.every(fixture =>
+                fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
+            );
+            
+            // Update status display
+            if (deadlineStatus) {
+                if (allFixturesCompleted) {
+                    deadlineStatus.textContent = 'All fixtures completed';
+                    deadlineStatus.style.color = '#28a745';
+                } else if (allFixturesFinished) {
+                    deadlineStatus.textContent = 'All fixtures finished, processing results...';
+                    deadlineStatus.style.color = '#ffc107';
+                } else {
+                    deadlineStatus.textContent = 'Fixtures in progress';
+                    deadlineStatus.style.color = '#007bff';
+                }
+            }
+            
+            // Update pick status
+            if (pickStatusDisplay && userData && userData.picks) {
+                const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
+                const userPick = userData.picks[gameweekKey];
+                
+                if (userPick) {
+                    pickStatusDisplay.textContent = `Pick made: ${userPick.team}`;
+                    pickStatusDisplay.style.color = '#28a745';
+                } else {
+                    pickStatusDisplay.textContent = 'No pick made yet';
+                    pickStatusDisplay.style.color = '#dc3545';
+                }
+            }
+            
+            // Render fixtures
+            let fixturesHTML = '<div class="mobile-fixtures-list">';
+            fixtures.forEach((fixture, index) => {
+                const fixtureDate = new Date(fixture.date);
+                const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                let statusClass = 'mobile-fixture-status';
+                let statusText = fixture.status || 'NS';
+                
+                if (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+                    statusClass += ' completed';
+                } else if (fixture.status === '1H' || fixture.status === 'HT' || fixture.status === '2H') {
+                    statusClass += ' in-progress';
+                } else if (fixture.status === 'NS') {
+                    statusClass += ' not-started';
+                }
+                
+                fixturesHTML += `
+                    <div class="mobile-fixture-item">
+                        <div class="mobile-fixture-header">
+                            <span class="mobile-fixture-date">${formattedDate}</span>
+                            <span class="${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="mobile-fixture-teams">
+                            <span class="mobile-team home-team">${fixture.homeTeam}</span>
+                            <span class="mobile-vs">v</span>
+                            <span class="mobile-team away-team">${fixture.awayTeam}</span>
+                        </div>
+                        ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 
+                            `<div class="mobile-fixture-score">${fixture.homeScore} - ${fixture.awayScore}</div>` : 
+                            '<div class="mobile-fixture-score">-</div>'
+                        }
+                    </div>
+                `;
+            });
+            
+            fixturesHTML += '</div>';
+            fixturesDisplay.innerHTML = fixturesHTML;
+            
+        } catch (error) {
+            console.error('Error rendering mobile fixtures display:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+        }
     }
 
     // Switch to fixtures tab
