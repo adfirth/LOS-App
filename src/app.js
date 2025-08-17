@@ -516,11 +516,18 @@ class App {
                 }
                 
                 // Wait for Firebase auth to be ready
-                if (!this.authManager.auth || !this.authManager.auth.currentUser) {
-                    console.log('⏳ Waiting for Firebase auth to be ready...');
+                if (!this.authManager.auth) {
+                    console.log('⏳ Firebase auth not ready yet, waiting...');
+                    setTimeout(() => this.initializePageSpecificFeatures(), 100);
+                    return;
+                }
+                
+                // Use the auth manager's authentication check methods
+                if (!this.authManager.isUserAuthenticated()) {
+                    console.log('⏳ No authenticated user found, waiting for auth state...');
                     // Wait for auth state to be properly initialized
                     const checkAuth = () => {
-                        if (this.authManager.auth && this.authManager.auth.currentUser) {
+                        if (this.authManager.isUserAuthenticated()) {
                             console.log('✅ Firebase auth ready, initializing dashboard...');
                             this.initializePageSpecificFeatures();
                         } else {
@@ -532,14 +539,15 @@ class App {
                 }
                 
                 // Dashboard-specific initialization
-                if (this.authManager.currentUser) {
-                    console.log('🔧 User authenticated, initializing dashboard...');
+                const authenticatedUser = this.authManager.getAuthenticatedUser();
+                if (authenticatedUser) {
+                    console.log('🔧 User authenticated, initializing dashboard for:', authenticatedUser.email);
                     // Initialize dashboard for authenticated user
                     if (this.uiManager && typeof this.uiManager.renderDashboard === 'function') {
-                        await this.uiManager.renderDashboard(this.authManager.currentUser);
+                        await this.uiManager.renderDashboard(authenticatedUser);
                     }
                 } else {
-                    console.log('🔧 No authenticated user, redirecting to login...');
+                    console.log('🔧 No authenticated user found, redirecting to login...');
                     // Redirect to login if not authenticated
                     setTimeout(() => {
                         window.location.href = '/login.html';

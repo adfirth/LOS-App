@@ -118,23 +118,12 @@ class AuthManager {
                 errorElement.style.display = 'none';
             }
 
-            // Set a flag to prevent multiple redirects
-            if (!this.redirectingToDashboard) {
-                this.redirectingToDashboard = true;
-                console.log('🔄 Redirecting to dashboard...');
-                
-                // Set a timeout to reset the redirect flag if something goes wrong
-                setTimeout(() => {
-                    if (this.redirectingToDashboard) {
-                        console.log('⚠️ Redirect timeout reached, resetting flags');
-                        this.redirectingToDashboard = false;
-                        this.isLoggingIn = false;
-                    }
-                }, 10000); // 10 second timeout
-                
-                // Redirect to dashboard
-                window.location.href = '/dashboard.html';
-            }
+            // Don't manually redirect - let the auth state change handler manage it
+            // This prevents conflicts between manual redirects and auth state changes
+            console.log('✅ Login successful, auth state change will handle redirect');
+            
+            // Reset login state
+            this.isLoggingIn = false;
 
         } catch (error) {
             console.error('❌ Login error:', error);
@@ -196,26 +185,43 @@ class AuthManager {
             console.log('🔄 Auth state changed - User:', user ? user.email : 'null');
             console.log('🔄 Current redirect flags - redirectingToDashboard:', this.redirectingToDashboard, 'isLoggingIn:', this.isLoggingIn);
             
+            // Always keep currentUser in sync with Firebase auth state
             this.currentUser = user;
+            
             this.handleAuthStateChange(user);
         });
         
         console.log('✅ Firebase auth state listener set up successfully');
     }
 
+    // Synchronize auth state with Firebase
+    syncAuthState() {
+        if (this.auth && this.auth.currentUser) {
+            this.currentUser = this.auth.currentUser;
+            console.log('🔄 Auth state synchronized - currentUser:', this.currentUser.email);
+        } else {
+            this.currentUser = null;
+            console.log('🔄 Auth state synchronized - no current user');
+        }
+    }
+
     // Handle authentication state changes
     async handleAuthStateChange(user) {
         try {
             console.log('🔄 Auth state change detected:', user ? `User: ${user.email}` : 'No user');
+            console.log('🔄 Current page:', window.location.pathname);
+            console.log('🔄 Current redirect flags - redirectingToDashboard:', this.redirectingToDashboard, 'isLoggingIn:', this.isLoggingIn);
             
             if (user) {
                 // Only handle sign in if we're not already redirecting
                 if (!this.redirectingToDashboard) {
+                    console.log('🔄 Processing sign in for user:', user.email);
                     await this.handleUserSignIn(user);
                 } else {
                     console.log('⏳ Already redirecting to dashboard, skipping sign in handling');
                 }
             } else {
+                console.log('🔄 Processing sign out');
                 this.handleUserSignOut();
             }
         } catch (error) {
@@ -225,9 +231,15 @@ class AuthManager {
 
     // Handle user sign in
     async handleUserSignIn(user) {
+        console.log('🔧 Handling user sign in for:', user.email);
+        console.log('🔧 Current page:', window.location.pathname);
+        
         // Reset redirect flags since user has successfully signed in
         this.redirectingToDashboard = false;
         this.isLoggingIn = false;
+        
+        // Ensure currentUser is properly set
+        this.currentUser = user;
         
         // Ensure database is initialized
         if (!this.db && window.db) {
@@ -237,11 +249,22 @@ class AuthManager {
         const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
         const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
         const onAdminPage = window.location.pathname.endsWith('admin.html');
+        const onLoginPage = window.location.pathname.includes('login.html');
 
         // Initialize user logout functionality
         this.initializeUserLogout();
 
+        if (onLoginPage) {
+            console.log('🔧 User signed in from login page, redirecting to dashboard...');
+            // User successfully signed in from login page, redirect to dashboard
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 500);
+            return;
+        }
+
         if (onDashboardPage) {
+            console.log('🔧 User signed in on dashboard page, initializing dashboard...');
             // Reset initialization flags when user logs in
             if (window.resetAsItStandsInitialization) {
                 window.resetAsItStandsInitialization();
@@ -249,10 +272,19 @@ class AuthManager {
             if (window.renderDashboard) {
                 await window.renderDashboard(user);
             }
+            return; // Don't redirect if already on dashboard
         }
 
         if (onAdminPage) {
             await this.handleAdminPageAccess(user);
+        }
+        
+        if (onIndexPage) {
+            console.log('🔧 User signed in on index page, redirecting to dashboard...');
+            // User signed in on main page, redirect to dashboard
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 500);
         }
     }
 
@@ -926,6 +958,29 @@ class AuthManager {
                 }
             }
         });
+    }
+
+    // Check if user is properly authenticated
+    isUserAuthenticated() {
+        // Check both Firebase auth and our currentUser
+        const firebaseUser = this.auth ? this.auth.currentUser : null;
+        const authManagerUser = this.currentUser;
+        
+        const isAuthenticated = !!(firebaseUser || authManagerUser);
+        
+        console.log('🔍 Authentication check - firebaseUser:', firebaseUser ? firebaseUser.email : 'null');
+        console.log('🔍 Authentication check - authManagerUser:', authManagerUser ? authManagerUser.email : 'null');
+        console.log('🔍 Authentication check - isAuthenticated:', isAuthenticated);
+        
+        return isAuthenticated;
+    }
+
+    // Get the authenticated user (prefer Firebase auth, fallback to currentUser)
+    getAuthenticatedUser() {
+        if (this.auth && this.auth.currentUser) {
+            return this.auth.currentUser;
+        }
+        return this.currentUser;
     }
 }
 
