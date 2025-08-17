@@ -277,19 +277,63 @@ class AuthManager {
             this.redirectingToDashboard = true;
             console.log('🔧 Set redirectingToDashboard flag to true');
             
-            // Set a backup timeout to ensure redirect happens
-            setTimeout(() => {
-                if (window.location.pathname.includes('login.html')) {
-                    console.log('⚠️ Backup redirect triggered - forcing redirect to dashboard');
-                    window.location.href = '/dashboard.html';
-                }
-            }, 2000); // 2 second backup
+            // Show success message before redirect
+            const successMessage = document.createElement('div');
+            successMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 2rem; color: #155724; z-index: 9999; text-align: center;';
+            successMessage.innerHTML = '<i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i><br><strong>Login Successful!</strong><br>Redirecting to dashboard...';
+            document.body.appendChild(successMessage);
             
-            // Redirect immediately
-            console.log('🔄 Redirecting to dashboard now...');
-            console.log('🔄 Current location before redirect:', window.location.href);
-            window.location.href = '/dashboard.html';
-            console.log('🔄 Redirect command executed');
+            // Try multiple redirect methods to ensure success
+            try {
+                // Method 1: Direct location change
+                console.log('🔄 Attempting redirect method 1: window.location.href');
+                console.log('🔄 Current location before redirect:', window.location.href);
+                console.log('🔄 Current pathname before redirect:', window.location.pathname);
+                window.location.href = '/dashboard.html';
+                console.log('🔄 Redirect command executed');
+                
+                // Method 2: Backup with location.replace (more aggressive)
+                setTimeout(() => {
+                    if (window.location.pathname.includes('login')) {
+                        console.log('🔄 Attempting redirect method 2: window.location.replace');
+                        console.log('🔄 Current pathname before replace:', window.location.pathname);
+                        window.location.replace('/dashboard.html');
+                        console.log('🔄 Replace command executed');
+                    }
+                }, 100);
+                
+                // Method 3: Force reload to dashboard
+                setTimeout(() => {
+                    if (window.location.pathname.includes('login')) {
+                        console.log('🔄 Attempting redirect method 3: window.location.assign');
+                        console.log('🔄 Current pathname before assign:', window.location.pathname);
+                        window.location.assign('/dashboard.html');
+                        console.log('🔄 Assign command executed');
+                    }
+                }, 500);
+                
+                // Method 4: Nuclear option - force page change
+                setTimeout(() => {
+                    if (window.location.pathname.includes('login')) {
+                        console.log('⚠️ All redirect methods failed, forcing page change');
+                        console.log('🔄 Current pathname before programmatic navigation:', window.location.pathname);
+                        // Try to navigate programmatically
+                        const dashboardLink = document.createElement('a');
+                        dashboardLink.href = '/dashboard.html';
+                        dashboardLink.style.display = 'none';
+                        document.body.appendChild(dashboardLink);
+                        dashboardLink.click();
+                        document.body.removeChild(dashboardLink);
+                        console.log('🔄 Programmatic navigation executed');
+                    }
+                }, 2000);
+                
+            } catch (redirectError) {
+                console.error('❌ Redirect error:', redirectError);
+                // Fallback to simple redirect
+                window.location.href = '/dashboard.html';
+            }
+            
             return;
         }
 
