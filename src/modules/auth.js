@@ -32,7 +32,7 @@ class AuthManager {
         
         // Only check existing auth state if we're not already on the login page
         // This prevents redirect loops
-        if (!window.location.pathname.includes('login.html')) {
+        if (!(window.location.pathname.includes('login.html') || window.location.pathname.includes('/pages/login') || window.location.pathname.endsWith('/login'))) {
             this.checkExistingAuthState();
         } else {
             console.log('🔍 Already on login page, skipping auth state check');
@@ -52,7 +52,7 @@ class AuthManager {
     // Check existing authentication state
     checkExistingAuthState() {
         // Don't redirect if we're already on the login page
-        if (window.location.pathname.includes('login.html')) {
+        if (window.location.pathname.includes('login.html') || window.location.pathname.includes('/pages/login') || window.location.pathname.endsWith('/login')) {
             console.log('🔍 Already on login page, skipping auth state check');
             return;
         }
@@ -257,7 +257,7 @@ class AuthManager {
         const onIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
         const onDashboardPage = window.location.pathname.endsWith('dashboard.html');
         const onAdminPage = window.location.pathname.endsWith('admin.html');
-        const onLoginPage = window.location.pathname.includes('login.html');
+        const onLoginPage = window.location.pathname.includes('login.html') || window.location.pathname.includes('/pages/login') || window.location.pathname.endsWith('/login');
 
         console.log('🔍 Path detection - current pathname:', window.location.pathname);
         console.log('🔍 Path detection - onIndexPage:', onIndexPage);
