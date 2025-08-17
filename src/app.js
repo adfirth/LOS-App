@@ -240,7 +240,7 @@ class App {
         // window.updatePickStatusHeader = (currentGameWeek, userData, userId) => this.gameLogicManager.updatePickStatusHeader(currentGameWeek, userData, userId);
         // window.updateMobilePickStatusHeader = (currentGameWeek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(currentGameWeek, userData, userId);
         window.startDeadlineChecker = () => this.gameLogicManager.startDeadlineChecker();
-        window.initializeEnhancedVidiprinter = () => this.gameLogicManager.initializeEnhancedVidiprinter();
+        // window.initializeEnhancedVidiprinter = () => this.gameLogicManager.initializeEnhancedVidiprinter();
         window.updateNavigationButtons = (currentGameWeek, prevButton, nextButton) => this.gameLogicManager.updateNavigationButtons(currentGameWeek, prevButton, nextButton);
         window.updateActiveTab = (currentGameWeek, gameweekTabs) => this.gameLogicManager.updateActiveTab(currentGameWeek, gameweekTabs);
         window.updateTabStates = (gameweekTabs) => this.gameLogicManager.updateTabStates(gameweekTabs);

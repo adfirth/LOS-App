@@ -307,9 +307,10 @@ class UIManager {
                 }
                 
                 // Initialize enhanced vidiprinter
-                if (typeof initializeEnhancedVidiprinter === 'function') {
-                    initializeEnhancedVidiprinter();
-                }
+                // TODO: Implement this function if needed
+                // if (typeof initializeEnhancedVidiprinter === 'function') {
+                //     initializeEnhancedVidiprinter();
+                // }
                 
                 // Start deadline checker
                 if (typeof startDeadlineChecker === 'function') {
