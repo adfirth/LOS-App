@@ -246,10 +246,6 @@ class AuthManager {
         console.log('🔧 Handling user sign in for:', user.email);
         console.log('🔧 Current page:', window.location.pathname);
         
-        // Reset redirect flags since user has successfully signed in
-        this.redirectingToDashboard = false;
-        this.isLoggingIn = false;
-        
         // Ensure currentUser is properly set
         this.currentUser = user;
         
@@ -263,6 +259,12 @@ class AuthManager {
         const onAdminPage = window.location.pathname.endsWith('admin.html');
         const onLoginPage = window.location.pathname.includes('login.html');
 
+        console.log('🔍 Path detection - current pathname:', window.location.pathname);
+        console.log('🔍 Path detection - onIndexPage:', onIndexPage);
+        console.log('🔍 Path detection - onDashboardPage:', onDashboardPage);
+        console.log('🔍 Path detection - onAdminPage:', onAdminPage);
+        console.log('🔍 Path detection - onLoginPage:', onLoginPage);
+
         // Initialize user logout functionality (non-blocking)
         this.initializeUserLogout();
 
@@ -270,6 +272,10 @@ class AuthManager {
             console.log('🔧 User signed in from login page, redirecting to dashboard immediately...');
             // User successfully signed in from login page, redirect to dashboard immediately
             // Don't wait for other operations that might block the redirect
+            
+            // Set redirect flag to prevent multiple handling
+            this.redirectingToDashboard = true;
+            console.log('🔧 Set redirectingToDashboard flag to true');
             
             // Set a backup timeout to ensure redirect happens
             setTimeout(() => {
@@ -281,7 +287,9 @@ class AuthManager {
             
             // Redirect immediately
             console.log('🔄 Redirecting to dashboard now...');
+            console.log('🔄 Current location before redirect:', window.location.href);
             window.location.href = '/dashboard.html';
+            console.log('🔄 Redirect command executed');
             return;
         }
 
@@ -294,18 +302,28 @@ class AuthManager {
             if (window.renderDashboard) {
                 await window.renderDashboard(user);
             }
+            // Reset redirect flags since we're already on dashboard
+            this.redirectingToDashboard = false;
+            this.isLoggingIn = false;
             return; // Don't redirect if already on dashboard
         }
 
         if (onAdminPage) {
             await this.handleAdminPageAccess(user);
+            // Reset redirect flags after admin handling
+            this.redirectingToDashboard = false;
+            this.isLoggingIn = false;
         }
         
         if (onIndexPage) {
             console.log('🔧 User signed in on index page, redirecting to dashboard...');
             // User signed in on main page, redirect to dashboard
+            this.redirectingToDashboard = true;
             window.location.href = '/dashboard.html';
         }
+        
+        // Reset login flag for other cases
+        this.isLoggingIn = false;
     }
 
     // Handle user sign out
