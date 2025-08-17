@@ -11,6 +11,8 @@ class AuthManager {
         this.tokenRefreshInterval = null;
         this.sessionCheckInterval = null;
         this.sessionWarningInterval = null;
+        this.isLoggingIn = false; // New flag to prevent multiple redirects
+        this.redirectingToDashboard = false; // New flag to prevent multiple redirects
     }
 
     // Initialize the auth manager
@@ -28,8 +30,13 @@ class AuthManager {
         // Initialize login form handlers
         this.initializeLoginFormHandlers();
         
-        // Check if user is already logged in and redirect if necessary
-        this.checkExistingAuthState();
+        // Only check existing auth state if we're not already on the login page
+        // This prevents redirect loops
+        if (!window.location.pathname.includes('login.html')) {
+            this.checkExistingAuthState();
+        } else {
+            console.log('🔍 Already on login page, skipping auth state check');
+        }
         
         console.log('✅ Login page initialization completed');
     }
@@ -44,12 +51,29 @@ class AuthManager {
 
     // Check existing authentication state
     checkExistingAuthState() {
-        if (this.currentUser) {
+        // Don't redirect if we're already on the login page
+        if (window.location.pathname.includes('login.html')) {
+            console.log('🔍 Already on login page, skipping auth state check');
+            return;
+        }
+        
+        // Wait for Firebase auth to be properly initialized
+        if (!this.auth) {
+            console.log('⏳ Firebase auth not ready yet, waiting...');
+            setTimeout(() => this.checkExistingAuthState(), 100);
+            return;
+        }
+
+        // Check if user is already authenticated
+        const currentUser = this.auth.currentUser;
+        if (currentUser) {
             console.log('🔍 User already logged in, redirecting to dashboard...');
             // Redirect to dashboard if user is already logged in
             setTimeout(() => {
                 window.location.href = '/dashboard.html';
             }, 1000);
+        } else {
+            console.log('🔍 No existing authentication found');
         }
     }
 
@@ -58,6 +82,13 @@ class AuthManager {
         e.preventDefault();
         console.log('🔧 Handling login form submission...');
 
+        // Prevent multiple submissions
+        if (this.isLoggingIn) {
+            console.log('⏳ Login already in progress...');
+            return;
+        }
+        this.isLoggingIn = true;
+
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
         const submitButton = document.querySelector('#login-form button[type="submit"]');
@@ -65,6 +96,7 @@ class AuthManager {
 
         if (!email || !password) {
             this.showLoginError('Please enter both email and password', errorElement);
+            this.isLoggingIn = false;
             return;
         }
 
@@ -86,8 +118,23 @@ class AuthManager {
                 errorElement.style.display = 'none';
             }
 
-            // Redirect to dashboard
-            window.location.href = '/dashboard.html';
+            // Set a flag to prevent multiple redirects
+            if (!this.redirectingToDashboard) {
+                this.redirectingToDashboard = true;
+                console.log('🔄 Redirecting to dashboard...');
+                
+                // Set a timeout to reset the redirect flag if something goes wrong
+                setTimeout(() => {
+                    if (this.redirectingToDashboard) {
+                        console.log('⚠️ Redirect timeout reached, resetting flags');
+                        this.redirectingToDashboard = false;
+                        this.isLoggingIn = false;
+                    }
+                }, 10000); // 10 second timeout
+                
+                // Redirect to dashboard
+                window.location.href = '/dashboard.html';
+            }
 
         } catch (error) {
             console.error('❌ Login error:', error);
@@ -101,6 +148,9 @@ class AuthManager {
             // Show error message
             const errorMessage = this.getLoginErrorMessage(error);
             this.showLoginError(errorMessage, errorElement);
+            
+            // Reset login state
+            this.isLoggingIn = false;
         }
     }
 
@@ -140,18 +190,31 @@ class AuthManager {
             return;
         }
 
+        console.log('🔧 Setting up Firebase auth state listener...');
+        
         this.auth.onAuthStateChanged(user => {
-            console.log('Auth state changed - User:', user ? user.email : 'null');
+            console.log('🔄 Auth state changed - User:', user ? user.email : 'null');
+            console.log('🔄 Current redirect flags - redirectingToDashboard:', this.redirectingToDashboard, 'isLoggingIn:', this.isLoggingIn);
+            
             this.currentUser = user;
             this.handleAuthStateChange(user);
         });
+        
+        console.log('✅ Firebase auth state listener set up successfully');
     }
 
     // Handle authentication state changes
     async handleAuthStateChange(user) {
         try {
+            console.log('🔄 Auth state change detected:', user ? `User: ${user.email}` : 'No user');
+            
             if (user) {
-                await this.handleUserSignIn(user);
+                // Only handle sign in if we're not already redirecting
+                if (!this.redirectingToDashboard) {
+                    await this.handleUserSignIn(user);
+                } else {
+                    console.log('⏳ Already redirecting to dashboard, skipping sign in handling');
+                }
             } else {
                 this.handleUserSignOut();
             }
@@ -162,6 +225,10 @@ class AuthManager {
 
     // Handle user sign in
     async handleUserSignIn(user) {
+        // Reset redirect flags since user has successfully signed in
+        this.redirectingToDashboard = false;
+        this.isLoggingIn = false;
+        
         // Ensure database is initialized
         if (!this.db && window.db) {
             this.db = window.db;
@@ -192,6 +259,11 @@ class AuthManager {
     // Handle user sign out
     handleUserSignOut() {
         console.log('User signed out');
+        
+        // Reset redirect flags
+        this.redirectingToDashboard = false;
+        this.isLoggingIn = false;
+        
         this.clearAdminStatus();
         this.stopAdminTokenRefresh();
         this.stopAdminSessionMonitoring();

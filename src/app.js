@@ -508,8 +508,31 @@ class App {
                 break;
             case 'dashboard':
                 console.log('🔧 Initializing dashboard features...');
+                // Wait for auth manager to be properly initialized
+                if (!this.authManager) {
+                    console.log('⏳ Auth manager not ready yet, waiting...');
+                    setTimeout(() => this.initializePageSpecificFeatures(), 100);
+                    return;
+                }
+                
+                // Wait for Firebase auth to be ready
+                if (!this.authManager.auth || !this.authManager.auth.currentUser) {
+                    console.log('⏳ Waiting for Firebase auth to be ready...');
+                    // Wait for auth state to be properly initialized
+                    const checkAuth = () => {
+                        if (this.authManager.auth && this.authManager.auth.currentUser) {
+                            console.log('✅ Firebase auth ready, initializing dashboard...');
+                            this.initializePageSpecificFeatures();
+                        } else {
+                            setTimeout(checkAuth, 100);
+                        }
+                    };
+                    checkAuth();
+                    return;
+                }
+                
                 // Dashboard-specific initialization
-                if (this.authManager && this.authManager.currentUser) {
+                if (this.authManager.currentUser) {
                     console.log('🔧 User authenticated, initializing dashboard...');
                     // Initialize dashboard for authenticated user
                     if (this.uiManager && typeof this.uiManager.renderDashboard === 'function') {
