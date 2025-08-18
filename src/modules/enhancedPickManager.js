@@ -4,8 +4,22 @@
  */
 class EnhancedPickManager {
     constructor() {
-        this.db = window.db;
         console.log('🔧 EnhancedPickManager: Initialized');
+    }
+
+    /**
+     * Get the Firebase database reference
+     * @returns {Object} Firebase database reference
+     */
+    getDb() {
+        if (window.db) {
+            return window.db;
+        }
+        if (window.app && window.app.db) {
+            return window.app.db;
+        }
+        console.error('🔧 EnhancedPickManager: No database reference available');
+        return null;
     }
 
     /**
@@ -254,43 +268,68 @@ class EnhancedPickManager {
      * @param {string} teamName - Name of the team being selected
      * @param {string} gameweek - Gameweek being viewed
      * @param {string} userId - User ID
-     * @param {Object} userData - User data
-     * @param {Array} fixtures - Fixtures for the current gameweek
      */
-    async handleTeamSelection(teamName, gameweek, userId, userData, fixtures) {
-        const teamStatus = this.getTeamStatus(teamName, gameweek, userData, fixtures);
-        const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+    async handleTeamSelection(teamName, gameweek, userId) {
+        const db = this.getDb();
+        if (!db) {
+            alert('Database connection not available. Please refresh the page.');
+            return;
+        }
 
-        console.log('🔧 EnhancedPickManager: Team selection:', {
-            teamName,
-            gameweek,
-            teamStatus,
-            action: teamStatus.action
-        });
+        try {
+            // Get current user data
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (!userDoc.exists) {
+                alert('User data not found. Please refresh the page.');
+                return;
+            }
+            const userData = userDoc.data();
 
-        switch (teamStatus.action) {
-            case 'pick':
-                await this.makeNewPick(teamName, gameweek, userId);
-                break;
+            // Get fixtures for the current gameweek
+            const userEdition = window.editionService ? window.editionService.getCurrentUserEdition() : 1;
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
+            
+            const fixturesDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
+            const fixtures = fixturesDoc.exists ? fixturesDoc.data().fixtures || [] : [];
 
-            case 'change':
-                await this.changeCurrentPick(teamName, gameweek, userId, userData.picks[gameweekKey]);
-                break;
+            const teamStatus = this.getTeamStatus(teamName, gameweek, userData, fixtures);
+            const currentGameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
 
-            case 'release-and-pick':
-                await this.releaseAndPick(teamName, gameweek, userId, teamStatus.savedGameweek);
-                break;
+            console.log('🔧 EnhancedPickManager: Team selection:', {
+                teamName,
+                gameweek,
+                teamStatus,
+                action: teamStatus.action
+            });
 
-            case 'locked':
-                alert('This pick cannot be changed - the gameweek deadline has passed.');
-                break;
+            switch (teamStatus.action) {
+                case 'pick':
+                    await this.makeNewPick(teamName, gameweek, userId);
+                    break;
 
-            case 'unavailable':
-                alert('Picks are not available for this gameweek - it has already started.');
-                break;
+                case 'change':
+                    await this.changeCurrentPick(teamName, gameweek, userId, userData.picks[currentGameweekKey]);
+                    break;
 
-            default:
-                console.error('Unknown team action:', teamStatus.action);
+                case 'release-and-pick':
+                    await this.releaseAndPick(teamName, gameweek, userId, teamStatus.savedGameweek);
+                    break;
+
+                case 'locked':
+                    alert('This pick cannot be changed - the gameweek deadline has passed.');
+                    break;
+
+                case 'unavailable':
+                    alert('Picks are not available for this gameweek - it has already started.');
+                    break;
+
+                default:
+                    console.error('Unknown team action:', teamStatus.action);
+            }
+        } catch (error) {
+            console.error('Error handling team selection:', error);
+            alert('Error processing pick. Please try again.');
         }
     }
 
@@ -302,10 +341,16 @@ class EnhancedPickManager {
      */
     async makeNewPick(teamName, gameweek, userId) {
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+        const db = this.getDb();
+        
+        if (!db) {
+            alert('Database connection not available. Please refresh the page.');
+            return;
+        }
         
         if (confirm(`Would you like to pick ${teamName} for ${gameweek === 'tiebreak' ? 'Tiebreak' : `Game Week ${gameweek}`}?`)) {
             try {
-                await this.db.collection('users').doc(userId).update({
+                await db.collection('users').doc(userId).update({
                     [`picks.${gameweekKey}`]: teamName
                 });
 
@@ -327,10 +372,16 @@ class EnhancedPickManager {
      */
     async changeCurrentPick(newTeam, gameweek, userId, currentTeam) {
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+        const db = this.getDb();
+        
+        if (!db) {
+            alert('Database connection not available. Please refresh the page.');
+            return;
+        }
         
         if (confirm(`You currently have ${currentTeam} selected for ${gameweek === 'tiebreak' ? 'Tiebreak' : `Game Week ${gameweek}`}. Would you like to change your pick to ${newTeam}?`)) {
             try {
-                await this.db.collection('users').doc(userId).update({
+                await db.collection('users').doc(userId).update({
                     [`picks.${gameweekKey}`]: newTeam
                 });
 
@@ -352,9 +403,15 @@ class EnhancedPickManager {
      */
     async releaseAndPick(teamName, newGameweek, userId, savedGameweek) {
         const newGameweekKey = newGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${newGameweek}`;
+        const db = this.getDb();
+        
+        if (!db) {
+            alert('Database connection not available. Please refresh the page.');
+            return;
+        }
         
         // Get current user data to find the original gameweek key
-        const userDoc = await this.db.collection('users').doc(userId).get();
+        const userDoc = await db.collection('users').doc(userId).get();
         if (!userDoc.exists) {
             console.error('User not found');
             return;
@@ -378,8 +435,8 @@ class EnhancedPickManager {
 
         if (confirm(`You have picked ${teamName} for ${savedGameweek}. Would you like to release this pick and select ${teamName} for ${newGameweek === 'tiebreak' ? 'Tiebreak' : `Game Week ${newGameweek}`}?`)) {
             try {
-                await this.db.collection('users').doc(userId).update({
-                    [`picks.${originalGameweekKey}`]: this.db.FieldValue.delete(),
+                await db.collection('users').doc(userId).update({
+                    [`picks.${originalGameweekKey}`]: db.FieldValue.delete(),
                     [`picks.${newGameweekKey}`]: teamName
                 });
 
@@ -399,7 +456,13 @@ class EnhancedPickManager {
      */
     async refreshDisplayAfterPickUpdate(gameweek, userId) {
         try {
-            const updatedUserDoc = await this.db.collection('users').doc(userId).get();
+            const db = this.getDb();
+            if (!db) {
+                console.error('Database connection not available for refresh');
+                return;
+            }
+            
+            const updatedUserDoc = await db.collection('users').doc(userId).get();
             if (updatedUserDoc.exists) {
                 const updatedUserData = updatedUserDoc.data();
 

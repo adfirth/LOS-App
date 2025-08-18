@@ -1574,9 +1574,9 @@ class FixturesManager {
                         
                         // Create click attributes for team buttons
                         const homeTeamClickAttr = homeTeamStatus.clickable ? 
-                            `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.homeTeam}', ${currentGameWeek}, '${userId}', ${JSON.stringify(userData).replace(/"/g, '&quot;')}, ${JSON.stringify(fixtures).replace(/"/g, '&quot;')})"` : '';
+                            `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
                         const awayTeamClickAttr = awayTeamStatus.clickable ? 
-                            `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.awayTeam}', ${currentGameWeek}, '${userId}', ${JSON.stringify(userData).replace(/"/g, '&quot;')}, ${JSON.stringify(fixtures).replace(/"/g, '&quot;')})"` : '';
+                            `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
                         
                         fixturesHTML += `
                             <div class="fixture-item">
