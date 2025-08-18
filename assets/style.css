@@ -7170,3 +7170,322 @@ a:hover {
     cursor: not-allowed;
     transform: none;
 }
+
+/* Mobile Fixtures Layout Styles */
+.mobile-fixtures-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-fixture-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.mobile-fixture-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.mobile-fixture-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-fixture-date {
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.mobile-fixture-status {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.mobile-fixture-status.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.mobile-fixture-status.in-progress {
+    background-color: #fff3cd;
+    color: #856404;
+    animation: pulse 2s infinite;
+}
+
+.mobile-fixture-status.not-started {
+    background-color: #e2e3e5;
+    color: #6c757d;
+}
+
+.mobile-fixture-teams {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 12px;
+}
+
+.mobile-team {
+    flex: 1;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #212529;
+    text-align: center;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.mobile-team.home-team {
+    text-align: left;
+    background-color: #e8f5e8;
+    border-left: 3px solid #28a745;
+}
+
+.mobile-team.away-team {
+    text-align: right;
+    background-color: #fff3cd;
+    border-right: 3px solid #ffc107;
+}
+
+.mobile-vs {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0 8px;
+}
+
+.mobile-fixture-score {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #212529;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+/* Mobile Deadline Section Improvements */
+.mobile-deadline-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.mobile-deadline-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    color: #495057;
+    font-weight: 600;
+}
+
+.mobile-deadline-section .deadline-status {
+    margin: 8px 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.mobile-deadline-section .pick-status-header {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background-color: #e8f5e8;
+    border-radius: 4px;
+    border-left: 3px solid #28a745;
+}
+
+.mobile-deadline-section .pick-status-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #155724;
+}
+
+/* Mobile Gameweek Navigation Improvements */
+.mobile-gameweek-nav {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.mobile-nav-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-nav-controls .nav-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-nav-controls .nav-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.mobile-nav-controls .current-gameweek {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    text-align: center;
+    flex: 1;
+    margin: 0 12px;
+}
+
+.mobile-gameweek-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+}
+
+.mobile-gameweek-tabs .gameweek-tab {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 40px;
+    text-align: center;
+}
+
+.mobile-gameweek-tabs .gameweek-tab:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.mobile-gameweek-tabs .gameweek-tab.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Mobile Edition Selector Improvements */
+#mobile-edition-selector-container {
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+    border: 2px solid #28a745;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+#mobile-edition-selector-container h4 {
+    margin: 0 0 12px 0;
+    color: #155724;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+#mobile-edition-selector-container select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: white;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+#mobile-edition-selector-container button {
+    width: 100%;
+    padding: 10px 16px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#mobile-edition-selector-container button:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+#mobile-edition-selector-container p {
+    margin: 8px 0 0 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+#mobile-edition-status {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #155724;
+    border-left: 3px solid #28a745;
+}
+
+/* Responsive adjustments for very small screens */
+@media (max-width: 480px) {
+    .mobile-fixture-item {
+        padding: 12px;
+    }
+    
+    .mobile-fixture-teams {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .mobile-team {
+        text-align: center !important;
+        width: 100%;
+    }
+    
+    .mobile-vs {
+        display: none;
+    }
+    
+    .mobile-gameweek-tabs {
+        gap: 4px;
+    }
+    
+    .mobile-gameweek-tabs .gameweek-tab {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        min-width: 35px;
+    }
+}

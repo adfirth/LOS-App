@@ -110,8 +110,22 @@ class EditionService {
         console.log('🔧 EditionService: Available editions:', availableEditions);
 
         if (availableEditions.length <= 1) {
-            console.log('🔧 EditionService: User only has one edition, hiding selector');
-            container.style.display = 'none';
+            console.log('🔧 EditionService: User only has one edition, showing status only');
+            // Instead of hiding completely, show a status display
+            const statusHTML = `
+                <div class="edition-selector-wrapper ${isMobile ? 'mobile-edition-selector' : 'desktop-edition-selector'}" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: ${isMobile ? '1rem' : '1.1rem'};">Current Edition:</h4>
+                    <div style="padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-size: 0.9rem; color: #155724; border-left: 3px solid #28a745;">
+                        <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>
+                    </div>
+                    <p style="margin: 0.5rem 0 0 0; font-size: ${isMobile ? '0.85rem' : '0.9rem'}; color: #6c757d;">
+                        You are registered for this edition only.
+                    </p>
+                </div>
+            `;
+            
+            container.innerHTML = statusHTML;
+            container.style.display = 'block';
             return;
         }
 
