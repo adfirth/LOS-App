@@ -233,7 +233,7 @@ class UIManager {
                 return;
             }
             const settings = settingsDoc.data();
-            const currentGameWeek = settings.active_gameweek;
+            const currentGameWeek = settings.active_gameweek || '1';
             console.log('🔧 UI: Settings loaded:', settings);
             console.log('🔧 UI: Current gameweek from settings:', currentGameWeek);
 
