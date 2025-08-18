@@ -414,12 +414,20 @@ class EditionService {
             // Update the current user edition
             this.currentUserEdition = newEdition;
             
-            // Reload fixtures for the current gameweek
+            // Reload fixtures for the current gameweek (both desktop and mobile)
             if (window.loadFixturesForDeadline && typeof window.loadFixturesForDeadline === 'function') {
                 console.log('🔧 EditionService: Calling loadFixturesForDeadline with gameweek:', currentGameweek);
                 await window.loadFixturesForDeadline(currentGameweek);
             } else {
                 console.log('🔧 EditionService: loadFixturesForDeadline function not available');
+            }
+            
+            // Reload mobile fixtures for the current gameweek
+            if (window.loadMobileFixturesForDeadline && typeof window.loadMobileFixturesForDeadline === 'function') {
+                console.log('🔧 EditionService: Calling loadMobileFixturesForDeadline with gameweek:', currentGameweek);
+                await window.loadMobileFixturesForDeadline(currentGameweek);
+            } else {
+                console.log('🔧 EditionService: loadMobileFixturesForDeadline function not available');
             }
             
             console.log('🔧 EditionService: Page content refresh complete');
