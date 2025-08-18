@@ -621,6 +621,11 @@
                                     windowHeight: window.innerHeight
                                 });
                                 
+                                // Temporary alert for OnePlus testing
+                                if (isOnePlus || isHighResMobile) {
+                                    alert(`OnePlus Device Detected!\nWidth: ${window.innerWidth}\nHeight: ${window.innerHeight}\nUser Agent: ${userAgent.substring(0, 50)}...`);
+                                }
+                                
                                 // Create edition selector for mobile
                                 window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').catch(error => {
                                     console.error('❌ Dashboard: Error creating mobile edition selector:', error);
