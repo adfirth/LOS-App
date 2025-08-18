@@ -137,6 +137,9 @@ class EnhancedPickManager {
 
         const lockedPicks = [];
         const now = new Date();
+        
+        // Get current edition to determine which deadlines to use
+        const userEdition = window.editionService ? window.editionService.getCurrentUserEdition() : 1;
 
         Object.entries(picks).forEach(([gameweekKey, team]) => {
             if (gameweekKey === 'gwtiebreak') return;
@@ -151,23 +154,36 @@ class EnhancedPickManager {
             // Check if this gameweek's deadline has passed
             let shouldLock = false;
 
-            if (gameweekKey === 'gw1') {
-                const gw1Deadline = new Date('2025-08-19T19:45:00');
-                shouldLock = now >= gw1Deadline;
-                console.log(`🔍 GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-            } else if (gameweekKey === 'gw2') {
-                const gw2Deadline = new Date('2025-08-23T15:00:00');
-                shouldLock = now >= gw2Deadline;
-                console.log(`🔍 GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-            } else if (gameweekKey === 'gw3') {
-                const gw3Deadline = new Date('2025-08-25T15:00:00');
-                shouldLock = now >= gw3Deadline;
-                console.log(`🔍 GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+            if (userEdition === 1) {
+                // Edition 1 deadlines
+                if (gameweekKey === 'gw1') {
+                    const gw1Deadline = new Date('2025-08-19T19:45:00');
+                    shouldLock = now >= gw1Deadline;
+                    console.log(`🔍 Edition 1 GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+                } else if (gameweekKey === 'gw2') {
+                    const gw2Deadline = new Date('2025-08-23T15:00:00');
+                    shouldLock = now >= gw2Deadline;
+                    console.log(`🔍 Edition 1 GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+                } else if (gameweekKey === 'gw3') {
+                    const gw3Deadline = new Date('2025-08-25T15:00:00');
+                    shouldLock = now >= gw3Deadline;
+                    console.log(`🔍 Edition 1 GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+                }
             } else {
-                // For other gameweeks, only lock if the deadline has actually passed
-                // Don't use numeric comparison as fallback - only lock based on actual deadlines
-                console.log(`🔍 ${gameweekKey} (${team}): No specific deadline set, not locking`);
-                shouldLock = false;
+                // Test Weeks deadlines
+                if (gameweekKey === 'gw1') {
+                    const gw1Deadline = new Date('2025-08-09T15:00:00');
+                    shouldLock = now >= gw1Deadline;
+                    console.log(`🔍 Test Weeks GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+                } else if (gameweekKey === 'gw2') {
+                    const gw2Deadline = new Date('2025-08-16T12:30:00');
+                    shouldLock = now >= gw2Deadline;
+                    console.log(`🔍 Test Weeks GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+                } else if (gameweekKey === 'gw3') {
+                    const gw3Deadline = new Date('2025-08-19T19:45:00');
+                    shouldLock = now >= gw3Deadline;
+                    console.log(`🔍 Test Weeks GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+                }
             }
 
             if (shouldLock) {
@@ -214,37 +230,75 @@ class EnhancedPickManager {
         if (!fixtures || fixtures.length === 0) return 'not-started';
 
         const now = new Date();
+        
+        // Get current edition to determine which deadlines to use
+        const userEdition = window.editionService ? window.editionService.getCurrentUserEdition() : 1;
 
-        // Special handling for Edition 1 Gameweeks
-        if (gameweek === '1') {
-            const gw1Deadline = new Date('2025-08-19T19:45:00');
-            if (now >= gw1Deadline) {
-                const allCompleted = fixtures.every(fixture =>
-                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                );
-                return allCompleted ? 'completed' : 'in-progress';
-            } else {
-                return 'not-started';
+        if (userEdition === 1) {
+            // Edition 1 deadlines
+            if (gameweek === '1') {
+                const gw1Deadline = new Date('2025-08-19T19:45:00');
+                if (now >= gw1Deadline) {
+                    const allCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    return allCompleted ? 'completed' : 'in-progress';
+                } else {
+                    return 'not-started';
+                }
+            } else if (gameweek === '2') {
+                const gw2Deadline = new Date('2025-08-23T15:00:00');
+                if (now >= gw2Deadline) {
+                    const allCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    return allCompleted ? 'completed' : 'in-progress';
+                } else {
+                    return 'not-started';
+                }
+            } else if (gameweek === '3') {
+                const gw3Deadline = new Date('2025-08-25T15:00:00');
+                if (now >= gw3Deadline) {
+                    const allCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    return allCompleted ? 'completed' : 'in-progress';
+                } else {
+                    return 'not-started';
+                }
             }
-        } else if (gameweek === '2') {
-            const gw2Deadline = new Date('2025-08-23T15:00:00');
-            if (now >= gw2Deadline) {
-                const allCompleted = fixtures.every(fixture =>
-                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                );
-                return allCompleted ? 'completed' : 'in-progress';
-            } else {
-                return 'not-started';
-            }
-        } else if (gameweek === '3') {
-            const gw3Deadline = new Date('2025-08-25T15:00:00');
-            if (now >= gw3Deadline) {
-                const allCompleted = fixtures.every(fixture =>
-                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                );
-                return allCompleted ? 'completed' : 'in-progress';
-            } else {
-                return 'not-started';
+        } else {
+            // Test Weeks deadlines
+            if (gameweek === '1') {
+                const gw1Deadline = new Date('2025-08-09T15:00:00');
+                if (now >= gw1Deadline) {
+                    const allCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    return allCompleted ? 'completed' : 'in-progress';
+                } else {
+                    return 'not-started';
+                }
+            } else if (gameweek === '2') {
+                const gw2Deadline = new Date('2025-08-16T12:30:00');
+                if (now >= gw2Deadline) {
+                    const allCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    return allCompleted ? 'completed' : 'in-progress';
+                } else {
+                    return 'not-started';
+                }
+            } else if (gameweek === '3') {
+                const gw3Deadline = new Date('2025-08-19T19:45:00');
+                if (now >= gw3Deadline) {
+                    const allCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    return allCompleted ? 'completed' : 'in-progress';
+                } else {
+                    return 'not-started';
+                }
             }
         }
 
