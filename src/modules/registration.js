@@ -559,7 +559,7 @@ class RegistrationManager {
             }
         };
 
-        await this.db.collection('users').doc(userId).update(updateData);
+        await this.db.collection('users').doc(userId).set(updateData, { merge: true });
         console.log('User re-registration data updated in Firestore');
     }
 
