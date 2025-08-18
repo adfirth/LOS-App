@@ -937,9 +937,63 @@ class MobileNavigationManager {
     async updateMobilePickStatusHeader(gameweek, userData, userId) {
         const pickStatusDisplay = document.querySelector('#mobile-pick-status-display');
         const pickStatusHeader = document.querySelector('.mobile-deadline-section .pick-status-header');
+        const deadlineDate = document.querySelector('#mobile-deadline-date');
+        const deadlineStatus = document.querySelector('#mobile-deadline-status');
         
         if (!pickStatusDisplay || !pickStatusHeader) {
             return;
+        }
+        
+        // Get user edition for deadline lookup
+        const userEdition = await window.editionService.getCurrentUserEdition();
+        const editionGameweekKey = `edition${userEdition}_gw${gameweek}`;
+        
+        // Get deadline information from DeadlineService
+        try {
+            const deadlineDoc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            if (deadlineDoc.exists) {
+                const deadlineData = deadlineDoc.data();
+                const deadline = deadlineData.deadline;
+                
+                if (deadline && deadlineDate) {
+                    // Format the deadline for display
+                    const deadlineDateObj = deadline.toDate ? deadline.toDate() : new Date(deadline);
+                    const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Europe/London'
+                    });
+                    deadlineDate.textContent = formattedDeadline;
+                    deadlineDate.style.color = '#dc3545'; // Red color for deadline
+                }
+                
+                if (deadlineStatus) {
+                    // Determine gameweek status
+                    const now = new Date();
+                    const deadlineTime = deadline.toDate ? deadline.toDate() : new Date(deadline);
+                    
+                    if (now < deadlineTime) {
+                        deadlineStatus.textContent = 'Open for picks';
+                        deadlineStatus.style.color = '#28a745'; // Green for open
+                    } else {
+                        deadlineStatus.textContent = 'Deadline passed';
+                        deadlineStatus.style.color = '#dc3545'; // Red for passed
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('🔧 Mobile Navigation: Error fetching deadline info:', error);
+            if (deadlineDate) {
+                deadlineDate.textContent = 'Error loading deadline';
+                deadlineDate.style.color = '#dc3545';
+            }
+            if (deadlineStatus) {
+                deadlineStatus.textContent = 'Error loading status';
+                deadlineStatus.style.color = '#dc3545';
+            }
         }
         
         // Check if deadline has passed for this gameweek

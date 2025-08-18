@@ -165,11 +165,11 @@ class EnhancedPickManager {
                 lockedPicks.push(team);
                 console.log(`🔒 Locking ${team} from ${gameweekKey} (deadline passed)`);
             } else {
-                console.log(`✅ Not locking ${team} from ${gameweekKey} (deadline not passed yet)`);
+                // console.log(`✅ Not locking ${team} from ${gameweekKey} (deadline not passed yet)`);
             }
         }
 
-        console.log('🔍 Final locked picks:', lockedPicks);
+        // console.log('🔍 Final locked picks:', lockedPicks);
         return lockedPicks;
     }
 
@@ -190,7 +190,7 @@ class EnhancedPickManager {
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
             const editionKey = `edition${edition || 1}_${gameweekKey}`;
             
-            console.log(`🔍 EnhancedPickManager: Checking deadline for ${editionKey}`);
+            // console.log(`🔍 EnhancedPickManager: Checking deadline for ${editionKey}`);
             
             const fixturesDoc = await db.collection('fixtures').doc(editionKey).get();
             if (!fixturesDoc.exists) {
@@ -222,7 +222,7 @@ class EnhancedPickManager {
             const now = new Date();
             
             const isDeadlinePassed = deadline <= now;
-            console.log(`🔍 EnhancedPickManager: ${editionKey} deadline ${deadline.toISOString()}, now ${now.toISOString()}, passed: ${isDeadlinePassed}`);
+            // console.log(`🔍 EnhancedPickManager: ${editionKey} deadline ${deadline.toISOString()}, now ${now.toISOString()}, passed: ${isDeadlinePassed}`);
             
             return isDeadlinePassed;
         } catch (error) {
