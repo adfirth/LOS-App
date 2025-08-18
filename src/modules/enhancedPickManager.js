@@ -154,22 +154,31 @@ class EnhancedPickManager {
             if (gameweekKey === 'gw1') {
                 const gw1Deadline = new Date('2025-08-09T15:00:00');
                 shouldLock = now >= gw1Deadline;
+                console.log(`🔍 GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
             } else if (gameweekKey === 'gw2') {
                 const gw2Deadline = new Date('2025-08-16T12:30:00');
                 shouldLock = now >= gw2Deadline;
+                console.log(`🔍 GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
             } else if (gameweekKey === 'gw3') {
                 const gw3Deadline = new Date('2025-08-19T19:45:00');
                 shouldLock = now >= gw3Deadline;
-            } else if (gameweekNum && gameweekNum < parseInt(currentGameweek)) {
-                // For other gameweeks, use numeric comparison as fallback
-                shouldLock = true;
+                console.log(`🔍 GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+            } else {
+                // For other gameweeks, only lock if the deadline has actually passed
+                // Don't use numeric comparison as fallback - only lock based on actual deadlines
+                console.log(`🔍 ${gameweekKey} (${team}): No specific deadline set, not locking`);
+                shouldLock = false;
             }
 
             if (shouldLock) {
                 lockedPicks.push(team);
+                console.log(`🔒 Locking ${team} from ${gameweekKey} (deadline passed)`);
+            } else {
+                console.log(`✅ Not locking ${team} from ${gameweekKey} (deadline not passed yet)`);
             }
         });
 
+        console.log('🔍 Final locked picks:', lockedPicks);
         return lockedPicks;
     }
 
