@@ -955,27 +955,79 @@ class MobileNavigationManager {
                 const deadlineData = deadlineDoc.data();
                 const deadline = deadlineData.deadline;
                 
+                console.log('🔧 Mobile Navigation: Deadline data from Firebase:', {
+                    deadline,
+                    deadlineType: typeof deadline,
+                    hasToDate: deadline && typeof deadline.toDate === 'function',
+                    isDate: deadline instanceof Date,
+                    deadlineKeys: deadline ? Object.keys(deadline) : null
+                });
+                
                 if (deadline && deadlineDate) {
-                    // Format the deadline for display
-                    const deadlineDateObj = deadline.toDate ? deadline.toDate() : new Date(deadline);
-                    const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        timeZone: 'Europe/London'
-                    });
-                    deadlineDate.textContent = formattedDeadline;
-                    deadlineDate.style.color = '#dc3545'; // Red color for deadline
+                    // Format the deadline for display - handle different data types
+                    let deadlineDateObj;
+                    if (deadline.toDate && typeof deadline.toDate === 'function') {
+                        // Firestore Timestamp
+                        deadlineDateObj = deadline.toDate();
+                    } else if (deadline instanceof Date) {
+                        // JavaScript Date object
+                        deadlineDateObj = deadline;
+                    } else if (typeof deadline === 'string') {
+                        // String date
+                        deadlineDateObj = new Date(deadline);
+                    } else if (deadline.seconds) {
+                        // Firestore Timestamp with seconds
+                        deadlineDateObj = new Date(deadline.seconds * 1000);
+                    } else {
+                        // Fallback - try to create Date from whatever we have
+                        deadlineDateObj = new Date(deadline);
+                    }
+                    
+                    // Check if the date is valid
+                    if (isNaN(deadlineDateObj.getTime())) {
+                        console.error('🔧 Mobile Navigation: Invalid deadline date:', deadline);
+                        deadlineDate.textContent = 'Invalid deadline';
+                        deadlineDate.style.color = '#dc3545';
+                    } else {
+                        const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Europe/London'
+                        });
+                        deadlineDate.textContent = formattedDeadline;
+                        deadlineDate.style.color = '#dc3545'; // Red color for deadline
+                    }
                 }
                 
                 if (deadlineStatus) {
                     // Determine gameweek status
                     const now = new Date();
-                    const deadlineTime = deadline.toDate ? deadline.toDate() : new Date(deadline);
+                    let deadlineTime;
                     
-                    if (now < deadlineTime) {
+                    if (deadline.toDate && typeof deadline.toDate === 'function') {
+                        // Firestore Timestamp
+                        deadlineTime = deadline.toDate();
+                    } else if (deadline instanceof Date) {
+                        // JavaScript Date object
+                        deadlineTime = deadline;
+                    } else if (typeof deadline === 'string') {
+                        // String date
+                        deadlineTime = new Date(deadline);
+                    } else if (deadline.seconds) {
+                        // Firestore Timestamp with seconds
+                        deadlineTime = new Date(deadline.seconds * 1000);
+                    } else {
+                        // Fallback
+                        deadlineTime = new Date(deadline);
+                    }
+                    
+                    if (isNaN(deadlineTime.getTime())) {
+                        deadlineStatus.textContent = 'Invalid deadline';
+                        deadlineStatus.style.color = '#dc3545';
+                    } else if (now < deadlineTime) {
                         deadlineStatus.textContent = 'Open for picks';
                         deadlineStatus.style.color = '#28a745'; // Green for open
                     } else {
