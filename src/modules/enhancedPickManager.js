@@ -74,12 +74,18 @@ class EnhancedPickManager {
         // Check if team is saved for a future gameweek
         if (savedPicks.includes(teamName)) {
             const savedGameweek = this.getGameweekWhereTeamPicked(teamName, userData.picks);
+            
+            // Only allow saved picks to be clickable if the current gameweek hasn't started
+            const canTransfer = gameweekStatus === 'not-started';
+            
             return {
                 status: 'saved-pick',
-                clickable: true,
-                tooltip: `Picked for ${savedGameweek} - click to release and pick for ${gameweek}`,
-                classes: 'team-pick-button saved-pick',
-                action: 'release-and-pick',
+                clickable: canTransfer,
+                tooltip: canTransfer ? 
+                    `Picked for ${savedGameweek} - click to release and pick for ${gameweek}` : 
+                    `Picked for ${savedGameweek} - cannot transfer (gameweek locked)`,
+                classes: `team-pick-button saved-pick ${canTransfer ? 'transferable' : 'locked'}`,
+                action: canTransfer ? 'release-and-pick' : 'locked',
                 savedGameweek: savedGameweek
             };
         }
