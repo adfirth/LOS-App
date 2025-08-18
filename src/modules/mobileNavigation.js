@@ -948,48 +948,34 @@ class MobileNavigationManager {
         const userEdition = await window.editionService.getCurrentUserEdition();
         const editionGameweekKey = `edition${userEdition}_gw${gameweek}`;
         
-        // Get deadline information from DeadlineService
+        // Get deadline information using the same approach as desktop (DeadlineService)
         try {
-            const deadlineDoc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
-            if (deadlineDoc.exists) {
-                const deadlineData = deadlineDoc.data();
-                const deadline = deadlineData.deadline;
+            // Get fixtures for this gameweek to calculate deadline
+            const fixturesDoc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            if (fixturesDoc.exists) {
+                const fixturesData = fixturesDoc.data();
+                const fixtures = fixturesData.fixtures || [];
                 
-                console.log('🔧 Mobile Navigation: Deadline data from Firebase:', {
-                    deadline,
-                    deadlineType: typeof deadline,
-                    hasToDate: deadline && typeof deadline.toDate === 'function',
-                    isDate: deadline instanceof Date,
-                    deadlineKeys: deadline ? Object.keys(deadline) : null
-                });
-                
-                if (deadline && deadlineDate) {
-                    // Format the deadline for display - handle different data types
-                    let deadlineDateObj;
-                    if (deadline.toDate && typeof deadline.toDate === 'function') {
-                        // Firestore Timestamp
-                        deadlineDateObj = deadline.toDate();
-                    } else if (deadline instanceof Date) {
-                        // JavaScript Date object
-                        deadlineDateObj = deadline;
-                    } else if (typeof deadline === 'string') {
-                        // String date
-                        deadlineDateObj = new Date(deadline);
-                    } else if (deadline.seconds) {
-                        // Firestore Timestamp with seconds
-                        deadlineDateObj = new Date(deadline.seconds * 1000);
-                    } else {
-                        // Fallback - try to create Date from whatever we have
-                        deadlineDateObj = new Date(deadline);
+                if (fixtures.length > 0) {
+                    // Find the earliest fixture (same logic as DeadlineService)
+                    let earliestFixture = null;
+                    let earliestDate = null;
+                    
+                    for (const fixture of fixtures) {
+                        if (fixture.date && fixture.kickOffTime) {
+                            const combinedDateTime = `${fixture.date}T${fixture.kickOffTime}`;
+                            const fixtureDate = new Date(combinedDateTime);
+                            
+                            if (!earliestDate || fixtureDate < earliestDate) {
+                                earliestDate = fixtureDate;
+                                earliestFixture = fixture;
+                            }
+                        }
                     }
                     
-                    // Check if the date is valid
-                    if (isNaN(deadlineDateObj.getTime())) {
-                        console.error('🔧 Mobile Navigation: Invalid deadline date:', deadline);
-                        deadlineDate.textContent = 'Invalid deadline';
-                        deadlineDate.style.color = '#dc3545';
-                    } else {
-                        const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+                    if (earliestFixture && earliestDate) {
+                        // Format the deadline for display
+                        const formattedDeadline = earliestDate.toLocaleDateString('en-GB', {
                             weekday: 'short',
                             day: 'numeric',
                             month: 'short',
@@ -997,44 +983,31 @@ class MobileNavigationManager {
                             minute: '2-digit',
                             timeZone: 'Europe/London'
                         });
-                        deadlineDate.textContent = formattedDeadline;
-                        deadlineDate.style.color = '#dc3545'; // Red color for deadline
-                    }
-                }
-                
-                if (deadlineStatus) {
-                    // Determine gameweek status
-                    const now = new Date();
-                    let deadlineTime;
-                    
-                    if (deadline.toDate && typeof deadline.toDate === 'function') {
-                        // Firestore Timestamp
-                        deadlineTime = deadline.toDate();
-                    } else if (deadline instanceof Date) {
-                        // JavaScript Date object
-                        deadlineTime = deadline;
-                    } else if (typeof deadline === 'string') {
-                        // String date
-                        deadlineTime = new Date(deadline);
-                    } else if (deadline.seconds) {
-                        // Firestore Timestamp with seconds
-                        deadlineTime = new Date(deadline.seconds * 1000);
+                        
+                        if (deadlineDate) {
+                            deadlineDate.textContent = formattedDeadline;
+                            deadlineDate.style.color = '#dc3545'; // Red color for deadline
+                        }
+                        
+                        if (deadlineStatus) {
+                            // Determine gameweek status
+                            const now = new Date();
+                            if (now < earliestDate) {
+                                deadlineStatus.textContent = 'Open for picks';
+                                deadlineStatus.style.color = '#28a745'; // Green for open
+                            } else {
+                                deadlineStatus.textContent = 'Deadline passed';
+                                deadlineStatus.style.color = '#dc3545'; // Red for passed
+                            }
+                        }
                     } else {
-                        // Fallback
-                        deadlineTime = new Date(deadline);
+                        throw new Error('No valid fixtures found for deadline calculation');
                     }
-                    
-                    if (isNaN(deadlineTime.getTime())) {
-                        deadlineStatus.textContent = 'Invalid deadline';
-                        deadlineStatus.style.color = '#dc3545';
-                    } else if (now < deadlineTime) {
-                        deadlineStatus.textContent = 'Open for picks';
-                        deadlineStatus.style.color = '#28a745'; // Green for open
-                    } else {
-                        deadlineStatus.textContent = 'Deadline passed';
-                        deadlineStatus.style.color = '#dc3545'; // Red for passed
-                    }
+                } else {
+                    throw new Error('No fixtures found for this gameweek');
                 }
+            } else {
+                throw new Error('Fixtures document not found');
             }
         } catch (error) {
             console.error('🔧 Mobile Navigation: Error fetching deadline info:', error);
