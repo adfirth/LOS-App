@@ -190,9 +190,23 @@ class MobileNavigationManager {
 
     // Mobile fixtures display rendering function
     async renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
+        console.log('🔧 Mobile Navigation: renderMobileFixturesDisplay called with:', {
+            fixturesCount: fixtures ? fixtures.length : 0,
+            userData: !!userData,
+            currentGameWeek,
+            userId
+        });
+        
         const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
+        console.log('🔧 Mobile Navigation: fixturesDisplay element found:', !!fixturesDisplay);
+        
+        if (!fixturesDisplay) {
+            console.error('🔧 Mobile Navigation: #mobile-fixtures-display element not found');
+            return;
+        }
         
         if (!fixtures || fixtures.length === 0) {
+            console.log('🔧 Mobile Navigation: No fixtures available');
             fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
             return;
         }

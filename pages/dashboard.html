@@ -617,6 +617,13 @@
                                     const currentGameweek = '1'; // Default to gameweek 1
                                     window.loadFixturesForDeadline(currentGameweek, userData, user.uid);
                                 }
+                                
+                                // Load mobile fixtures for the current gameweek after edition selector is set up
+                                if (window.loadMobileFixturesForDeadline) {
+                                    console.log('🔧 Dashboard: Loading mobile fixtures after edition selector setup...');
+                                    const currentGameweek = '1'; // Default to gameweek 1
+                                    window.loadMobileFixturesForDeadline(currentGameweek, userData, user.uid);
+                                }
                             }).catch(error => {
                                 console.error('❌ Dashboard: Error initializing EditionService:', error);
                             });
@@ -642,6 +649,34 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Dashboard: DOM loaded, waiting for app initialization...');
             waitForApp();
+            
+            // Add mobile tab switching functionality
+            const mobileTabButtons = document.querySelectorAll('.mobile-tabs .tab-btn');
+            const mobileTabPanes = document.querySelectorAll('.mobile-tab-content .tab-pane');
+            
+            console.log('🔧 Dashboard: Mobile tab buttons found:', mobileTabButtons.length);
+            console.log('🔧 Dashboard: Mobile tab panes found:', mobileTabPanes.length);
+            
+            mobileTabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    console.log('🔧 Dashboard: Mobile tab clicked:', targetTab);
+                    
+                    // Remove active class from all buttons and panes
+                    mobileTabButtons.forEach(btn => btn.classList.remove('active'));
+                    mobileTabPanes.forEach(pane => pane.classList.remove('active'));
+                    
+                    // Add active class to clicked button and corresponding pane
+                    this.classList.add('active');
+                    const targetPane = document.getElementById(targetTab + '-tab');
+                    if (targetPane) {
+                        targetPane.classList.add('active');
+                        console.log('🔧 Dashboard: Mobile tab pane activated:', targetTab + '-tab');
+                    } else {
+                        console.error('🔧 Dashboard: Mobile tab pane not found:', targetTab + '-tab');
+                    }
+                });
+            });
         });
     </script>
     
