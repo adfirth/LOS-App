@@ -85,6 +85,9 @@ class EditionService {
             desktopContainer: !!desktopContainer, 
             mobileContainer: !!mobileContainer 
         });
+        console.log('🔧 EditionService: Container selector passed:', containerSelector);
+        console.log('🔧 EditionService: Mobile container element:', mobileContainer);
+        console.log('🔧 EditionService: Desktop container element:', desktopContainer);
         
         // Use the appropriate container based on the selector
         let container;
@@ -236,6 +239,8 @@ class EditionService {
                     console.log('🔧 EditionService: MOBILE BUTTON TOUCHED!', e);
                 });
             }
+        } else {
+            console.log('🔧 EditionService: Desktop edition selector created (not mobile)');
         }
         
 
