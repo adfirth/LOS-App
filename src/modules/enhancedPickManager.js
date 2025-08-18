@@ -96,10 +96,10 @@ class EnhancedPickManager {
     }
 
     /**
-     * Get saved picks (picks made for future gameweeks)
+     * Get saved picks (picks made for other gameweeks - not the current one being viewed)
      * @param {Object} picks - User's picks object
      * @param {string} currentGameweek - Current gameweek being viewed
-     * @returns {Array} Array of team names that are saved for future gameweeks
+     * @returns {Array} Array of team names that are saved for other gameweeks
      */
     getSavedPicks(picks, currentGameweek) {
         if (!picks) return [];
@@ -117,8 +117,8 @@ class EnhancedPickManager {
                 gameweekNum = parseInt(gameweekKey);
             }
 
-            // If this pick is for a future gameweek, it's a saved pick
-            if (gameweekNum > currentGameweekNum) {
+            // If this pick is for a different gameweek (not the current one being viewed), it's a saved pick
+            if (gameweekNum !== currentGameweekNum) {
                 savedPicks.push(team);
             }
         });
