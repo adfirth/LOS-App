@@ -28,9 +28,9 @@ class EnhancedPickManager {
      * @param {string} gameweek - Current gameweek being viewed
      * @param {Object} userData - User data including picks
      * @param {Array} fixtures - Fixtures for the current gameweek
-     * @returns {Object} Team status object
+     * @returns {Promise<Object>} Team status object
      */
-    getTeamStatus(teamName, gameweek, userData, fixtures) {
+    async getTeamStatus(teamName, gameweek, userData, fixtures) {
         if (!userData || !userData.picks) {
             return {
                 status: 'available',
@@ -44,7 +44,7 @@ class EnhancedPickManager {
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
         const currentPick = userData.picks[gameweekKey] || null;
         const gameweekStatus = this.getGameweekStatus(fixtures, gameweek);
-        const lockedPicks = this.getLockedPicks(userData.picks, gameweek);
+        const lockedPicks = await this.getLockedPicks(userData.picks, gameweek);
         const savedPicks = this.getSavedPicks(userData.picks, gameweek);
 
         // Check if this is the current pick for this gameweek
@@ -130,19 +130,20 @@ class EnhancedPickManager {
      * Get locked picks (picks that can't be changed due to deadlines)
      * @param {Object} picks - User's picks object
      * @param {string} currentGameweek - Current gameweek being viewed
-     * @returns {Array} Array of team names that are locked
+     * @returns {Promise<Array>} Array of team names that are locked
      */
-    getLockedPicks(picks, currentGameweek) {
+    async getLockedPicks(picks, currentGameweek) {
         if (!picks) return [];
 
         const lockedPicks = [];
         const now = new Date();
         
-        // Get current edition to determine which deadlines to use
+        // Get current edition
         const userEdition = window.editionService ? window.editionService.getCurrentUserEdition() : 1;
 
-        Object.entries(picks).forEach(([gameweekKey, team]) => {
-            if (gameweekKey === 'gwtiebreak') return;
+        // Check each pick against its deadline from the database
+        for (const [gameweekKey, team] of Object.entries(picks)) {
+            if (gameweekKey === 'gwtiebreak') continue;
 
             let gameweekNum;
             if (gameweekKey.startsWith('gw')) {
@@ -151,51 +152,77 @@ class EnhancedPickManager {
                 gameweekNum = parseInt(gameweekKey);
             }
 
-            // Check if this gameweek's deadline has passed
-            let shouldLock = false;
-
-            if (userEdition === 1) {
-                // Edition 1 deadlines
-                if (gameweekKey === 'gw1') {
-                    const gw1Deadline = new Date('2025-08-19T19:45:00');
-                    shouldLock = now >= gw1Deadline;
-                    console.log(`🔍 Edition 1 GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-                } else if (gameweekKey === 'gw2') {
-                    const gw2Deadline = new Date('2025-08-23T15:00:00');
-                    shouldLock = now >= gw2Deadline;
-                    console.log(`🔍 Edition 1 GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-                } else if (gameweekKey === 'gw3') {
-                    const gw3Deadline = new Date('2025-08-25T15:00:00');
-                    shouldLock = now >= gw3Deadline;
-                    console.log(`🔍 Edition 1 GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-                }
-            } else {
-                // Test Weeks deadlines
-                if (gameweekKey === 'gw1') {
-                    const gw1Deadline = new Date('2025-08-09T15:00:00');
-                    shouldLock = now >= gw1Deadline;
-                    console.log(`🔍 Test Weeks GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-                } else if (gameweekKey === 'gw2') {
-                    const gw2Deadline = new Date('2025-08-16T12:30:00');
-                    shouldLock = now >= gw2Deadline;
-                    console.log(`🔍 Test Weeks GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-                } else if (gameweekKey === 'gw3') {
-                    const gw3Deadline = new Date('2025-08-19T19:45:00');
-                    shouldLock = now >= gw3Deadline;
-                    console.log(`🔍 Test Weeks GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
-                }
-            }
-
-            if (shouldLock) {
+            // Check if this gameweek's deadline has passed by querying the database
+            const isDeadlinePassed = await this.checkDeadlineForGameweek(gameweekNum.toString(), userEdition);
+            
+            if (isDeadlinePassed) {
                 lockedPicks.push(team);
                 console.log(`🔒 Locking ${team} from ${gameweekKey} (deadline passed)`);
             } else {
                 console.log(`✅ Not locking ${team} from ${gameweekKey} (deadline not passed yet)`);
             }
-        });
+        }
 
         console.log('🔍 Final locked picks:', lockedPicks);
         return lockedPicks;
+    }
+
+    /**
+     * Check if deadline has passed for a specific gameweek and edition
+     * @param {string} gameweek - Gameweek number
+     * @param {number|string} edition - Edition number
+     * @returns {Promise<boolean>} True if deadline has passed
+     */
+    async checkDeadlineForGameweek(gameweek, edition = null) {
+        const db = this.getDb();
+        if (!db) {
+            console.error('🔧 EnhancedPickManager: No database reference available for deadline check');
+            return false;
+        }
+
+        try {
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionKey = `edition${edition || 1}_${gameweekKey}`;
+            
+            console.log(`🔍 EnhancedPickManager: Checking deadline for ${editionKey}`);
+            
+            const fixturesDoc = await db.collection('fixtures').doc(editionKey).get();
+            if (!fixturesDoc.exists) {
+                console.log(`🔍 EnhancedPickManager: No fixtures found for ${editionKey}`);
+                return false;
+            }
+
+            const fixturesData = fixturesDoc.data();
+            const fixtures = fixturesData.fixtures || [];
+            
+            if (fixtures.length === 0) {
+                console.log(`🔍 EnhancedPickManager: No fixtures in document for ${editionKey}`);
+                return false;
+            }
+
+            // Find the earliest fixture (deadline)
+            const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                const fixtureDate = this.createFixtureDateTime(fixture);
+                const earliestDate = this.createFixtureDateTime(earliest);
+                return fixtureDate < earliestDate ? fixture : earliest;
+            });
+
+            if (!earliestFixture || !earliestFixture.date) {
+                console.log(`🔍 EnhancedPickManager: No valid fixture date found for ${editionKey}`);
+                return false;
+            }
+
+            const deadline = this.createFixtureDateTime(earliestFixture);
+            const now = new Date();
+            
+            const isDeadlinePassed = deadline <= now;
+            console.log(`🔍 EnhancedPickManager: ${editionKey} deadline ${deadline.toISOString()}, now ${now.toISOString()}, passed: ${isDeadlinePassed}`);
+            
+            return isDeadlinePassed;
+        } catch (error) {
+            console.error('🔧 EnhancedPickManager: Error checking deadline for gameweek:', error);
+            return false;
+        }
     }
 
     /**
@@ -230,77 +257,6 @@ class EnhancedPickManager {
         if (!fixtures || fixtures.length === 0) return 'not-started';
 
         const now = new Date();
-        
-        // Get current edition to determine which deadlines to use
-        const userEdition = window.editionService ? window.editionService.getCurrentUserEdition() : 1;
-
-        if (userEdition === 1) {
-            // Edition 1 deadlines
-            if (gameweek === '1') {
-                const gw1Deadline = new Date('2025-08-19T19:45:00');
-                if (now >= gw1Deadline) {
-                    const allCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-                    return allCompleted ? 'completed' : 'in-progress';
-                } else {
-                    return 'not-started';
-                }
-            } else if (gameweek === '2') {
-                const gw2Deadline = new Date('2025-08-23T15:00:00');
-                if (now >= gw2Deadline) {
-                    const allCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-                    return allCompleted ? 'completed' : 'in-progress';
-                } else {
-                    return 'not-started';
-                }
-            } else if (gameweek === '3') {
-                const gw3Deadline = new Date('2025-08-25T15:00:00');
-                if (now >= gw3Deadline) {
-                    const allCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-                    return allCompleted ? 'completed' : 'in-progress';
-                } else {
-                    return 'not-started';
-                }
-            }
-        } else {
-            // Test Weeks deadlines
-            if (gameweek === '1') {
-                const gw1Deadline = new Date('2025-08-09T15:00:00');
-                if (now >= gw1Deadline) {
-                    const allCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-                    return allCompleted ? 'completed' : 'in-progress';
-                } else {
-                    return 'not-started';
-                }
-            } else if (gameweek === '2') {
-                const gw2Deadline = new Date('2025-08-16T12:30:00');
-                if (now >= gw2Deadline) {
-                    const allCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-                    return allCompleted ? 'completed' : 'in-progress';
-                } else {
-                    return 'not-started';
-                }
-            } else if (gameweek === '3') {
-                const gw3Deadline = new Date('2025-08-19T19:45:00');
-                if (now >= gw3Deadline) {
-                    const allCompleted = fixtures.every(fixture =>
-                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-                    );
-                    return allCompleted ? 'completed' : 'in-progress';
-                } else {
-                    return 'not-started';
-                }
-            }
-        }
 
         // Find the earliest fixture (deadline)
         const earliestFixture = fixtures.reduce((earliest, fixture) => {
@@ -376,7 +332,7 @@ class EnhancedPickManager {
             const fixturesDoc = await db.collection('fixtures').doc(editionGameweekKey).get();
             const fixtures = fixturesDoc.exists ? fixturesDoc.data().fixtures || [] : [];
 
-            const teamStatus = this.getTeamStatus(teamName, gameweek, userData, fixtures);
+            const teamStatus = await this.getTeamStatus(teamName, gameweek, userData, fixtures);
             const currentGameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
 
             console.log('🔧 EnhancedPickManager: Team selection:', {
