@@ -202,11 +202,17 @@ class GameLogicManager {
             const freshUserDoc = await this.db.collection('users').doc(userId).get();
             const freshUserData = freshUserDoc.exists ? freshUserDoc.data() : userData;
             
-            // Update current gameweek display
+            // Update current gameweek display (both desktop and mobile)
             const currentGameweekDisplay = document.querySelector('#current-gameweek-display');
+            const mobileCurrentGameweekDisplay = document.querySelector('#mobile-current-gameweek-display');
             const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
+            
             if (currentGameweekDisplay) {
                 currentGameweekDisplay.textContent = displayText;
+            }
+            
+            if (mobileCurrentGameweekDisplay) {
+                mobileCurrentGameweekDisplay.textContent = displayText;
             }
             
             // Update navigation buttons
@@ -233,10 +239,15 @@ class GameLogicManager {
             const gameweekTabs = document.querySelectorAll('.gameweek-tab');
             this.updateActiveTab(gameweek, gameweekTabs);
             
-            // Load fixtures for the selected gameweek with fresh data
+            // Load fixtures for the selected gameweek with fresh data (both desktop and mobile)
             // This will be handled by the fixtures manager
             if (window.loadFixturesForDeadline) {
                 window.loadFixturesForDeadline(gameweek, freshUserData, userId);
+            }
+            
+            // Load mobile fixtures for the selected gameweek
+            if (window.loadMobileFixturesForDeadline) {
+                window.loadMobileFixturesForDeadline(gameweek, freshUserData, userId);
             }
             
             console.log(`Navigated to gameweek ${gameweek} with fresh user data`);

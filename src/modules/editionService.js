@@ -108,6 +108,8 @@ class EditionService {
         // Get available editions for this user
         const availableEditions = await this.getUserAvailableEditions(userData, this.currentUserEdition);
         console.log('🔧 EditionService: Available editions:', availableEditions);
+        console.log('🔧 EditionService: Available editions length:', availableEditions.length);
+        console.log('🔧 EditionService: Current user edition:', this.currentUserEdition);
 
         if (availableEditions.length <= 1) {
             console.log('🔧 EditionService: User only has one edition, showing status only');
