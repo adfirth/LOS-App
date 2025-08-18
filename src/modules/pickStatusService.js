@@ -376,3 +376,4 @@ class PickStatusService {
 
 // Export the PickStatusService class
 export default PickStatusService;
+

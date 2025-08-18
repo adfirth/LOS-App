@@ -6,3 +6,4 @@ window.NETLIFY_ENV = {
 
 console.log('🔧 Netlify environment configuration loaded');
 console.log('🔑 API Key available:', !!window.NETLIFY_ENV.RAPIDAPI_KEY);
+

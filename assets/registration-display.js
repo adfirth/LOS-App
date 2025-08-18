@@ -47,3 +47,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial update
     updateCountdown();
 });
+
