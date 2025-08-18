@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../assets/style.css">
     <style>
         /* Edition selector responsive display */
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
             .desktop-edition-selector {
                 display: none !important;
             }
@@ -15,11 +15,25 @@
                 display: block !important;
             }
         }
-        @media (min-width: 769px) {
+        @media (min-width: 768px) {
             .desktop-edition-selector {
                 display: block !important;
             }
             .mobile-edition-selector {
+                display: none !important;
+            }
+        }
+        
+        /* iPad-specific adjustments */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            /* Ensure desktop layout shows on iPads */
+            .desktop-layout {
+                display: block !important;
+            }
+            .mobile-tabs {
+                display: none !important;
+            }
+            .mobile-tab-content {
                 display: none !important;
             }
         }

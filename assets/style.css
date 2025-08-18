@@ -5201,6 +5201,38 @@ a:hover {
     }
 }
 
+/* iPad and tablet support */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Ensure desktop layout is shown on iPads and tablets */
+    .desktop-layout {
+        display: block !important;
+    }
+    
+    .mobile-tabs {
+        display: none !important;
+    }
+    
+    .mobile-tab-content {
+        display: none !important;
+    }
+    
+    /* Adjust container for iPad */
+    .container {
+        max-width: 95%;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    /* Ensure edition selectors work properly on iPad */
+    .desktop-edition-selector {
+        display: block !important;
+    }
+    
+    .mobile-edition-selector {
+        display: none !important;
+    }
+}
+
 /* Desktop Tabbed Interface Styles */
 
 /* Desktop Tab Navigation */
