@@ -1,9 +1,7 @@
 // Fixtures Management Module
-console.log('🔍 TEST: fixtures.js file loaded and executing!');
 
 class FixturesManager {
     constructor(db) {
-        console.log('🔍 TEST: FixturesManager constructor called!');
         this.db = db;
         this.footballWebPagesAPI = null;
         this.deadlineChecker = null;
@@ -1570,13 +1568,7 @@ class FixturesManager {
                                 picksKeys: Object.keys(userData.picks)
                             });
                             
-                            // Show complete breakdown of picks by gameweek
-                            console.log('🔍 Complete picks breakdown:', {
-                                gw1: userData.picks.gw1,
-                                gw2: userData.picks.gw2,
-                                gw3: userData.picks.gw3,
-                                gwtiebreak: userData.picks.gwtiebreak
-                            });
+
                             
                             // Get gameweek status and locked picks
                             const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
@@ -1609,28 +1601,7 @@ class FixturesManager {
                                     gameweekKey: gameweekKey
                                 });
                                 
-                                // Show exactly what's happening for each team
-                                if (fixture.homeTeam === 'Hartlepool' || fixture.homeTeam === 'Gateshead') {
-                                    console.log(`🔍 ${fixture.homeTeam} status breakdown:`, {
-                                        isCurrentPick: currentPick === fixture.homeTeam,
-                                        isLocked: lockedPicks.includes(fixture.homeTeam),
-                                        isInExistingPicks: existingPicks.includes(fixture.homeTeam),
-                                        finalClasses: homeTeamClasses,
-                                        finalTooltip: homeTeamTooltip,
-                                        finalClickable: homeTeamClickable
-                                    });
-                                }
-                                
-                                if (fixture.awayTeam === 'Hartlepool' || fixture.awayTeam === 'Gateshead') {
-                                    console.log(`🔍 ${fixture.awayTeam} status breakdown:`, {
-                                        isCurrentPick: currentPick === fixture.awayTeam,
-                                        isLocked: lockedPicks.includes(fixture.awayTeam),
-                                        isInExistingPicks: existingPicks.includes(fixture.awayTeam),
-                                        finalClasses: awayTeamClasses,
-                                        finalTooltip: awayTeamTooltip,
-                                        finalClickable: awayTeamClickable
-                                    });
-                                }
+
                             }
                             
                             // Check home team status
@@ -1649,14 +1620,7 @@ class FixturesManager {
                                 homeTeamClickable = false;
                                 homeTeamTooltip = 'Picked in another gameweek';
                                 
-                                // Debug: Show which gameweek this team was picked in
-                                if (fixture.homeTeam === 'Hartlepool' || fixture.homeTeam === 'Gateshead') {
-                                    Object.entries(userData.picks).forEach(([pickGameweek, pickTeam]) => {
-                                        if (pickTeam === fixture.homeTeam) {
-                                            console.log(`🔍 ${fixture.homeTeam} was picked in ${pickGameweek}`);
-                                        }
-                                    });
-                                }
+
                             } else {
                                 homeTeamClasses += ' available';
                                 homeTeamClickable = gameweekStatus === 'not-started'; // Can pick if not started
@@ -1678,14 +1642,7 @@ class FixturesManager {
                                 awayTeamClickable = false;
                                 awayTeamTooltip = 'Picked in another gameweek';
                                 
-                                // Debug: Show which gameweek this team was picked in
-                                if (fixture.awayTeam === 'Hartlepool' || fixture.awayTeam === 'Gateshead') {
-                                    Object.entries(userData.picks).forEach(([pickGameweek, pickTeam]) => {
-                                        if (pickTeam === fixture.awayTeam) {
-                                            console.log(`🔍 ${fixture.awayTeam} was picked in ${pickGameweek}`);
-                                        }
-                                    });
-                                }
+
                             } else {
                                 awayTeamClasses += ' available';
                                 awayTeamClickable = gameweekStatus === 'not-started'; // Can pick if not started
@@ -1779,10 +1736,7 @@ class FixturesManager {
 
     // Render fixtures display
     async renderFixturesDisplay(fixtures, userData, currentGameWeek) {
-        console.log('🔍 TEST: renderFixturesDisplay function STARTED');
-        console.log('🔍 TEST: Number of fixtures:', fixtures.length);
-        console.log('🔍 TEST: Current game week:', currentGameWeek);
-        console.log('🔍 TEST: This should definitely appear!');
+        
         
         try {
             const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
@@ -2510,11 +2464,7 @@ class FixturesManager {
             // GW3: Not started yet (deadline 19:45 on 19th August 2025)
             
             const now = new Date();
-            console.log('🔍 Current date/time for locked picks calculation:', {
-                now: now.toISOString(),
-                nowLocal: now.toString(),
-                nowUTC: now.toUTCString()
-            });
+
             
             let shouldLock = false;
             
