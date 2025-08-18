@@ -571,6 +571,13 @@
             // Test alert to see if this function is being called
             alert('App initialization check started!');
             
+            // Debug authentication status
+            if (window.authManager) {
+                alert(`Auth Manager Status:\nCurrent User: ${window.authManager.currentUser ? window.authManager.currentUser.email : 'NO USER'}\nAuth State: ${window.authManager.auth ? 'Available' : 'Not Available'}`);
+            } else {
+                alert('Auth Manager is NOT available!');
+            }
+            
             if (window.editionService && window.authManager) {
                 console.log('🔧 Dashboard: App initialized, setting up edition selector');
                 setupDashboard();
@@ -584,6 +591,11 @@
             console.log('🔧 Dashboard: Setting up dashboard...');
             
             // Check if user is authenticated
+            console.log('🔧 Dashboard: Auth check - firebaseUser:', window.authManager?.currentUser?.email);
+            console.log('🔧 Dashboard: Auth check - authManagerUser:', window.authManager?.currentUser?.email);
+            console.log('🔧 Dashboard: Auth check - isAuthenticated:', !!(window.authManager && window.authManager.currentUser));
+            console.log('🔧 Dashboard: Auth check - auth object available:', !!window.authManager?.auth);
+            
             if (window.authManager && window.authManager.currentUser) {
                 const user = window.authManager.currentUser;
                 console.log('🔧 Dashboard: User authenticated, setting up edition selector for:', user.email);
@@ -714,6 +726,9 @@
                 if (window.authManager) {
                     console.log('🔧 Dashboard: authManager.currentUser:', window.authManager.currentUser);
                 }
+                
+                // Debug alert for authentication failure
+                alert(`Authentication Failed!\nAuth Manager: ${!!window.authManager}\nCurrent User: ${window.authManager?.currentUser ? window.authManager.currentUser.email : 'NO USER'}\nAuth State: ${window.authManager?.auth ? 'Available' : 'Not Available'}`);
             }
         }
         
