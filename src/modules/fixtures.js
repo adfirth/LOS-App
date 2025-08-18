@@ -1550,112 +1550,33 @@ class FixturesManager {
                             statusClass += ' not-started';
                         }
                         
-                        // Get team status for pick buttons
-                        let homeTeamClasses = 'team-pick-button';
-                        let awayTeamClasses = 'team-pick-button';
-                        let homeTeamClickable = true;
-                        let awayTeamClickable = true;
-                        let homeTeamTooltip = 'Click to pick this team';
-                        let awayTeamTooltip = 'Click to pick this team';
+                        // Get team status using EnhancedPickManager
+                        let homeTeamStatus, awayTeamStatus;
                         
-                        // Check if user has already picked these teams
-                        if (userData && userData.picks) {
-                            const existingPicks = Object.values(userData.picks || {});
-                            const currentPick = userData.picks[gameweekKey] || null;
-                            
-                            // Debug: Show what's in the user's picks
-                            console.log('🔍 User picks debug:', {
-                                gameweekKey,
-                                currentPick,
-                                allPicks: userData.picks,
-                                existingPicksArray: existingPicks,
-                                picksKeys: Object.keys(userData.picks)
-                            });
-                            
-
-                            
-                            // Get gameweek status and locked picks
-                            const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
-                            const lockedPicks = this.getLockedPicks(userData.picks, currentGameWeek);
-                            
-                            console.log('🔍 Pick validation:', {
-                                gameweek: currentGameWeek,
-                                gameweekStatus,
-                                currentPick,
-                                lockedPicks,
-                                homeTeam: fixture.homeTeam,
-                                awayTeam: fixture.awayTeam,
-                                existingPicks: existingPicks
-                            });
-                            
-                            // Debug specific teams that might be incorrectly flagged
-                            if (fixture.homeTeam === 'Hartlepool' || fixture.homeTeam === 'Gateshead' || 
-                                fixture.awayTeam === 'Hartlepool' || fixture.awayTeam === 'Gateshead') {
-                                console.log('🔍 Special Debug for Hartlepool/Gateshead:', {
-                                    homeTeam: fixture.homeTeam,
-                                    awayTeam: fixture.awayTeam,
-                                    homeTeamInExistingPicks: existingPicks.includes(fixture.homeTeam),
-                                    awayTeamInExistingPicks: existingPicks.includes(fixture.awayTeam),
-                                    homeTeamInLockedPicks: lockedPicks.includes(fixture.homeTeam),
-                                    awayTeamInLockedPicks: lockedPicks.includes(fixture.awayTeam),
-                                    existingPicksArray: existingPicks,
-                                    lockedPicksArray: lockedPicks,
-                                    userDataPicks: userData.picks,
-                                    currentPick: currentPick,
-                                    gameweekKey: gameweekKey
-                                });
-                                
-
-                            }
-                            
-                            // Check home team status
-                            if (currentPick === fixture.homeTeam) {
-                                homeTeamClasses += ' current-pick';
-                                homeTeamClickable = gameweekStatus === 'not-started'; // Can change if not started
-                                homeTeamTooltip = gameweekStatus === 'not-started' ? 
-                                    'Current pick - click to change' : 
-                                    'Current pick for this gameweek (locked)';
-                            } else if (lockedPicks.includes(fixture.homeTeam)) {
-                                homeTeamClasses += ' locked-pick';
-                                homeTeamClickable = false;
-                                homeTeamTooltip = 'Team locked - picked in previous gameweek';
-                            } else if (existingPicks.includes(fixture.homeTeam)) {
-                                homeTeamClasses += ' future-pick';
-                                homeTeamClickable = false;
-                                homeTeamTooltip = 'Picked in another gameweek';
-                                
-
-                            } else {
-                                homeTeamClasses += ' available';
-                                homeTeamClickable = gameweekStatus === 'not-started'; // Can pick if not started
-                            }
-                            
-                            // Check away team status
-                            if (currentPick === fixture.awayTeam) {
-                                awayTeamClasses += ' current-pick';
-                                awayTeamClickable = gameweekStatus === 'not-started'; // Can change if not started
-                                awayTeamTooltip = gameweekStatus === 'not-started' ? 
-                                    'Current pick - click to change' : 
-                                    'Current pick for this gameweek (locked)';
-                            } else if (lockedPicks.includes(fixture.awayTeam)) {
-                                awayTeamClasses += ' locked-pick';
-                                awayTeamClickable = false;
-                                awayTeamTooltip = 'Team locked - picked in previous gameweek';
-                            } else if (existingPicks.includes(fixture.awayTeam)) {
-                                awayTeamClasses += ' future-pick';
-                                awayTeamClickable = false;
-                                awayTeamTooltip = 'Picked in another gameweek';
-                                
-
-                            } else {
-                                awayTeamClasses += ' available';
-                                awayTeamClickable = gameweekStatus === 'not-started'; // Can pick if not started
-                            }
+                        if (window.enhancedPickManager) {
+                            homeTeamStatus = window.enhancedPickManager.getTeamStatus(fixture.homeTeam, currentGameWeek, userData, fixtures);
+                            awayTeamStatus = window.enhancedPickManager.getTeamStatus(fixture.awayTeam, currentGameWeek, userData, fixtures);
+                        } else {
+                            // Fallback to old logic if EnhancedPickManager not available
+                            homeTeamStatus = {
+                                classes: 'team-pick-button available',
+                                clickable: true,
+                                tooltip: 'Click to pick this team',
+                                action: 'pick'
+                            };
+                            awayTeamStatus = {
+                                classes: 'team-pick-button available',
+                                clickable: true,
+                                tooltip: 'Click to pick this team',
+                                action: 'pick'
+                            };
                         }
                         
                         // Create click attributes for team buttons
-                        const homeTeamClickAttr = homeTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
-                        const awayTeamClickAttr = awayTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
+                        const homeTeamClickAttr = homeTeamStatus.clickable ? 
+                            `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.homeTeam}', ${currentGameWeek}, '${userId}', ${JSON.stringify(userData).replace(/"/g, '&quot;')}, ${JSON.stringify(fixtures).replace(/"/g, '&quot;')})"` : '';
+                        const awayTeamClickAttr = awayTeamStatus.clickable ? 
+                            `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.awayTeam}', ${currentGameWeek}, '${userId}', ${JSON.stringify(userData).replace(/"/g, '&quot;')}, ${JSON.stringify(fixtures).replace(/"/g, '&quot;')})"` : '';
                         
                         fixturesHTML += `
                             <div class="fixture-item">
@@ -1664,14 +1585,18 @@ class FixturesManager {
                                     <span class="${statusClass}">${statusText}</span>
                                 </div>
                                 <div class="fixture-teams">
-                                    <button class="${homeTeamClasses}" ${homeTeamClickAttr} ${!homeTeamClickable ? 'disabled' : ''} title="${homeTeamTooltip}">
+                                    <button class="${homeTeamStatus.classes}" ${homeTeamClickAttr} ${!homeTeamStatus.clickable ? 'disabled' : ''} title="${homeTeamStatus.tooltip}">
                                         ${fixture.homeTeam}
                                         ${userData && userData.picks && userData.picks[gameweekKey] === fixture.homeTeam ? '<span class="pick-indicator">✓</span>' : ''}
+                                        ${homeTeamStatus.status === 'saved-pick' ? '<span class="saved-pick-indicator">💾</span>' : ''}
+                                        ${homeTeamStatus.status === 'locked-pick' ? '<span class="locked-pick-indicator">🔒</span>' : ''}
                                     </button>
                                     <span class="vs">v</span>
-                                    <button class="${awayTeamClasses}" ${awayTeamClickAttr} ${!awayTeamClickable ? 'disabled' : ''} title="${awayTeamTooltip}">
+                                    <button class="${awayTeamStatus.classes}" ${awayTeamClickAttr} ${!awayTeamStatus.clickable ? 'disabled' : ''} title="${awayTeamStatus.tooltip}">
                                         ${fixture.awayTeam}
                                         ${userData && userData.picks && userData.picks[gameweekKey] === fixture.awayTeam ? '<span class="pick-indicator">✓</span>' : ''}
+                                        ${awayTeamStatus.status === 'saved-pick' ? '<span class="saved-pick-indicator">💾</span>' : ''}
+                                        ${awayTeamStatus.status === 'locked-pick' ? '<span class="locked-pick-indicator">🔒</span>' : ''}
                                     </button>
                                 </div>
                                 ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 

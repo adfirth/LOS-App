@@ -21,6 +21,7 @@ import PickStatusService from './modules/pickStatusService.js'; // New centraliz
 import GameweekService from './modules/gameweekService.js'; // New centralized gameweek service
 import ButtonTextService from './modules/buttonTextService.js'; // New centralized button text service
 import EditionService from './modules/editionService.js'; // New centralized edition service
+import EnhancedPickManager from './modules/enhancedPickManager.js'; // New enhanced pick management
 
 console.log('🔍 Imports completed, about to define App class...');
 
@@ -47,6 +48,7 @@ class App {
         this.gameweekService = null; // New centralized gameweek service
         this.buttonTextService = null; // New centralized button text service
         this.editionService = null; // New centralized edition service
+        this.enhancedPickManager = null; // New enhanced pick management
         this.initialized = false;
         
         // Use state management instead of global variables
@@ -119,6 +121,7 @@ class App {
         this.pickStatusService = new PickStatusService(this.db, this.deadlineService); // Initialize centralized pick status service
         this.gameweekService = new GameweekService(this.db, this.deadlineService); // Initialize centralized gameweek service
         this.buttonTextService = new ButtonTextService(); // Initialize centralized button text service
+        this.enhancedPickManager = new EnhancedPickManager(); // Initialize enhanced pick management
         
         // Initialize auth manager
         await this.authManager.initialize(this.db, this.auth);
@@ -182,6 +185,7 @@ class App {
         window.gameweekService = this.gameweekService; // Expose centralized gameweek service
         window.buttonTextService = this.buttonTextService; // Expose centralized button text service
         window.editionService = this.editionService; // Expose centralized edition service
+        window.enhancedPickManager = this.enhancedPickManager; // Expose enhanced pick management
         
         // Global app instance
         window.app = this;
