@@ -1982,6 +1982,26 @@ a:hover {
     box-shadow: none;
 }
 
+/* Autopick indicator */
+.team-pick-button.autopick::after {
+    content: ' (A)';
+    font-weight: bold;
+    color: #ffc107;
+    margin-left: 2px;
+}
+
+/* Autopick button styling */
+.team-pick-button.current-pick.autopick {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
+    border-color: #ffc107;
+    position: relative;
+}
+
+.team-pick-button.current-pick.autopick:hover {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(255, 193, 7, 0.15) 100%);
+    border-color: #ffc107;
+}
+
 /* Future pick - picked in a future gameweek (amber border) */
 .team-pick-button.future-pick {
     background-color: rgba(253, 185, 19, 0.05);

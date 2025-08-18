@@ -42,7 +42,9 @@ class EnhancedPickManager {
         }
 
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-        const currentPick = userData.picks[gameweekKey] || null;
+        const currentPickData = userData.picks[gameweekKey] || null;
+        const currentPick = currentPickData && typeof currentPickData === 'object' ? currentPickData.team : currentPickData;
+        const isAutopick = currentPickData && currentPickData.isAutopick;
         const gameweekStatus = this.getGameweekStatus(fixtures, gameweek);
         const lockedPicks = await this.getLockedPicks(userData.picks, gameweek);
         const savedPicks = this.getSavedPicks(userData.picks, gameweek);
@@ -50,12 +52,16 @@ class EnhancedPickManager {
         // Check if this is the current pick for this gameweek
         if (currentPick === teamName) {
             const canChange = gameweekStatus === 'not-started';
+            const autopickIndicator = isAutopick ? ' (A)' : '';
             return {
                 status: 'current-pick',
                 clickable: canChange,
-                tooltip: canChange ? 'Current pick - click to change' : 'Current pick for this gameweek (locked)',
-                classes: `team-pick-button current-pick ${canChange ? 'changeable' : 'locked'}`,
-                action: canChange ? 'change' : 'locked'
+                tooltip: canChange ? 
+                    `Current pick${autopickIndicator} - click to change` : 
+                    `Current pick${autopickIndicator} for this gameweek (locked)`,
+                classes: `team-pick-button current-pick ${canChange ? 'changeable' : 'locked'} ${isAutopick ? 'autopick' : ''}`,
+                action: canChange ? 'change' : 'locked',
+                isAutopick: isAutopick
             };
         }
 
@@ -113,7 +119,7 @@ class EnhancedPickManager {
         const savedPicks = [];
         const currentGameweekNum = parseInt(currentGameweek);
 
-        Object.entries(picks).forEach(([gameweekKey, team]) => {
+        Object.entries(picks).forEach(([gameweekKey, teamData]) => {
             if (gameweekKey === 'gwtiebreak') return;
 
             let gameweekNum;
@@ -125,7 +131,10 @@ class EnhancedPickManager {
 
             // If this pick is for a different gameweek (not the current one being viewed), it's a saved pick
             if (gameweekNum !== currentGameweekNum) {
-                savedPicks.push(team);
+                const teamName = teamData && typeof teamData === 'object' ? teamData.team : teamData;
+                if (teamName) {
+                    savedPicks.push(teamName);
+                }
             }
         });
 
@@ -148,7 +157,7 @@ class EnhancedPickManager {
         const userEdition = window.editionService ? window.editionService.getCurrentUserEdition() : 1;
 
         // Check each pick against its deadline from the database
-        for (const [gameweekKey, team] of Object.entries(picks)) {
+        for (const [gameweekKey, teamData] of Object.entries(picks)) {
             if (gameweekKey === 'gwtiebreak') continue;
 
             let gameweekNum;
@@ -158,14 +167,18 @@ class EnhancedPickManager {
                 gameweekNum = parseInt(gameweekKey);
             }
 
+            // Extract team name from pick data (handles both old string format and new object format)
+            const teamName = teamData && typeof teamData === 'object' ? teamData.team : teamData;
+            if (!teamName) continue;
+
             // Check if this gameweek's deadline has passed by querying the database
             const isDeadlinePassed = await this.checkDeadlineForGameweek(gameweekNum.toString(), userEdition);
             
             if (isDeadlinePassed) {
-                lockedPicks.push(team);
-                console.log(`🔒 Locking ${team} from ${gameweekKey} (deadline passed)`);
+                lockedPicks.push(teamName);
+                console.log(`🔒 Locking ${teamName} from ${gameweekKey} (deadline passed)`);
             } else {
-                // console.log(`✅ Not locking ${team} from ${gameweekKey} (deadline not passed yet)`);
+                // console.log(`✅ Not locking ${teamName} from ${gameweekKey} (deadline not passed yet)`);
             }
         }
 

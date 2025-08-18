@@ -607,7 +607,7 @@ class GameLogicManager {
     // --- AUTO-PICK FUNCTIONS ---
 
     // Check and assign auto picks
-    checkAndAssignAutoPicks(userData, currentGameWeek, userId) {
+    async checkAndAssignAutoPicks(userData, currentGameWeek, userId) {
         const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
         
         // Check if user already has a pick for current gameweek
@@ -615,8 +615,11 @@ class GameLogicManager {
             return; // User already has a pick
         }
 
-        // Check if deadline has passed
-        this.db.collection('fixtures').doc(gameweekKey).get().then(doc => {
+        // Check if deadline has passed using the new edition-based structure
+        try {
+            const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
+            const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
                 if (fixtures && fixtures.length > 0) {
@@ -626,15 +629,14 @@ class GameLogicManager {
                         return fixtureDate < earliestDate ? fixture : earliest;
                     });
 
-                    // Fix: Combine date and kickOffTime if both are available
+                    // Combine date and kickOffTime if both are available
                     let dateString = earliestFixture.date;
                     if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
-                        // Combine date with kick-off time
                         dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
                         console.log('🔍 GameLogic auto-pick: Combined date and time:', dateString);
                     } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
                         // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
-                        dateString = `${dateString}T15:00:00`;
+                        dateString = `${earliestFixture.date}T15:00:00`;
                         console.log('🔍 GameLogic auto-pick: Added default time to date string:', dateString);
                     }
                     
@@ -643,36 +645,99 @@ class GameLogicManager {
 
                     if (deadlineDate <= now) {
                         // Deadline has passed, assign auto-pick
-                        this.assignAutoPick(userData, currentGameWeek, userId);
+                        console.log(`🔍 GameLogic: Deadline passed for GW${currentGameWeek}, assigning auto-pick for user ${userId}`);
+                        await this.assignAutoPick(userData, currentGameWeek, userId);
                     }
                 }
             }
-        });
+        } catch (error) {
+            console.error('Error checking auto-pick deadline:', error);
+        }
     }
 
     // Assign auto pick
-    assignAutoPick(userData, gameweek, userId) {
+    async assignAutoPick(userData, gameweek, userId) {
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-        const existingPicks = userData.picks || {};
-        const pickedTeams = Object.values(existingPicks);
         
-        // Find the next available team alphabetically that hasn't been picked
-        const availableTeams = window.TEAMS_CONFIG ? window.TEAMS_CONFIG.allTeams.filter(team => !pickedTeams.includes(team)) : [];
-        
-        if (availableTeams.length > 0) {
-            const autoPick = availableTeams[0]; // First alphabetical team
+        try {
+            // Get teams playing in this specific gameweek
+            const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
+            const fixturesDoc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             
-            this.db.collection('users').doc(userId).update({
-                [`picks.${gameweekKey}`]: autoPick
-            }).then(() => {
-                console.log(`Auto-pick assigned: ${autoPick} for Game Week ${gameweek}`);
+            if (!fixturesDoc.exists) {
+                console.error(`No fixtures found for ${editionGameweekKey}`);
+                return;
+            }
+            
+            const fixtures = fixturesDoc.data().fixtures || [];
+            const teamsInGameweek = [];
+            
+            // Extract all teams playing in this gameweek
+            fixtures.forEach(fixture => {
+                if (fixture.homeTeam && !teamsInGameweek.includes(fixture.homeTeam)) {
+                    teamsInGameweek.push(fixture.homeTeam);
+                }
+                if (fixture.awayTeam && !teamsInGameweek.includes(fixture.awayTeam)) {
+                    teamsInGameweek.push(fixture.awayTeam);
+                }
+            });
+            
+            // Sort teams alphabetically
+            teamsInGameweek.sort();
+            
+            let autoPick = null;
+            
+            if (gameweek === 1 || gameweek === '1') {
+                // GW1: First team alphabetically from teams playing in GW1
+                autoPick = teamsInGameweek[0];
+                console.log(`🔍 GameLogic: GW1 autopick - first team alphabetically: ${autoPick}`);
+            } else {
+                // GW2+: Next available team based on previous gameweek pick
+                const previousGameweek = parseInt(gameweek) - 1;
+                const previousGameweekKey = `gw${previousGameweek}`;
+                const previousPick = userData.picks?.[previousGameweekKey];
+                
+                if (previousPick) {
+                    // Find the next team alphabetically after the previous pick
+                    const previousPickIndex = teamsInGameweek.indexOf(previousPick);
+                    if (previousPickIndex !== -1 && previousPickIndex < teamsInGameweek.length - 1) {
+                        autoPick = teamsInGameweek[previousPickIndex + 1];
+                    } else {
+                        // If previous pick was last alphabetically, wrap to first
+                        autoPick = teamsInGameweek[0];
+                    }
+                    console.log(`🔍 GameLogic: GW${gameweek} autopick - based on previous pick ${previousPick}: ${autoPick}`);
+                } else {
+                    // No previous pick, fall back to first team alphabetically
+                    autoPick = teamsInGameweek[0];
+                    console.log(`🔍 GameLogic: GW${gameweek} autopick - no previous pick, using first team: ${autoPick}`);
+                }
+            }
+            
+            if (autoPick) {
+                // Mark this as an autopick with 'A' indicator
+                const autoPickData = {
+                    team: autoPick,
+                    isAutopick: true,
+                    assignedAt: new Date(),
+                    gameweek: gameweek
+                };
+                
+                await this.db.collection('users').doc(userId).update({
+                    [`picks.${gameweekKey}`]: autoPickData
+                });
+                
+                console.log(`✅ Auto-pick assigned: ${autoPick} for Game Week ${gameweek} (marked as autopick)`);
+                
                 // Refresh the dashboard to show the auto-pick
                 if (window.renderDashboard) {
                     window.renderDashboard({ uid: userId }).catch(console.error);
                 }
-            }).catch(error => {
-                console.error('Error assigning auto-pick:', error);
-            });
+            } else {
+                console.error('No teams available for autopick in gameweek', gameweek);
+            }
+        } catch (error) {
+            console.error('Error assigning auto-pick:', error);
         }
     }
 
@@ -1038,3 +1103,4 @@ class GameLogicManager {
 
 // Export the GameLogicManager class
 export default GameLogicManager;
+
