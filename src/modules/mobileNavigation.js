@@ -465,7 +465,7 @@ class MobileNavigationManager {
             // Get current pick for this gameweek
             const gameweekKey = currentGameWeek ? (currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`) : null;
             const currentPick = userData && gameweekKey ? userData.picks && userData.picks[gameweekKey] : null;
-
+            
             // Clear existing content and add the combined dropdown
             pickStatusHeader.innerHTML = `
                 <div class="mobile-combined-picker-container">
@@ -511,7 +511,7 @@ class MobileNavigationManager {
                         } else {
                             statusClass = status.clickable ? 'available pickable' : 'available unavailable';
                         }
-                    } catch (error) {
+                } catch (error) {
                         console.error('🔧 Mobile Navigation: Error getting team status for', team, error);
                         // Fallback to available
                         teamStatus = 'available';
@@ -564,7 +564,7 @@ class MobileNavigationManager {
                     // Clear pick
                     if (confirm('Are you sure you want to clear your pick for this gameweek?')) {
                         await this.clearPickForGameweek(currentGameWeek, userId);
-                    } else {
+            } else {
                         // Reset dropdown to previous value
                         event.target.value = currentPick || '';
                     }
@@ -635,7 +635,7 @@ class MobileNavigationManager {
                             statusClass = status.clickable ? 'saved-pick transferable' : 'saved-pick locked';
                         } else if (status.status === 'locked-pick') {
                             statusClass = 'locked-pick';
-                        } else {
+            } else {
                             statusClass = status.clickable ? 'available pickable' : 'available unavailable';
                         }
                     } catch (error) {

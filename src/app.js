@@ -282,6 +282,7 @@ class App {
         window.releaseFuturePick = (teamName, gameweek, userId) => this.gameLogicManager.releaseFuturePick(teamName, gameweek, userId);
         window.selectTeamAsPick = (teamName, gameweek, userId) => this.gameLogicManager.selectTeamAsPick(teamName, gameweek, userId);
         window.assignAutoPick = (userData, gameweek, userId) => this.gameLogicManager.assignAutoPick(userData, gameweek, userId);
+        window.testAutopickForUser = (userId, gameweek) => this.gameLogicManager.testAutopickForUser(userId, gameweek);
         window.getDeadlineDateForGameweek = (gameweek) => this.gameLogicManager.getDeadlineDateForGameweek(gameweek);
         window.formatDeadlineDate = (date) => this.gameLogicManager.formatDeadlineDate(date);
         window.getOrdinalSuffix = (day) => this.gameLogicManager.getOrdinalSuffix(day);

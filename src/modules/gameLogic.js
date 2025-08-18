@@ -618,10 +618,14 @@ class GameLogicManager {
         // Check if deadline has passed using the new edition-based structure
         try {
             const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
+            console.log(`🔍 GameLogic: Checking autopick for ${editionGameweekKey}`);
+            
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
+                console.log(`🔍 GameLogic: Found ${fixtures?.length || 0} fixtures for ${editionGameweekKey}`);
+                
                 if (fixtures && fixtures.length > 0) {
                     const earliestFixture = fixtures.reduce((earliest, fixture) => {
                         const fixtureDate = new Date(fixture.date);
@@ -642,16 +646,53 @@ class GameLogicManager {
                     
                     const deadlineDate = new Date(dateString);
                     const now = new Date();
+                    
+                    console.log(`🔍 GameLogic: Deadline: ${deadlineDate.toISOString()}, Now: ${now.toISOString()}, Passed: ${deadlineDate <= now}`);
 
                     if (deadlineDate <= now) {
                         // Deadline has passed, assign auto-pick
                         console.log(`🔍 GameLogic: Deadline passed for GW${currentGameWeek}, assigning auto-pick for user ${userId}`);
                         await this.assignAutoPick(userData, currentGameWeek, userId);
+                    } else {
+                        console.log(`🔍 GameLogic: Deadline not passed yet for GW${currentGameWeek}`);
                     }
                 }
+            } else {
+                console.log(`🔍 GameLogic: No fixtures document found for ${editionGameweekKey}`);
             }
         } catch (error) {
             console.error('Error checking auto-pick deadline:', error);
+        }
+    }
+
+    // Manual test function for autopicks (for testing purposes)
+    async testAutopickForUser(userId, gameweek) {
+        console.log(`🧪 Testing autopick for user ${userId} in GW${gameweek}`);
+        
+        try {
+            // Get user data
+            const userDoc = await this.db.collection('users').doc(userId).get();
+            if (!userDoc.exists) {
+                console.error('User not found:', userId);
+                return;
+            }
+            
+            const userData = userDoc.data();
+            console.log('User data:', userData);
+            
+            // Check if user already has a pick for this gameweek
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            if (userData.picks && userData.picks[gameweekKey]) {
+                console.log(`User already has pick for ${gameweekKey}:`, userData.picks[gameweekKey]);
+                return;
+            }
+            
+            // Force assign autopick
+            console.log('Forcing autopick assignment...');
+            await this.assignAutoPick(userData, gameweek, userId);
+            
+        } catch (error) {
+            console.error('Error testing autopick:', error);
         }
     }
 
