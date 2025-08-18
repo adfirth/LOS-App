@@ -5180,14 +5180,33 @@ a:hover {
     /* Ensure mobile elements are visible */
     #mobile-edition-selector-container {
         display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     #mobile-gameweek-navigation {
         display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     #mobile-fixtures-display-container {
         display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Ensure mobile edition selector is always visible on mobile devices */
+    .mobile-edition-selector {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Hide desktop edition selector on mobile */
+    .desktop-edition-selector {
+        display: none !important;
     }
     
     /* Mobile tab content visibility */
@@ -5221,6 +5240,80 @@ a:hover {
         padding: 15px 20px;
         margin-top: 20px;
     }
+}
+
+/* High-resolution mobile devices (OnePlus 12, etc.) */
+@media (max-width: 1440px) and (min-width: 768px) {
+    /* Check if it's a mobile device by user agent */
+    /* This will be handled by JavaScript, but we can add CSS fallbacks */
+}
+
+/* OnePlus and similar high-resolution mobile devices */
+@media (max-width: 1440px) and (min-width: 320px) and (max-height: 4000px) {
+    /* This targets mobile devices with high resolution but reasonable height */
+    /* Force mobile layout for devices that might be detected as desktop */
+    .desktop-layout {
+        display: none !important;
+    }
+    
+    .mobile-tabs {
+        display: flex !important;
+    }
+    
+    .mobile-tab-content {
+        display: block !important;
+    }
+    
+    /* Ensure mobile edition selector is visible */
+    #mobile-edition-selector-container {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .mobile-edition-selector {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Hide desktop edition selector */
+    .desktop-edition-selector {
+        display: none !important;
+    }
+}
+
+/* Force mobile layout for OnePlus and similar devices */
+body.force-mobile-layout {
+    /* Force mobile layout regardless of screen size */
+}
+
+body.force-mobile-layout .desktop-layout {
+    display: none !important;
+}
+
+body.force-mobile-layout .mobile-tabs {
+    display: flex !important;
+}
+
+body.force-mobile-layout .mobile-tab-content {
+    display: block !important;
+}
+
+body.force-mobile-layout #mobile-edition-selector-container {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body.force-mobile-layout .mobile-edition-selector {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body.force-mobile-layout .desktop-edition-selector {
+    display: none !important;
 }
 
 /* iPad and tablet support */

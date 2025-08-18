@@ -76,7 +76,25 @@ class EditionService {
         console.log('🔧 EditionService: Creating edition selector in container:', containerSelector);
         
         // Handle both desktop and mobile containers
+        // Enhanced mobile detection for devices like OnePlus 12
         const isMobile = containerSelector === '#mobile-edition-selector-container';
+        
+        // Additional mobile detection for devices that might not be caught by CSS media queries
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+        const isOnePlus = userAgent.includes('oneplus') || userAgent.includes('one plus');
+        const isHighResMobile = window.innerWidth <= 1440 && isMobileDevice; // OnePlus 12 and similar devices
+        
+        console.log('🔧 EditionService: Enhanced mobile detection:', {
+            containerSelector,
+            isMobile,
+            userAgent: userAgent.substring(0, 100) + '...',
+            isMobileDevice,
+            isOnePlus,
+            isHighResMobile,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight
+        });
         const desktopContainer = document.querySelector('#edition-selector-container');
         const mobileContainer = document.querySelector('#mobile-edition-selector-container');
         

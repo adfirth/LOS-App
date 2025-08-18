@@ -606,10 +606,47 @@
                                     console.error('❌ Dashboard: Error creating desktop edition selector:', error);
                                 });
                                 
+                                // Enhanced mobile detection for OnePlus and similar devices
+                                const userAgent = navigator.userAgent.toLowerCase();
+                                const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+                                const isOnePlus = userAgent.includes('oneplus') || userAgent.includes('one plus');
+                                const isHighResMobile = window.innerWidth <= 1440 && isMobileDevice;
+                                
+                                console.log('🔧 Dashboard: Device detection:', {
+                                    userAgent: userAgent.substring(0, 100) + '...',
+                                    isMobileDevice,
+                                    isOnePlus,
+                                    isHighResMobile,
+                                    windowWidth: window.innerWidth,
+                                    windowHeight: window.innerHeight
+                                });
+                                
                                 // Create edition selector for mobile
                                 window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').catch(error => {
                                     console.error('❌ Dashboard: Error creating mobile edition selector:', error);
                                 });
+                                
+                                // Force mobile layout for OnePlus and similar devices
+                                if (isOnePlus || isHighResMobile) {
+                                    console.log('🔧 Dashboard: Detected OnePlus or high-res mobile device, forcing mobile layout');
+                                    document.body.classList.add('force-mobile-layout');
+                                    
+                                    // Ensure mobile elements are visible
+                                    const mobileElements = [
+                                        '#mobile-edition-selector-container',
+                                        '#mobile-gameweek-navigation',
+                                        '#mobile-fixtures-display-container'
+                                    ];
+                                    
+                                    mobileElements.forEach(selector => {
+                                        const element = document.querySelector(selector);
+                                        if (element) {
+                                            element.style.display = 'block';
+                                            element.style.visibility = 'visible';
+                                            element.style.opacity = '1';
+                                        }
+                                    });
+                                }
                                 
                                 // Load fixtures for the current gameweek after edition selector is set up
                                 if (window.loadFixturesForDeadline) {
