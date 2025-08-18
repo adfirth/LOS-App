@@ -31,67 +31,9 @@ class AdminManagementManager {
         // Check if methods are available on the prototype
         console.log('🔍 Prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
         
-        // Ensure renderPicksTable method is available on this instance
-        if (typeof this.renderPicksTable !== 'function') {
-            console.log('🔍 renderPicksTable not found on instance, adding it manually...');
-            this.renderPicksTable = async function() {
-                console.log('🔍 renderPicksTable called via manual binding - clearing table first');
-                console.log('🔍 this object:', this);
-                console.log('🔍 this.db:', this.db);
-                console.log('🔍 Available methods on this:', Object.getOwnPropertyNames(this));
-                
-
-            }.bind(this);
-            
-            console.log('🔍 After manual binding - this.renderPicksTable:', typeof this.renderPicksTable);
-        }
+        // Note: renderPicksTable method is now properly defined in the class
         
-        // Ensure debugAllPicks method is available on this instance
-        if (typeof this.debugAllPicks !== 'function') {
-            console.log('🔍 debugAllPicks not found on instance, adding it manually...');
-            this.debugAllPicks = async function() {
-                console.log('🔍 debugAllPicks called via manual binding');
-                console.log('🔍 this object:', this);
-                console.log('🔍 this.db:', this.db);
-                
-                try {
-                    console.log('🔍 Fetching all users for debugging...');
-                    const usersSnapshot = await this.db.collection('users').get();
-                    console.log('🔍 Users snapshot received, count:', usersSnapshot.size);
-                    
-                    let usersWithPicks = 0;
-                    let totalPicks = 0;
-                    
-                    usersSnapshot.forEach(doc => {
-                        const userData = doc.data();
-                        if (userData.picks && Object.keys(userData.picks).length > 0) {
-                            usersWithPicks++;
-                            const pickCount = Object.keys(userData.picks).length;
-                            totalPicks += pickCount;
-                            
-                            console.log(`🔍 User ${userData.firstName} ${userData.surname}:`, {
-                                id: doc.id,
-                                picks: userData.picks,
-                                pickCount: pickCount,
-                                pickKeys: Object.keys(userData.picks)
-                            });
-                        }
-                    });
-                    
-                    console.log('🔍 Debug summary:');
-                    console.log('🔍 Total users:', usersSnapshot.size);
-                    console.log('🔍 Users with picks:', usersWithPicks);
-                    console.log('🔍 Total picks across all users:', totalPicks);
-                    
-                } catch (error) {
-                    console.error('❌ Error in debugAllPicks:', error);
-                }
-            }.bind(this);
-            
-            console.log('🔍 After manual binding - this.debugAllPicks:', typeof this.debugAllPicks);
-        }
-
-        // Ensure renderPicksTableFromCollection method is available on this instance
+        // Note: debugAllPicks method is not needed for production
         
 
     }
@@ -134,6 +76,14 @@ class AdminManagementManager {
         
         // Initialize Football Web Pages API integration for admin interface
         this.initializeAdminApiIntegration();
+        
+        // Automatically render the picks table for the current edition
+        setTimeout(() => {
+            if (this.renderPicksTable) {
+                console.log('🔧 Auto-rendering picks table on admin page initialization...');
+                this.renderPicksTable();
+            }
+        }, 1000); // Small delay to ensure DOM is ready
         
         console.log('✅ Admin page initialization complete');
     }
@@ -187,8 +137,59 @@ class AdminManagementManager {
         // Set up As It Stands functionality
         this.setupAsItStandsFunctionality();
         
+        // Set up picks table event listeners
+        this.setupPicksTableEventListeners();
+        
+        // Set up admin panel focus event listener to refresh picks table
+        this.setupAdminPanelFocusListener();
+        
         // Set up other event listeners as needed
         console.log('✅ Admin management event listeners ready');
+    }
+
+    /**
+     * Set up event listeners for the picks table functionality
+     */
+    setupPicksTableEventListeners() {
+        console.log('🔧 Setting up picks table event listeners...');
+        
+        // Add event listener for the render picks table button
+        const renderPicksTableBtn = document.querySelector('#render-picks-table-btn');
+        if (renderPicksTableBtn) {
+            renderPicksTableBtn.addEventListener('click', () => {
+                console.log('🔧 Render picks table button clicked');
+                this.renderPicksTable();
+            });
+            console.log('✅ Picks table button event listener added');
+        } else {
+            console.warn('⚠️ Render picks table button not found');
+        }
+    }
+    
+    /**
+     * Set up admin panel focus event listener to refresh picks table
+     */
+    setupAdminPanelFocusListener() {
+        console.log('🔧 Setting up admin panel focus event listener...');
+        
+        // Refresh picks table when admin panel gains focus
+        window.addEventListener('focus', () => {
+            // Only refresh if we're on the admin panel and the picks table is visible
+            if (document.getElementById('admin-panel') && 
+                document.getElementById('admin-panel').style.display !== 'none') {
+                const activeTab = document.querySelector('.admin-tab.active');
+                if (activeTab && activeTab.dataset.tab === 'picks-v2') {
+                    console.log('🔧 Admin panel gained focus on picks tab - refreshing picks table...');
+                    setTimeout(() => {
+                        if (this.renderPicksTable) {
+                            this.renderPicksTable();
+                        }
+                    }, 500);
+                }
+            }
+        });
+        
+        console.log('✅ Admin panel focus event listener added');
     }
 
     // Admin Dashboard Functions
@@ -299,6 +300,14 @@ class AdminManagementManager {
                 console.warn('window.refreshRegistrationStats is not a function');
                 console.log('Available global functions:', Object.keys(window).filter(key => typeof window[key] === 'function'));
             }
+            
+            // Auto-refresh the picks table after gameweek change
+            setTimeout(() => {
+                if (this.renderPicksTable) {
+                    console.log('🔧 Auto-refreshing picks table after gameweek change...');
+                    this.renderPicksTable();
+                }
+            }, 500);
             
             // Show success message
             const statusElement = document.querySelector('#settings-status');
@@ -550,6 +559,14 @@ class AdminManagementManager {
                     window.app.adminManagementManager.updateCurrentActiveEdition(newEdition);
                 }
             }
+            
+            // Auto-refresh the picks table with the new edition
+            setTimeout(() => {
+                if (this.renderPicksTable) {
+                    console.log('🔧 Auto-refreshing picks table after edition change...');
+                    this.renderPicksTable();
+                }
+            }, 500);
             
             // Save to database
             await this.db.collection('settings').doc('currentCompetition').update({
@@ -2719,6 +2736,167 @@ class AdminManagementManager {
         // This function should be implemented based on your team badge logic
         // For now, returning null as placeholder
         return null;
+    }
+
+    /**
+     * Render the picks table for all players in the current edition
+     * This method displays all player picks with proper autopick indicators
+     */
+    async renderPicksTable() {
+        console.log('🔧 AdminManagementManager: renderPicksTable called');
+        
+        try {
+            // Get current active edition
+            const currentEdition = window.currentActiveEdition || this.currentActiveEdition;
+            console.log('🔧 Current edition for picks table:', currentEdition);
+            
+            // Get all users
+            const usersSnapshot = await this.db.collection('users').get();
+            console.log('🔧 Users snapshot received, size:', usersSnapshot.size);
+            
+            // Get fixtures for the current edition to determine gameweek statuses
+            const fixturesData = {};
+            for (let i = 1; i <= 10; i++) { // Assuming max 10 gameweeks
+                try {
+                    const gameweekKey = `edition${currentEdition}_gw${i}`;
+                    const fixtureDoc = await this.db.collection('fixtures').doc(gameweekKey).get();
+                    if (fixtureDoc.exists) {
+                        fixturesData[`gw${i}`] = fixtureDoc.data().fixtures || [];
+                    }
+                } catch (error) {
+                    console.log(`🔧 No fixtures found for ${gameweekKey}`);
+                }
+            }
+            
+            // Build the picks table HTML
+            let picksTableHTML = `
+                <div class="picks-table-container">
+                    <h3>Player Picks - ${currentEdition === 'test' ? 'Test Weeks' : `Edition ${currentEdition}`}</h3>
+                    <table class="picks-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>GW1</th>
+                                <th>GW2</th>
+                                <th>GW3</th>
+                                <th>GW4</th>
+                                <th>GW5</th>
+                                <th>GW6</th>
+                                <th>GW7</th>
+                                <th>GW8</th>
+                                <th>GW9</th>
+                                <th>GW10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Process each user
+            usersSnapshot.forEach(doc => {
+                const userData = doc.data();
+                const editionKey = `edition${currentEdition}`;
+                
+                // Check if user is registered for this edition
+                if (userData.registrations && userData.registrations[editionKey]) {
+                    const picks = userData.picks || {};
+                    
+                    picksTableHTML += `
+                        <tr>
+                            <td>${userData.firstName || ''} ${userData.surname || ''}</td>
+                    `;
+                    
+                    // Add picks for each gameweek
+                    for (let i = 1; i <= 10; i++) {
+                        const gameweekKey = `gw${i}`;
+                        const pick = picks[gameweekKey];
+                        
+                        if (pick) {
+                            // Handle new pick object format
+                            let teamName, isAutopick;
+                            if (typeof pick === 'string') {
+                                teamName = pick;
+                                isAutopick = false;
+                            } else if (pick && typeof pick === 'object') {
+                                teamName = pick.team || pick;
+                                isAutopick = pick.isAutopick || false;
+                            } else {
+                                teamName = 'Unknown';
+                                isAutopick = false;
+                            }
+                            
+                            // Add autopick indicator if applicable
+                            const displayTeamName = isAutopick ? `${teamName} (A)` : teamName;
+                            
+                            // Determine cell styling based on gameweek status
+                            const fixtures = fixturesData[gameweekKey] || [];
+                            const gameweekStatus = this.getGameweekStatus(fixtures, i.toString());
+                            
+                            let cellClass = 'pick-cell';
+                            let cellStyle = '';
+                            
+                            switch (gameweekStatus) {
+                                case 'not-started':
+                                    cellClass += ' not-started';
+                                    break;
+                                case 'in-progress':
+                                    cellClass += ' in-progress';
+                                    break;
+                                case 'completed':
+                                    cellClass += ' completed';
+                                    break;
+                            }
+                            
+                            picksTableHTML += `<td class="${cellClass}" style="${cellStyle}">${displayTeamName}</td>`;
+                        } else {
+                            picksTableHTML += '<td class="pick-cell no-pick">-</td>';
+                        }
+                    }
+                    
+                    picksTableHTML += '</tr>';
+                }
+            });
+            
+            picksTableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Find the picks table container and update it
+            const picksTableContainer = document.querySelector('#picks-table-container');
+            if (picksTableContainer) {
+                picksTableContainer.innerHTML = picksTableHTML;
+                console.log('🔧 Picks table rendered successfully');
+            } else {
+                console.warn('🔧 Picks table container not found');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error rendering picks table:', error);
+        }
+    }
+    
+    /**
+     * Get gameweek status (helper method for picks table)
+     */
+    getGameweekStatus(fixtures, gameweek) {
+        if (!fixtures || fixtures.length === 0) {
+            return 'not-started';
+        }
+        
+        const now = new Date();
+        const earliestFixture = fixtures.reduce((earliest, fixture) => {
+            const fixtureDate = new Date(`${fixture.date}T${fixture.kickOffTime || '15:00'}`);
+            return fixtureDate < earliest ? fixtureDate : earliest;
+        }, new Date('9999-12-31'));
+        
+        if (earliestFixture > now) {
+            return 'not-started';
+        } else if (fixtures.some(f => f.status && f.status !== 'NS')) {
+            return 'in-progress';
+        } else {
+            return 'completed';
+        }
     }
 
     // Cleanup method

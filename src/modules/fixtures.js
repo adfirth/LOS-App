@@ -1459,7 +1459,25 @@ class FixturesManager {
                         });
                         
                         if (userPick) {
-                            let statusText = `Pick made: ${userPick}`;
+                            // Handle new pick object format with team and isAutopick properties
+                            let teamName, isAutopick;
+                            if (typeof userPick === 'string') {
+                                // Old format: userPick is the team name directly
+                                teamName = userPick;
+                                isAutopick = false;
+                            } else if (userPick && typeof userPick === 'object') {
+                                // New format: userPick is an object with team and isAutopick
+                                teamName = userPick.team || userPick;
+                                isAutopick = userPick.isAutopick || false;
+                            } else {
+                                teamName = 'Unknown Team';
+                                isAutopick = false;
+                            }
+                            
+                            // Add autopick indicator if applicable
+                            const displayTeamName = isAutopick ? `${teamName} (A)` : teamName;
+                            
+                            let statusText = `Pick made: ${displayTeamName}`;
                             let statusColor = '#28a745'; // Green for made
                             
                             // Add gameweek status to the display
@@ -1812,8 +1830,25 @@ class FixturesManager {
                 });
                 
                 if (userPick) {
-                    // userPick is the team name directly, not an object with .team property
-                    pickStatusDisplay.textContent = `Pick made: ${userPick}`;
+                    // Handle new pick object format with team and isAutopick properties
+                    let teamName, isAutopick;
+                    if (typeof userPick === 'string') {
+                        // Old format: userPick is the team name directly
+                        teamName = userPick;
+                        isAutopick = false;
+                    } else if (userPick && typeof userPick === 'object') {
+                        // New format: userPick is an object with team and isAutopick
+                        teamName = userPick.team || userPick;
+                        isAutopick = userPick.isAutopick || false;
+                    } else {
+                        teamName = 'Unknown Team';
+                        isAutopick = false;
+                    }
+                    
+                    // Add autopick indicator if applicable
+                    const displayTeamName = isAutopick ? `${teamName} (A)` : teamName;
+                    
+                    pickStatusDisplay.textContent = `Pick made: ${displayTeamName}`;
                     pickStatusDisplay.style.color = '#28a745';
                 } else {
                     pickStatusDisplay.textContent = 'No pick made yet';
@@ -2196,7 +2231,25 @@ class FixturesManager {
                 });
                 
                 if (userPick) {
-                    let statusText = `Pick made: ${userPick}`;
+                    // Handle new pick object format with team and isAutopick properties
+                    let teamName, isAutopick;
+                    if (typeof userPick === 'string') {
+                        // Old format: userPick is the team name directly
+                        teamName = userPick;
+                        isAutopick = false;
+                    } else if (userPick && typeof userPick === 'object') {
+                        // New format: userPick is an object with team and isAutopick
+                        teamName = userPick.team || userPick;
+                        isAutopick = userPick.isAutopick || false;
+                    } else {
+                        teamName = 'Unknown Team';
+                        isAutopick = false;
+                    }
+                    
+                    // Add autopick indicator if applicable
+                    const displayTeamName = isAutopick ? `${teamName} (A)` : teamName;
+                    
+                    let statusText = `Pick made: ${displayTeamName}`;
                     let statusColor = '#28a745'; // Green for made
                     
                     // Add gameweek status to the display
