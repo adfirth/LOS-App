@@ -80,12 +80,20 @@ class EditionService {
         const desktopContainer = document.querySelector('#edition-selector-container');
         const mobileContainer = document.querySelector('#mobile-edition-selector-container');
         
+        console.log('🔧 EditionService: Mobile detection:', { isMobile, containerSelector });
+        console.log('🔧 EditionService: Containers found:', { 
+            desktopContainer: !!desktopContainer, 
+            mobileContainer: !!mobileContainer 
+        });
+        
         // Use the appropriate container based on the selector
         let container;
         if (isMobile) {
             container = mobileContainer;
+            console.log('🔧 EditionService: Using mobile container');
         } else {
             container = desktopContainer;
+            console.log('🔧 EditionService: Using desktop container');
         }
         
         if (!container) {

@@ -5177,6 +5177,28 @@ a:hover {
         display: block;
     }
     
+    /* Ensure mobile elements are visible */
+    #mobile-edition-selector-container {
+        display: block !important;
+    }
+    
+    #mobile-gameweek-navigation {
+        display: block !important;
+    }
+    
+    #mobile-fixtures-display-container {
+        display: block !important;
+    }
+    
+    /* Mobile tab content visibility */
+    .tab-pane {
+        display: none;
+    }
+    
+    .tab-pane.active {
+        display: block;
+    }
+    
     .container {
         padding: 0;
         margin: 0;
