@@ -253,6 +253,10 @@ class GameLogicManager {
     initializeMobileGameweekNavigation(currentGameWeek, userData, userId) {
         console.log('Initializing mobile gameweek navigation for gameweek:', currentGameWeek);
         
+        // Ensure currentGameWeek has a valid value
+        const gameweek = currentGameWeek || '1';
+        console.log('🔧 Mobile navigation: Using gameweek:', gameweek);
+        
         // Get all mobile gameweek tab buttons (they use the same class as desktop)
         const mobileGameweekButtons = document.querySelectorAll('#mobile-gameweek-navigation .gameweek-tab');
         
@@ -262,7 +266,7 @@ class GameLogicManager {
         }
         
         // Set active gameweek
-        this.setActiveGameweek(currentGameWeek);
+        this.setActiveGameweek(gameweek);
         
         // Add click event listeners to all mobile gameweek buttons
         mobileGameweekButtons.forEach(button => {
@@ -279,16 +283,19 @@ class GameLogicManager {
         const mobileCurrentGameweekDisplay = document.querySelector('#mobile-current-gameweek-display');
         
         if (mobileCurrentGameweekDisplay) {
-            const displayText = currentGameWeek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${currentGameWeek}`;
+            const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
             mobileCurrentGameweekDisplay.textContent = displayText;
+            console.log('🔧 Mobile navigation: Set display text to:', displayText);
+        } else {
+            console.error('🔧 Mobile navigation: mobile-current-gameweek-display element not found');
         }
         
         if (mobilePrevButton) {
-            mobilePrevButton.addEventListener('click', () => this.navigateGameweek(currentGameWeek, -1, userData, userId));
+            mobilePrevButton.addEventListener('click', () => this.navigateGameweek(gameweek, -1, userData, userId));
         }
         
         if (mobileNextButton) {
-            mobileNextButton.addEventListener('click', () => this.navigateGameweek(currentGameWeek, 1, userData, userId));
+            mobileNextButton.addEventListener('click', () => this.navigateGameweek(gameweek, 1, userData, userId));
         }
         
         console.log('Mobile gameweek navigation initialized');

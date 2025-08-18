@@ -234,6 +234,8 @@ class UIManager {
             }
             const settings = settingsDoc.data();
             const currentGameWeek = settings.active_gameweek;
+            console.log('🔧 UI: Settings loaded:', settings);
+            console.log('🔧 UI: Current gameweek from settings:', currentGameWeek);
 
             const userDoc = await this.db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
@@ -276,9 +278,11 @@ class UIManager {
                 
                 // Initialize gameweek navigation for both desktop and mobile
                 if (window.app && window.app.gameLogicManager) {
+                    console.log('🔧 UI: Initializing desktop gameweek navigation with:', currentGameWeek);
                     window.app.gameLogicManager.initializeGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
                 if (window.app && window.app.gameLogicManager) {
+                    console.log('🔧 UI: Initializing mobile gameweek navigation with:', currentGameWeek);
                     window.app.gameLogicManager.initializeMobileGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
                 
