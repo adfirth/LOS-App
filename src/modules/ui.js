@@ -243,6 +243,11 @@ class UIManager {
                 const userEdition = this.getUserEdition(userData);
                 const userRegisteredEditions = this.getUserRegisteredEditions(userData);
                 
+                // Initialize EditionService with user data
+                if (window.editionService) {
+                    await window.editionService.initializeWithUser(userData, user.uid);
+                }
+                
                 // Show edition selection if user is registered for multiple editions
                 this.setupEditionSelection(userData, userEdition, userRegisteredEditions, user.uid);
                 
