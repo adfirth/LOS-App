@@ -1307,7 +1307,6 @@ class FixturesManager {
                     }
                     
                     // Add gameweek status indicator
-                    const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
                     let statusText = '';
                     let statusColor = '';
                     
@@ -1409,6 +1408,9 @@ class FixturesManager {
                         console.log('🔍 loadFixturesForDeadline: earliestFixture:', earliestFixture);
                     }
                     
+                    // Get gameweek status to determine if deadline has passed
+                    const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                    
                     // Check if all fixtures are completed
                     const allFixturesCompleted = fixtures.every(fixture =>
                         fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
@@ -1421,7 +1423,10 @@ class FixturesManager {
                     
                     // Update status display
                     if (deadlineStatus) {
-                        if (allFixturesCompleted) {
+                        if (gameweekStatus === 'not-started') {
+                            deadlineStatus.textContent = 'Open for picks';
+                            deadlineStatus.style.color = '#28a745';
+                        } else if (allFixturesCompleted) {
                             deadlineStatus.textContent = 'All fixtures completed';
                             deadlineStatus.style.color = '#28a745';
                         } else if (allFixturesFinished) {
@@ -1444,7 +1449,6 @@ class FixturesManager {
                         
                         const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
                         const userPick = userData.picks[gameweekKey] || null;
-                        const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
                         
                         console.log('🔍 Pick status debug:', {
                             gameweekKey,
