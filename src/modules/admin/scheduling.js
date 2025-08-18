@@ -35,10 +35,6 @@ export class Scheduling {
             const editionSelector = document.querySelector('#quick-edition-selector');
             const quickSaveEditionBtn = document.querySelector('#quick-save-edition-btn');
             
-            console.log('🔍 Looking for elements...');
-            console.log('Edition selector found:', !!editionSelector);
-            console.log('Save button found:', !!quickSaveEditionBtn);
-            
             if (!editionSelector) {
                 console.log('❌ Quick edition selector not found, will retry...');
                 return false;
@@ -50,19 +46,6 @@ export class Scheduling {
             }
             
             console.log('✅ Found both elements');
-            console.log('🔍 Edition selector properties:', {
-                disabled: editionSelector.disabled,
-                style: editionSelector.style.cssText,
-                className: editionSelector.className,
-                type: editionSelector.type
-            });
-            
-            console.log('🔍 Save button properties:', {
-                disabled: quickSaveEditionBtn.disabled,
-                style: quickSaveEditionBtn.style.cssText,
-                className: quickSaveEditionBtn.className,
-                type: quickSaveEditionBtn.type
-            });
             
             // Load available editions
             this.loadAvailableEditions();
@@ -75,28 +58,30 @@ export class Scheduling {
                 const newEdition = editionSelector.value;
                 this.resetActiveWeekForNewEdition(newEdition);
                 
-                // Save the edition change
-                this.saveQuickEditionChange();
+                // Update Registration Window Status IMMEDIATELY for the new edition
+                console.log(`🔧 Immediately updating registration window status for edition: ${newEdition}`);
+                this.updateRegistrationWindowStatus(newEdition);
                 
-                // Refresh registration statistics if admin management manager is available
-                if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
-                    console.log('🔄 Refreshing registration statistics after edition change...');
-                    window.adminManagementManager.refreshRegistrationStatistics();
-                }
+                // Save the edition change and then refresh statistics
+                this.saveQuickEditionChange().then(() => {
+                    // Update Registration Window Status AGAIN after saving to ensure consistency
+                    console.log(`🔧 Updating registration window status again after save for edition: ${newEdition}`);
+                    this.updateRegistrationWindowStatus(newEdition);
+                    
+                    // Refresh registration statistics AFTER the edition change is saved
+                    if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
+                        console.log('🔄 Refreshing registration statistics after edition change...');
+                        window.adminManagementManager.refreshRegistrationStatistics();
+                    }
+                }).catch((error) => {
+                    console.error('❌ Error saving edition change:', error);
+                    // Even if save fails, we still want to update the display
+                    this.updateRegistrationWindowStatus(newEdition);
+                });
             });
             
-            // Set up save button event listener - use direct approach without cloning
+            // Set up save button event listener
             console.log('🔧 Setting up save button event listener...');
-            console.log('🔍 Save button element:', quickSaveEditionBtn);
-            console.log('🔍 Save button properties:', {
-                disabled: quickSaveEditionBtn.disabled,
-                style: quickSaveEditionBtn.style.cssText,
-                className: quickSaveEditionBtn.className,
-                type: quickSaveEditionBtn.type,
-                onclick: quickSaveEditionBtn.onclick,
-                onmousedown: quickSaveEditionBtn.onmousedown,
-                onmouseup: quickSaveEditionBtn.onmouseup
-            });
             
             // Remove any existing event listeners
             const newButton = quickSaveEditionBtn.cloneNode(true);
@@ -104,7 +89,6 @@ export class Scheduling {
             
             // Get the new button reference
             const freshButton = document.querySelector('#quick-save-edition-btn');
-            console.log('🔍 Fresh button element:', freshButton);
             
             freshButton.addEventListener('click', (e) => {
                 console.log('🔄 Quick save edition button clicked!');
@@ -144,15 +128,6 @@ export class Scheduling {
                         freshButton.disabled = false;
                     }, 3000);
                 });
-            });
-            
-            // Also try mousedown and mouseup events
-            freshButton.addEventListener('mousedown', (e) => {
-                console.log('🔄 Quick save edition button mousedown!');
-            });
-            
-            freshButton.addEventListener('mouseup', (e) => {
-                console.log('🔄 Quick save edition button mouseup!');
             });
             
             console.log('✅ Save button event listeners attached');
@@ -408,7 +383,7 @@ export class Scheduling {
             } else {
                 // Check if we need to add missing editions
                 const requiredEditions = [
-                    { id: 1, name: 'Edition 1', active: true },
+                    { id: 1, name: 'Edition 1', active: false },
                     { id: 2, name: 'Edition 2', active: false },
                     { id: 3, name: 'Edition 3', active: false },
                     { id: 4, name: 'Edition 4', active: false },
@@ -445,8 +420,41 @@ export class Scheduling {
             
             console.log(`✅ Loaded ${editions.length} editions`);
             
+            // Load current active edition from database
+            await this.loadCurrentActiveEdition();
+            
         } catch (error) {
             console.error('❌ Error loading editions:', error);
+        }
+    }
+
+    // Load current active edition from database
+    async loadCurrentActiveEdition() {
+        try {
+            const currentEditionDoc = await this.db.collection('settings').doc('currentActiveEdition').get();
+            
+            if (currentEditionDoc.exists) {
+                const data = currentEditionDoc.data();
+                this.currentActiveEdition = data.edition || 1;
+                console.log(`✅ Loaded current active edition: ${this.currentActiveEdition}`);
+            } else {
+                // Set default edition if none exists
+                this.currentActiveEdition = 1;
+                console.log('⚠️ No current active edition found, using default: 1');
+                
+                // Save default to database
+                await this.db.collection('settings').doc('currentActiveEdition').set({
+                    edition: 1,
+                    lastUpdated: new Date()
+                });
+            }
+            
+            // Update the selector to reflect the loaded edition
+            this.updateQuickEditionSelector();
+            
+        } catch (error) {
+            console.error('❌ Error loading current active edition:', error);
+            this.currentActiveEdition = 1;
         }
     }
 
@@ -457,6 +465,16 @@ export class Scheduling {
         
         editionSelector.value = this.currentActiveEdition;
         console.log(`✅ Updated edition selector to ${this.currentActiveEdition}`);
+        
+        // Update registration window status for the current edition
+        console.log(`🔧 Updating registration window status for current edition: ${this.currentActiveEdition}`);
+        this.updateRegistrationWindowStatus(this.currentActiveEdition);
+    }
+
+    // Force refresh registration window status
+    async forceRefreshRegistrationWindowStatus() {
+        console.log(`🔧 Force refreshing registration window status for edition: ${this.currentActiveEdition}`);
+        await this.updateRegistrationWindowStatus(this.currentActiveEdition);
     }
 
     // Save quick edition change
@@ -540,6 +558,12 @@ export class Scheduling {
         
         // Update edition display
         this.updateActiveEditionDisplay(this.currentActiveEdition);
+        
+        // Refresh registration statistics to reflect the new edition
+        if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
+            console.log('🔄 Refreshing registration statistics after edition change...');
+            window.adminManagementManager.refreshRegistrationStatistics();
+        }
         
         // Refresh any standings displays
         const standingsContainer = document.querySelector('#standings-table-container');
@@ -1058,9 +1082,229 @@ export class Scheduling {
             }
         }, 100);
     }
+
+    // Update Registration Window Status based on selected edition
+    async updateRegistrationWindowStatus(edition) {
+        try {
+            console.log(`🔧 Updating Registration Window Status for edition: ${edition}`);
+            
+            // Get the registration window status container
+            const statusContainer = document.querySelector('#registration-window-status');
+            if (!statusContainer) {
+                console.log('⚠️ Registration window status container not found');
+                return;
+            }
+
+            // Clear any existing fallback message first
+            const existingFallback = document.querySelector('#registration-fallback-message');
+            if (existingFallback) {
+                existingFallback.remove();
+            }
+
+            // Hide any existing countdown sections
+            this.hideRegistrationCountdowns();
+
+            // Get registration settings for the selected edition
+            const settingsDoc = await this.db.collection('settings').doc(`registration_edition_${edition}`).get();
+            
+            if (!settingsDoc.exists) {
+                console.log(`⚠️ No registration settings found for edition ${edition}`);
+                // Show a fallback message instead of hiding everything
+                this.showFallbackRegistrationMessage(edition, 'No registration settings configured');
+                return;
+            }
+
+            const settings = settingsDoc.data();
+            const now = new Date();
+
+            // Check if registration is enabled
+            if (!settings.enabled) {
+                console.log(`⚠️ Registration is disabled for edition ${edition}`);
+                this.hideRegistrationCountdowns();
+                this.showFallbackRegistrationMessage(edition, 'Registration is currently disabled');
+                return;
+            }
+
+            // Check if registration is currently open
+            if (settings.startDate && settings.endDate) {
+                const startDate = new Date(settings.startDate.toDate());
+                const endDate = new Date(settings.endDate.toDate());
+
+                if (now >= startDate && now <= endDate) {
+                    // Registration is currently open
+                    console.log(`✅ Registration is currently open for edition ${edition}`);
+                    this.showCurrentRegistrationCountdown(endDate);
+                    this.hideNextRegistrationCountdown();
+                } else if (now < startDate) {
+                    // Registration hasn't started yet
+                    console.log(`⏰ Registration hasn't started yet for edition ${edition}`);
+                    this.hideCurrentRegistrationCountdown();
+                    this.showNextRegistrationCountdown(startDate);
+                } else {
+                    // Registration has ended
+                    console.log(`❌ Registration period has ended for edition ${edition}`);
+                    this.hideRegistrationCountdowns();
+                    this.showFallbackRegistrationMessage(edition, 'Registration period has ended');
+                }
+            } else {
+                // Registration is enabled but dates are not configured
+                console.log(`⚠️ Registration is enabled but dates are not configured for edition ${edition}`);
+                this.hideRegistrationCountdowns();
+                this.showFallbackRegistrationMessage(edition, 'Registration is enabled but dates are not configured');
+            }
+
+            // Add a visual indicator that the status was updated
+            const updateIndicator = document.createElement('div');
+            updateIndicator.style.cssText = 'background: #28a745; color: white; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; font-size: 0.8rem; text-align: center;';
+            updateIndicator.textContent = `✅ Status updated for Edition ${edition} at ${new Date().toLocaleTimeString()}`;
+            
+            // Remove any existing indicators
+            const existingIndicators = statusContainer.querySelectorAll('[data-update-indicator]');
+            existingIndicators.forEach(indicator => indicator.remove());
+            
+            // Add the new indicator
+            updateIndicator.setAttribute('data-update-indicator', 'true');
+            statusContainer.appendChild(updateIndicator);
+            
+            // Remove the indicator after 5 seconds
+            setTimeout(() => {
+                if (updateIndicator.parentNode) {
+                    updateIndicator.remove();
+                }
+            }, 5000);
+
+        } catch (error) {
+            console.error('Error updating registration window status:', error);
+            this.showFallbackRegistrationMessage(edition, 'Error loading registration settings');
+        }
+    }
+
+    // Show current registration countdown
+    showCurrentRegistrationCountdown(endDate) {
+        const currentCountdown = document.querySelector('#registration-countdown');
+        const nextCountdown = document.querySelector('#next-registration-countdown');
+        
+        if (currentCountdown) {
+            currentCountdown.style.display = 'block';
+            this.startCountdownTimer(endDate, '#countdown-timer');
+        }
+        
+        if (nextCountdown) {
+            nextCountdown.style.display = 'none';
+        }
+    }
+
+    // Show next registration countdown
+    showNextRegistrationCountdown(startDate) {
+        const currentCountdown = document.querySelector('#registration-countdown');
+        const nextCountdown = document.querySelector('#next-registration-countdown');
+        
+        if (nextCountdown) {
+            nextCountdown.style.display = 'block';
+            this.startCountdownTimer(startDate, '#next-countdown-timer');
+        }
+        
+        if (currentCountdown) {
+            currentCountdown.style.display = 'none';
+        }
+    }
+
+    // Hide all registration countdowns
+    hideRegistrationCountdowns() {
+        const currentCountdown = document.querySelector('#registration-countdown');
+        const nextCountdown = document.querySelector('#next-registration-countdown');
+        
+        if (currentCountdown) currentCountdown.style.display = 'none';
+        if (nextCountdown) nextCountdown.style.display = 'none';
+    }
+
+    // Hide current registration countdown
+    hideCurrentRegistrationCountdown() {
+        const currentCountdown = document.querySelector('#registration-countdown');
+        if (currentCountdown) currentCountdown.style.display = 'none';
+    }
+
+    // Hide next registration countdown
+    hideNextRegistrationCountdown() {
+        const nextCountdown = document.querySelector('#next-registration-countdown');
+        if (nextCountdown) nextCountdown.style.display = 'none';
+    }
+
+    // Start countdown timer
+    startCountdownTimer(targetDate, timerElementId) {
+        const timerElement = document.querySelector(timerElementId);
+        if (!timerElement) return;
+
+        const updateTimer = () => {
+            const now = new Date();
+            const timeLeft = targetDate - now;
+
+            if (timeLeft <= 0) {
+                timerElement.textContent = 'Time expired';
+                return;
+            }
+
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            let timeString = '';
+            if (days > 0) timeString += `${days}d `;
+            if (hours > 0) timeString += `${hours}h `;
+            if (minutes > 0) timeString += `${minutes}m `;
+            timeString += `${seconds}s`;
+
+            timerElement.textContent = timeString;
+        };
+
+        // Update immediately and then every second
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+
+        // Store the interval ID so we can clear it later if needed
+        timerElement.dataset.countdownInterval = interval;
+    }
     
     // Cleanup method
     cleanup() {
         console.log('🧹 Scheduling cleanup completed');
+    }
+
+    // Show fallback message when no registration settings are found or registration is disabled
+    showFallbackRegistrationMessage(edition, message) {
+        const currentCountdown = document.querySelector('#registration-countdown');
+        const nextCountdown = document.querySelector('#next-registration-countdown');
+        
+        // Hide both countdown sections
+        if (currentCountdown) currentCountdown.style.display = 'none';
+        if (nextCountdown) nextCountdown.style.display = 'none';
+        
+        // Create or update fallback message
+        let fallbackMessage = document.querySelector('#registration-fallback-message');
+        if (!fallbackMessage) {
+            fallbackMessage = document.createElement('div');
+            fallbackMessage.id = 'registration-fallback-message';
+            fallbackMessage.style.cssText = 'padding: 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; margin-top: 1rem;';
+            
+            const statusContainer = document.querySelector('#registration-window-status');
+            if (statusContainer) {
+                statusContainer.appendChild(fallbackMessage);
+            }
+        }
+        
+        fallbackMessage.innerHTML = `
+            <h5 style="color: #6c757d; margin-bottom: 0.5rem;">Registration Status for Edition ${edition}</h5>
+            <p style="color: #6c757d; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                <strong>Status:</strong> ${message}
+            </p>
+            <p style="color: #6c757d; font-size: 0.8rem; margin: 0;">
+                ${message === 'Registration is currently disabled' ? 
+                    'To enable registration, check the "Enable Registration" checkbox in the Competition Settings tab.' :
+                    'Registration settings need to be configured in the admin panel for this edition.'
+                }
+            </p>
+        `;
+        fallbackMessage.style.display = 'block';
     }
 }

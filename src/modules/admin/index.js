@@ -112,10 +112,119 @@ export class AdminManager {
         refreshBtn.addEventListener('click', () => this.loadPlayerPicksV2());
         exportBtn.addEventListener('click', () => this.exportPlayerPicksV2());
         
+        // Set up search and filter event listeners
+        const searchInput = document.querySelector('#picks-v2-search');
+        const teamFilter = document.querySelector('#picks-v2-team-filter');
+        const statusFilter = document.querySelector('#picks-v2-status-filter');
+        const clearFiltersBtn = document.querySelector('#picks-v2-clear-filters-btn');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', () => this.filterPlayerPicks());
+        }
+        if (teamFilter) {
+            teamFilter.addEventListener('change', () => this.filterPlayerPicks());
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => this.filterPlayerPicks());
+        }
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', () => this.clearPlayerPicksFilters());
+        }
+        
         // Load initial data
         this.loadPlayerPicksV2();
         
         console.log('✅ Player Picks v2 initialized');
+    }
+
+    // Store enriched picks data for filtering
+    currentEnrichedPicks = [];
+
+    // Get active players for a specific edition
+    async getActivePlayersForEdition(edition) {
+        console.log(`🔍 Getting active players for edition: ${edition}`);
+        
+        try {
+            // Get all users and filter for active status and edition registration
+            const allUsersQuery = await this.db.collection('users').get();
+            const activePlayers = [];
+            
+            allUsersQuery.forEach(doc => {
+                const userData = doc.data();
+                const userId = doc.id;
+                
+                // Check if user is active (has no status field or status is 'active' - case-insensitive)
+                const status = userData.status;
+                const isActive = !status || status.toLowerCase() === 'active';
+                
+                if (isActive) {
+                    // Check if user is registered for this edition
+                    const editionKey = `edition${edition}`;
+                    const hasEditionRegistration = userData.registrations && userData.registrations[editionKey];
+                    
+                    if (hasEditionRegistration) {
+                        activePlayers.push({
+                            id: userId,
+                            firstName: userData.firstName || 'Unknown',
+                            surname: userData.surname || 'Unknown',
+                            email: userData.email || 'Unknown',
+                            displayName: userData.displayName || `${userData.firstName} ${userData.surname}`,
+                            registrations: userData.registrations
+                        });
+                    }
+                }
+            });
+            
+            console.log(`✅ Found ${activePlayers.length} active players for edition ${edition}`);
+            return activePlayers;
+            
+        } catch (error) {
+            console.error('❌ Error getting active players:', error);
+            return [];
+        }
+    }
+
+    // Get picks for active players only
+    async getPicksForActivePlayers(edition, gameweek, activePlayers) {
+        console.log(`🔍 Getting picks for ${activePlayers.length} active players in edition ${edition}, gameweek ${gameweek}`);
+        
+        try {
+            // Get all picks for this edition and gameweek
+            const picksQuery = this.db.collection('picks')
+                .where('edition', '==', edition)
+                .where('gameweek', '==', gameweek);
+            
+            const picksSnapshot = await picksQuery.get();
+            const allPicks = picksSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            // Debug: Log the structure of the first pick
+            if (allPicks.length > 0) {
+                console.log('🔍 Raw pick structure:', allPicks[0]);
+                console.log('🔍 Raw pick userId:', allPicks[0].userId);
+            }
+            
+            // Filter picks to only include those from active players
+            const activePlayerIds = activePlayers.map(player => player.id);
+            console.log('🔍 Active player IDs:', activePlayerIds);
+            
+            const picksForActivePlayers = allPicks.filter(pick => {
+                const isFromActivePlayer = activePlayerIds.includes(pick.userId);
+                if (!isFromActivePlayer) {
+                    console.log(`⏭️ Skipping pick from inactive player: ${pick.userId}`);
+                }
+                return isFromActivePlayer;
+            });
+            
+            console.log(`✅ Filtered to ${picksForActivePlayers.length} picks from active players`);
+            return picksForActivePlayers;
+            
+        } catch (error) {
+            console.error('❌ Error getting picks for active players:', error);
+            return [];
+        }
     }
 
     // Load player picks for v2 tab
@@ -142,28 +251,73 @@ export class AdminManager {
         try {
             console.log(`🔍 Fetching picks for edition: ${selectedEdition}, gameweek: ${selectedGameweek}`);
             
-            // Query picks collection
-            const picksQuery = this.db.collection('picks')
-                .where('edition', '==', selectedEdition)
-                .where('gameweek', '==', selectedGameweek)
-                .where('isActive', '==', true);
+            // First, get active players for this edition from registration statistics
+            const activePlayers = await this.getActivePlayersForEdition(selectedEdition);
+            console.log(`✅ Found ${activePlayers.length} active players for edition ${selectedEdition}`);
             
-            const picksSnapshot = await picksQuery.get();
-            console.log(`✅ Found ${picksSnapshot.size} picks`);
+            // Debug: Log active player details
+            if (activePlayers.length > 0) {
+                console.log('🔍 Active players:', activePlayers.map(p => ({ id: p.id, name: p.displayName })));
+            }
             
-
+            if (activePlayers.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No active players found for this edition
+                        </td>
+                    </tr>
+                `;
+                this.updatePlayerPicksV2Stats([], activePlayers.length);
+                return;
+            }
             
-            // Update stats
-            this.updatePlayerPicksV2Stats(picksSnapshot);
+            // Get picks for active players only
+            const picksForActivePlayers = await this.getPicksForActivePlayers(selectedEdition, selectedGameweek, activePlayers);
+            console.log(`✅ Found ${picksForActivePlayers.length} picks for active players`);
             
-            // Render table
-            this.renderPlayerPicksV2Table(picksSnapshot, tableBody);
+            // Debug: Log the structure of the first pick
+            if (picksForActivePlayers.length > 0) {
+                console.log('🔍 First pick structure:', picksForActivePlayers[0]);
+                console.log('🔍 First pick keys:', Object.keys(picksForActivePlayers[0]));
+            }
+            
+            // Enrich picks with user details
+            let picksWithUserDetails = [];
+            try {
+                picksWithUserDetails = await this.enrichPicksWithUserDetails(picksForActivePlayers);
+            } catch (enrichError) {
+                console.error('❌ Error enriching picks, using basic data:', enrichError);
+                // Fallback to basic data structure
+                picksWithUserDetails = picksForActivePlayers.map(pick => ({
+                    id: pick.id,
+                    ...pick,
+                    userDetails: {
+                        firstName: pick.userFirstName || 'Unknown',
+                        surname: pick.userSurname || 'Unknown',
+                        email: pick.userEmail || 'Unknown',
+                        userId: pick.userId || pick.id
+                    }
+                }));
+            }
+            
+            // Store for filtering
+            this.currentEnrichedPicks = picksWithUserDetails;
+            
+            // Populate team filter
+            this.populateTeamFilter(picksWithUserDetails);
+            
+            // Update stats with enriched data and active player count
+            this.updatePlayerPicksV2Stats(picksWithUserDetails, activePlayers.length);
+            
+            // Render table with enriched data and active players
+            this.renderPlayerPicksV2Table(picksWithUserDetails, tableBody, activePlayers);
             
         } catch (error) {
             console.error('❌ Error loading Player Picks v2:', error);
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-danger">
+                    <td colspan="6" class="text-center text-danger">
                         Error loading picks: ${error.message}
                     </td>
                 </tr>
@@ -173,62 +327,328 @@ export class AdminManager {
         }
     }
 
+    // Enrich picks data with user details
+    async enrichPicksWithUserDetails(picksData) {
+        console.log('🔍 Enriching picks with user details...');
+        
+        const enrichedPicks = [];
+        
+        for (const pick of picksData) {
+            // Handle both Firestore docs and plain objects
+            const pickData = pick.data ? pick.data() : pick;
+            const pickId = pick.id || pick.docId;
+            
+            try {
+                // Get user details
+                let userDetails = {
+                    firstName: pickData.userFirstName || 'Unknown',
+                    surname: pickData.userSurname || 'Unknown',
+                    email: pickData.userEmail || 'Unknown',
+                    userId: pickData.userId || pickId
+                };
+                
+                // Try to get additional user info from users collection
+                if (pickData.userId) {
+                    try {
+                        const userDoc = await this.db.collection('users').doc(pickData.userId).get();
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            userDetails = {
+                                ...userDetails,
+                                firstName: userData.firstName || userDetails.firstName,
+                                surname: userData.surname || userDetails.surname,
+                                email: userData.email || userDetails.email,
+                                registrationDate: userData.registrationDate,
+                                defaultEdition: userData.defaultEdition
+                            };
+                        }
+                    } catch (userError) {
+                        console.log(`⚠️ Could not fetch user details for ${pickData.userId}:`, userError);
+                    }
+                }
+                
+                enrichedPicks.push({
+                    id: pickId,
+                    ...pickData,
+                    userDetails
+                });
+                
+            } catch (error) {
+                console.error(`❌ Error enriching pick ${pickId}:`, error);
+                // Add pick with basic data if enrichment fails
+                enrichedPicks.push({
+                    id: pickId,
+                    ...pickData,
+                    userDetails: {
+                        firstName: pickData.userFirstName || 'Unknown',
+                        surname: pickData.userSurname || 'Unknown',
+                        email: pickData.userEmail || 'Unknown',
+                        userId: pickData.userId || pickId
+                }
+                });
+            }
+        }
+        
+        console.log(`✅ Enriched ${enrichedPicks.length} picks with user details`);
+        return enrichedPicks;
+    }
+
+    // Populate team filter dropdown
+    populateTeamFilter(enrichedPicks) {
+        const teamFilter = document.querySelector('#picks-v2-team-filter');
+        if (!teamFilter) return;
+        
+        // Get unique teams
+        const uniqueTeams = [...new Set(enrichedPicks.map(pick => pick.teamPicked).filter(team => team))].sort();
+        
+        // Clear existing options except "All Teams"
+        teamFilter.innerHTML = '<option value="">All Teams</option>';
+        
+        // Add team options
+        uniqueTeams.forEach(team => {
+            const option = document.createElement('option');
+            option.value = team;
+            option.textContent = team;
+            teamFilter.appendChild(option);
+        });
+        
+        console.log(`✅ Populated team filter with ${uniqueTeams.length} teams`);
+    }
+
+    // Filter player picks based on search and filter criteria
+    filterPlayerPicks() {
+        if (!this.currentEnrichedPicks || this.currentEnrichedPicks.length === 0) {
+            return;
+        }
+        
+        const searchInput = document.querySelector('#picks-v2-search');
+        const teamFilter = document.querySelector('#picks-v2-team-filter');
+        const statusFilter = document.querySelector('#picks-v2-status-filter');
+        const tableBody = document.querySelector('#picks-v2-table-body');
+        
+        if (!searchInput || !teamFilter || !statusFilter || !tableBody) return;
+        
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedTeam = teamFilter.value;
+        const selectedStatus = statusFilter.value;
+        
+        // Filter picks based on criteria
+        const filteredPicks = this.currentEnrichedPicks.filter(pick => {
+            // Search filter
+            const playerName = `${pick.userDetails.firstName} ${pick.userDetails.surname}`.toLowerCase();
+            const playerEmail = pick.userDetails.email.toLowerCase();
+            const searchMatch = !searchTerm || 
+                playerName.includes(searchTerm) || 
+                playerEmail.includes(searchTerm);
+            
+            // Team filter
+            const teamMatch = !selectedTeam || pick.teamPicked === selectedTeam;
+            
+            // Status filter
+            const statusMatch = !selectedStatus || 
+                (selectedStatus === 'active' && pick.isActive !== false) ||
+                (selectedStatus === 'inactive' && pick.isActive === false);
+            
+            return searchMatch && teamMatch && statusMatch;
+        });
+        
+        // Get the current active players for this edition
+        const editionSelect = document.querySelector('#picks-v2-edition-select');
+        const currentEdition = editionSelect ? editionSelect.value : 'test';
+        
+        // For now, we'll just show the filtered picks
+        // In a future enhancement, we could also filter the active players list
+        this.updatePlayerPicksV2Stats(filteredPicks);
+        
+        // Render filtered table (without active players for now)
+        this.renderPlayerPicksV2Table(filteredPicks, tableBody);
+        
+        console.log(`🔍 Filtered picks: ${filteredPicks.length} of ${this.currentEnrichedPicks.length} total`);
+    }
+
+    // Clear all filters and show all picks
+    clearPlayerPicksFilters() {
+        const searchInput = document.querySelector('#picks-v2-search');
+        const teamFilter = document.querySelector('#picks-v2-team-filter');
+        const statusFilter = document.querySelector('#picks-v2-status-filter');
+        
+        if (searchInput) searchInput.value = '';
+        if (teamFilter) teamFilter.value = '';
+        if (statusFilter) statusFilter.value = '';
+        
+        // Reload the data to show all active players and picks
+        this.loadPlayerPicksV2();
+        
+        console.log('🧹 Cleared all filters and reloaded data');
+    }
+
     // Update Player Picks v2 statistics
-    updatePlayerPicksV2Stats(picksSnapshot) {
+    updatePlayerPicksV2Stats(enrichedPicks, activePlayerCount = 0) {
         const totalCount = document.querySelector('#picks-v2-total-count');
         const playersCount = document.querySelector('#picks-v2-players-count');
         const teamsCount = document.querySelector('#picks-v2-teams-count');
         
         if (!totalCount || !playersCount || !teamsCount) return;
         
-        const picks = picksSnapshot.docs.map(doc => doc.data());
-        const uniquePlayers = new Set(picks.map(pick => pick.userId)).size;
-        const uniqueTeams = new Set(picks.map(pick => pick.teamPicked)).size;
+        const uniquePlayers = new Set(enrichedPicks.map(pick => pick.userDetails.userId)).size;
+        const uniqueTeams = new Set(enrichedPicks.map(pick => pick.teamPicked).filter(team => team)).size;
+        const activePicks = enrichedPicks.filter(pick => pick.isActive !== false).length;
+        const playersWithPicks = uniquePlayers;
+        const playersWithoutPicks = Math.max(0, activePlayerCount - playersWithPicks);
         
-
-        
-        totalCount.textContent = picksSnapshot.size;
-        playersCount.textContent = uniquePlayers;
+        totalCount.textContent = enrichedPicks.length;
+        playersCount.textContent = activePlayerCount;
         teamsCount.textContent = uniqueTeams;
+        
+        // Add additional stats if we have them
+        const statsContainer = document.querySelector('#picks-v2-stats-details');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stats-detail">
+                    <span class="stat-label">Players with Picks:</span>
+                    <span class="stat-value">${playersWithPicks}</span>
+                </div>
+                <div class="stats-detail">
+                    <span class="stat-label">Players without Picks:</span>
+                    <span class="stat-value">${playersWithoutPicks}</span>
+                </div>
+                <div class="stats-detail">
+                    <span class="stat-label">Active Picks:</span>
+                    <span class="stat-value">${activePicks}</span>
+                </div>
+                <div class="stats-detail">
+                    <span class="stat-label">Inactive Picks:</span>
+                    <span class="stat-value">${enrichedPicks.length - activePicks}</span>
+                </div>
+            `;
+        }
     }
 
     // Render Player Picks v2 table
-    renderPlayerPicksV2Table(picksSnapshot, tableBody) {
-        if (picksSnapshot.empty) {
+    renderPlayerPicksV2Table(enrichedPicks, tableBody, activePlayers = []) {
+        if (!enrichedPicks && (!activePlayers || activePlayers.length === 0)) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-muted">
-                        No picks found for this edition and game week
+                    <td colspan="6" class="text-center text-muted">
+                        No active players found for this edition
                     </td>
                 </tr>
             `;
             return;
         }
         
-        const rows = picksSnapshot.docs.map(doc => {
-            const pickData = doc.data();
-            return `
-                <tr>
+        if (!enrichedPicks || enrichedPicks.length === 0) {
+            // Show active players who don't have picks yet
+            const rows = activePlayers.map(player => `
+                <tr class="pick-row no-pick">
                     <td>
-                        <strong>${pickData.userFirstName} ${pickData.userSurname}</strong>
+                        <div class="player-info">
+                            <strong>${player.firstName} ${player.surname}</strong>
+                            <br><small class="text-muted">${player.email}</small>
+                        </div>
                     </td>
                     <td>
-                        <span class="team-badge">${pickData.teamPicked}</span>
+                        <span class="team-badge no-team">No Pick Made</span>
                     </td>
-                    <td>${pickData.gameweek}</td>
-                    <td>${pickData.edition}</td>
                     <td>
-                        <span class="status-badge status-active">Active</span>
+                        <span class="gameweek-badge">-</span>
+                    </td>
+                    <td>
+                        <span class="edition-badge">-</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-no-pick">No Pick</span>
+                    </td>
+                    <td>
+                        <small class="text-muted">-</small>
                     </td>
                 </tr>
-            `;
-        }).join('');
+            `).join('');
+            
+            tableBody.innerHTML = rows;
+            return;
+        }
         
-        tableBody.innerHTML = rows;
+        // Create a map of players who have picks
+        const playersWithPicks = new Set(enrichedPicks.map(pick => pick.userDetails.userId));
+        
+        // Combine picks with players who don't have picks
+        const allRows = [];
+        
+        // Add rows for players with picks
+        enrichedPicks.forEach(pick => {
+            const statusClass = pick.isActive !== false ? 'status-active' : 'status-inactive';
+            const statusText = pick.isActive !== false ? 'Active' : 'Inactive';
+            
+            // Format pick date if available
+            const pickDate = pick.pickDate ? new Date(pick.pickDate.toDate()).toLocaleDateString() : 'N/A';
+            
+            // Get team name with fallback
+            const teamName = pick.teamPicked || 'No Team Selected';
+            
+            allRows.push(`
+                <tr class="pick-row ${pick.isActive === false ? 'inactive-pick' : ''}">
+                    <td>
+                        <div class="player-info">
+                            <strong>${pick.userDetails.firstName} ${pick.userDetails.surname}</strong>
+                            <br><small class="text-muted">${pick.userDetails.email}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="team-badge ${teamName === 'No Team Selected' ? 'no-team' : ''}">${teamName}</span>
+                    </td>
+                    <td>
+                        <span class="gameweek-badge">${pick.gameweek}</span>
+                    </td>
+                    <td>
+                        <span class="edition-badge">${pick.edition}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </td>
+                    <td>
+                        <small class="text-muted">${pickDate}</small>
+                    </td>
+                </tr>
+            `);
+        });
+        
+        // Add rows for active players without picks
+        activePlayers.forEach(player => {
+            if (!playersWithPicks.has(player.id)) {
+                allRows.push(`
+                    <tr class="pick-row no-pick">
+                        <td>
+                            <div class="player-info">
+                                <strong>${player.firstName} ${player.surname}</strong>
+                                <br><small class="text-muted">${player.email}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="team-badge no-team">No Pick Made</span>
+                        </td>
+                        <td>
+                            <span class="gameweek-badge">-</span>
+                        </td>
+                        <td>
+                            <span class="edition-badge">-</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-no-pick">No Pick</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">-</small>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+        
+        tableBody.innerHTML = allRows.join('');
     }
 
     // Export Player Picks v2 data
-    exportPlayerPicksV2() {
+    async exportPlayerPicksV2() {
         console.log('📤 Exporting Player Picks v2...');
         
         const editionSelect = document.querySelector('#picks-v2-edition-select');
@@ -239,8 +659,81 @@ export class AdminManager {
         const selectedEdition = editionSelect.value;
         const selectedGameweek = gameweekSelect.value;
         
-        // This would implement CSV export functionality
-        alert(`Export functionality for ${selectedEdition} - Game Week ${selectedGameweek} would be implemented here.`);
+        try {
+            // Get the current picks data
+            const picksQuery = this.db.collection('picks')
+                .where('edition', '==', selectedEdition)
+                .where('gameweek', '==', selectedGameweek);
+            
+            const picksSnapshot = await picksQuery.get();
+            
+            if (picksSnapshot.empty) {
+                alert('No picks found to export for this edition and game week.');
+                return;
+            }
+            
+            // Enrich the data for export
+            const enrichedPicks = await this.enrichPicksWithUserDetails(picksSnapshot.docs);
+            
+            // Create CSV content
+            const csvContent = this.createPicksCSV(enrichedPicks, selectedEdition, selectedGameweek);
+            
+            // Download the CSV file
+            this.downloadCSV(csvContent, `picks_${selectedEdition}_gw${selectedGameweek}_${new Date().toISOString().split('T')[0]}.csv`);
+            
+            console.log('✅ Picks exported successfully');
+            
+        } catch (error) {
+            console.error('❌ Error exporting picks:', error);
+            alert(`Error exporting picks: ${error.message}`);
+        }
+    }
+
+    // Create CSV content from picks data
+    createPicksCSV(enrichedPicks, edition, gameweek) {
+        const headers = [
+            'Player Name',
+            'Email',
+            'Team Picked',
+            'Game Week',
+            'Edition',
+            'Status',
+            'Pick Date',
+            'User ID'
+        ];
+        
+        const rows = enrichedPicks.map(pick => [
+            `${pick.userDetails.firstName} ${pick.userDetails.surname}`,
+            pick.userDetails.email,
+            pick.teamPicked || 'No Team Selected',
+            pick.gameweek,
+            pick.edition,
+            pick.isActive !== false ? 'Active' : 'Inactive',
+            pick.pickDate ? new Date(pick.pickDate.toDate()).toLocaleDateString() : 'N/A',
+            pick.userDetails.userId
+        ]);
+        
+        const csvContent = [headers, ...rows]
+            .map(row => row.map(cell => `"${cell}"`).join(','))
+            .join('\n');
+        
+        return csvContent;
+    }
+
+    // Download CSV file
+    downloadCSV(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     }
 
     // Ensure Save Settings button is ready
@@ -304,6 +797,9 @@ export class AdminManager {
         
         // Set up player management event listeners
         this.setupPlayerManagementEventListeners();
+        
+        // Set up edition registration handlers
+        this.setupEditionRegistrationHandlers();
         
         this.eventListenersInitialized = true;
         console.log('✅ Admin management event listeners setup complete');
@@ -726,6 +1222,7 @@ export class AdminManager {
             let archivedCount = 0;
             
             console.log(`🔍 Checking ${allUsersQuery.size} users for active status...`);
+            console.log(`🔍 Current edition being checked: ${currentEdition}`);
             
             allUsersQuery.forEach(doc => {
                 const userData = doc.data();
@@ -741,7 +1238,14 @@ export class AdminManager {
                     totalActive++;
                     
                     // Check if user is registered for current edition using the registrations object
-                    if (userData.registrations && userData.registrations[`edition${currentEdition}`]) {
+                    const editionKey = `edition${currentEdition}`;
+                    const hasEditionRegistration = userData.registrations && userData.registrations[editionKey];
+                    
+                    console.log(`🔍 ${userName} registrations:`, userData.registrations);
+                    console.log(`🔍 Checking for edition key: ${editionKey}`);
+                    console.log(`🔍 Has edition registration: ${hasEditionRegistration}`);
+                    
+                    if (hasEditionRegistration) {
                         currentEditionCount++;
                         console.log(`✅ ${userName} counted for current edition (${currentEdition})`);
                     } else {
@@ -781,18 +1285,22 @@ export class AdminManager {
 
     // Get current active edition
     getCurrentActiveEdition() {
-        // Get the current active edition from the edition selector
-        const editionSelector = document.querySelector('#edition-selector');
+        // Get the current active edition from the quick edition selector
+        const editionSelector = document.querySelector('#quick-edition-selector');
         if (editionSelector) {
-            return editionSelector.value;
+            const edition = editionSelector.value;
+            console.log(`🔍 Current active edition from selector: ${edition}`);
+            return edition;
         }
         
         // Fallback to checking window.currentActiveEdition
         if (window.currentActiveEdition) {
+            console.log(`🔍 Current active edition from window: ${window.currentActiveEdition}`);
             return window.currentActiveEdition;
         }
         
         // Default fallback
+        console.log('🔍 Using default edition: 1');
         return 1;
     }
 
@@ -952,7 +1460,38 @@ export class AdminManager {
     initializeAdminApiIntegration() {
         console.log('🔧 Initializing admin API integration...');
         
-        // Set up import button event listeners
+        // Set up import button event listeners directly
+        console.log('🔧 Setting up button event listeners directly...');
+        
+        // Fetch Fixtures by Date Range button
+        const fetchDateRangeBtn = document.querySelector('#fetch-date-range-fixtures-btn');
+        console.log('🔍 Fetch date range button found:', !!fetchDateRangeBtn);
+        if (fetchDateRangeBtn) {
+            console.log('🔍 Button details:', {
+                id: fetchDateRangeBtn.id,
+                text: fetchDateRangeBtn.textContent,
+                visible: fetchDateRangeBtn.offsetParent !== null
+            });
+            fetchDateRangeBtn.addEventListener('click', () => {
+                console.log('📅 Fetch fixtures by date range button clicked!');
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.fetchDateRangeFixtures();
+                } else {
+                    console.log('⚠️ API Manager not available, using fallback method');
+                    // Fallback: try to find the method on other global objects
+                    if (window.footballWebPagesAPI && window.footballWebPagesAPI.fetchDateRangeFixtures) {
+                        window.footballWebPagesAPI.fetchDateRangeFixtures();
+                    } else {
+                        console.error('❌ No API method found for fetchDateRangeFixtures');
+                    }
+                }
+            });
+            console.log('✅ Fetch fixtures by date range button event listener attached');
+        } else {
+            console.log('⚠️ Fetch fixtures by date range button not found');
+        }
+        
+        // Set up other button event listeners
         this.setupImportButtonEventListeners();
         
         console.log('✅ Admin API integration initialized');
@@ -961,6 +1500,38 @@ export class AdminManager {
     // Setup import button event listeners
     setupImportButtonEventListeners() {
         console.log('🔧 Setting up import button event listeners...');
+        
+        // Debug: Check what buttons exist
+        const allButtons = document.querySelectorAll('button[id*="fetch"], button[id*="api"], button[id*="import"]');
+        console.log('🔍 Found buttons with fetch/api/import in ID:', Array.from(allButtons).map(btn => btn.id));
+        
+        // Fetch Fixtures by Date Range button
+        const fetchDateRangeBtn = document.querySelector('#fetch-date-range-fixtures-btn');
+        console.log('🔍 Fetch date range button found:', !!fetchDateRangeBtn);
+        if (fetchDateRangeBtn) {
+            console.log('🔍 Button details:', {
+                id: fetchDateRangeBtn.id,
+                text: fetchDateRangeBtn.textContent,
+                visible: fetchDateRangeBtn.offsetParent !== null
+            });
+            fetchDateRangeBtn.addEventListener('click', () => {
+                console.log('📅 Fetch fixtures by date range button clicked!');
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.fetchDateRangeFixtures();
+                } else {
+                    console.log('⚠️ API Manager not available, using fallback method');
+                    // Fallback: try to find the method on other global objects
+                    if (window.footballWebPagesAPI && window.footballWebPagesAPI.fetchDateRangeFixtures) {
+                        window.footballWebPagesAPI.fetchDateRangeFixtures();
+                    } else {
+                        console.error('❌ No API method found for fetchDateRangeFixtures');
+                    }
+                }
+            });
+            console.log('✅ Fetch fixtures by date range button event listener attached');
+        } else {
+            console.log('⚠️ Fetch fixtures by date range button not found');
+        }
         
         // Select All Fixtures button
         const selectAllBtn = document.querySelector('#select-all-fixtures-btn');
@@ -1113,4 +1684,25 @@ export class AdminManager {
         
         console.log('🧹 AdminManager cleanup completed');
     }
+
+    // === EDITION REGISTRATION MANAGEMENT ===
+
+    // Setup edition registration event handlers
+    setupEditionRegistrationHandlers() {
+        console.log('🔧 Setting up edition registration handlers...');
+        
+        // Handle cancel button click for edition editing
+        const cancelButton = document.querySelector('#cancel-player-edit');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', () => {
+                this.userManagement.closePlayerEdit();
+            });
+        }
+
+        console.log('✅ Edition registration handlers setup complete');
+    }
+
+
+
+
 }

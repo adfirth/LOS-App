@@ -1,9 +1,14 @@
-// Fixtures Module
-// Handles all fixture-related functionality including management, loading, rendering, and API integrations
+// Fixtures Management Module
+console.log('🔍 TEST: fixtures.js file loaded and executing!');
 
 class FixturesManager {
     constructor(db) {
+        console.log('🔍 TEST: FixturesManager constructor called!');
         this.db = db;
+        this.footballWebPagesAPI = null;
+        this.deadlineChecker = null;
+        this.currentGameWeek = null;
+        this.userEdition = null;
         this.fixtureManagementInitialized = false;
         this.currentGameweekFixtures = [];
         this.lastProcessedEvents = new Set();
@@ -240,13 +245,14 @@ class FixturesManager {
                 if (homeTeam && awayTeam && dateTimeInput) {
                     // Parse the datetime-local input to get date and kick-off time
                     const dateTime = new Date(dateTimeInput);
-                    const date = dateTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+                    // Fix: Save the full date+time instead of just the date
+                    const date = dateTimeInput; // Keep the full datetime string
                     const kickOffTime = dateTime.toTimeString().split(' ')[0]; // HH:MM:SS format
                     
                     fixtures.push({
                         homeTeam,
                         awayTeam,
-                        date,
+                        date, // Now contains full date+time like "2025-08-09T15:00"
                         kickOffTime,
                         dateTime: dateTimeInput, // Keep the full datetime for editing
                         venue: venue || 'TBD',
@@ -262,11 +268,20 @@ class FixturesManager {
 
             // Use the same format as the main app.js file
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            
+            // Get the current active edition from the admin page selector
+            const quickEditionSelector = document.querySelector('#quick-edition-selector');
+            let currentActiveEdition = window.currentActiveEdition || 1;
+            
+            if (quickEditionSelector) {
+                currentActiveEdition = quickEditionSelector.value;
+            }
+            
+            const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
             await this.db.collection('fixtures').doc(editionGameweekKey).set({
                 fixtures: fixtures,
                 gameweek: gameweek,
-                edition: window.currentActiveEdition,
+                edition: currentActiveEdition,
                 lastUpdated: new Date()
             });
 
@@ -291,7 +306,16 @@ class FixturesManager {
             const gameweek = document.querySelector('#gameweek-select').value;
             // Use the same format as the main app.js file
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            
+            // Get the current active edition from the admin page selector
+            const quickEditionSelector = document.querySelector('#quick-edition-selector');
+            let currentActiveEdition = window.currentActiveEdition || 1;
+            
+            if (quickEditionSelector) {
+                currentActiveEdition = quickEditionSelector.value;
+            }
+            
+            const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
             
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             if (!doc.exists) {
@@ -345,7 +369,16 @@ class FixturesManager {
             
             // Get source fixtures
             const sourceGameweekKey = sourceGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${sourceGameweek}`;
-            const sourceEditionGameweekKey = `edition${window.currentActiveEdition}_${sourceGameweekKey}`;
+            
+            // Get the current active edition from the admin page selector
+            const quickEditionSelector = document.querySelector('#quick-edition-selector');
+            let currentActiveEdition = window.currentActiveEdition || 1;
+            
+            if (quickEditionSelector) {
+                currentActiveEdition = quickEditionSelector.value;
+            }
+            
+            const sourceEditionGameweekKey = `edition${currentActiveEdition}_${sourceGameweekKey}`;
             const sourceDoc = await this.db.collection('fixtures').doc(sourceEditionGameweekKey).get();
             
             if (!sourceDoc.exists) {
@@ -361,12 +394,12 @@ class FixturesManager {
             
             // Save to target game week
             const targetGameweekKey = targetGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${targetGameweek}`;
-            const targetEditionGameweekKey = `edition${window.currentActiveEdition}_${targetGameweekKey}`;
+            const targetEditionGameweekKey = `edition${currentActiveEdition}_${targetGameweekKey}`;
             
             await this.db.collection('fixtures').doc(targetEditionGameweekKey).set({
                 fixtures: sourceFixtures,
                 gameweek: targetGameweek,
-                edition: window.currentActiveEdition,
+                edition: currentActiveEdition,
                 lastUpdated: new Date()
             });
             
@@ -412,7 +445,16 @@ class FixturesManager {
             
             // Use the same format as the main app.js file
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            
+            // Get the current active edition from the admin page selector
+            const quickEditionSelector = document.querySelector('#quick-edition-selector');
+            let currentActiveEdition = window.currentActiveEdition || 1;
+            
+            if (quickEditionSelector) {
+                currentActiveEdition = quickEditionSelector.value;
+            }
+            
+            const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
             
             await this.db.collection('fixtures').doc(editionGameweekKey).delete();
             
@@ -517,9 +559,40 @@ class FixturesManager {
             // Format date for API (YYYY-MM-DD)
             const apiDate = fixtureDate.toISOString().split('T')[0];
             
-            // Check if we have API configuration
-            if (!window.footballWebPagesConfig || !window.footballWebPagesConfig.RAPIDAPI_KEY) {
+            // Check if we have API configuration - try multiple possible locations
+            let apiKey = null;
+            let apiHost = 'football-web-pages1.p.rapidapi.com';
+            
+            // Check multiple possible API configuration locations
+            if (window.footballWebPagesConfig && window.footballWebPagesConfig.RAPIDAPI_KEY) {
+                apiKey = window.footballWebPagesConfig.RAPIDAPI_KEY;
+                apiHost = window.footballWebPagesConfig.RAPIDAPI_HOST || apiHost;
+                console.log('🔑 Using API key from footballWebPagesConfig');
+            } else if (window.footballWebPagesAPI && window.footballWebPagesAPI.config && window.footballWebPagesAPI.config.RAPIDAPI_KEY) {
+                apiKey = window.footballWebPagesAPI.config.RAPIDAPI_KEY;
+                apiHost = window.footballWebPagesAPI.config.RAPIDAPI_HOST || apiHost;
+                console.log('🔑 Using API key from footballWebPagesAPI.config');
+            } else if (window.apiManager && window.apiManager.footballWebPagesAPI && window.apiManager.footballWebPagesAPI.config && window.apiManager.footballWebPagesAPI.config.RAPIDAPI_KEY) {
+                apiKey = window.apiManager.footballWebPagesAPI.config.RAPIDAPI_KEY;
+                apiHost = window.apiManager.footballWebPagesAPI.config.RAPIDAPI_HOST || apiHost;
+                console.log('🔑 Using API key from apiManager.footballWebPagesAPI.config');
+            } else if (window.RAPIDAPI_KEY) {
+                apiKey = window.RAPIDAPI_KEY;
+                console.log('🔑 Using API key from global RAPIDAPI_KEY');
+            } else if (window.envConfig && window.envConfig.RAPIDAPI_KEY) {
+                apiKey = window.envConfig.RAPIDAPI_KEY;
+                console.log('🔑 Using API key from envConfig');
+            }
+            
+            if (!apiKey) {
                 console.log('⚠️ No API configuration found - skipping API validation');
+                console.log('🔍 Available API configuration objects:', {
+                    footballWebPagesConfig: !!window.footballWebPagesConfig,
+                    footballWebPagesAPI: !!window.footballWebPagesAPI,
+                    apiManager: !!window.apiManager,
+                    RAPIDAPI_KEY: !!window.RAPIDAPI_KEY,
+                    envConfig: !!window.envConfig
+                });
                 return;
             }
             
@@ -527,12 +600,13 @@ class FixturesManager {
             const apiUrl = `https://football-web-pages1.p.rapidapi.com/fixtures-results.json?from=${apiDate}&to=${apiDate}&comp=5&season=2025-2026`;
             
             console.log(`🔍 Fetching API data for ${apiDate}: ${apiUrl}`);
+            console.log(`🔑 Using API key: ${apiKey.substring(0, 10)}...`);
             
             const response = await fetch(apiUrl, {
                 method: 'GET',
                 headers: {
-                    'X-RapidAPI-Key': window.footballWebPagesConfig.RAPIDAPI_KEY,
-                    'X-RapidAPI-Host': window.footballWebPagesConfig.RAPIDAPI_HOST
+                    'X-RapidAPI-Key': apiKey,
+                    'X-RapidAPI-Host': apiHost
                 }
             });
             
@@ -670,7 +744,20 @@ class FixturesManager {
         const gameweek = gameweekSelect.value;
         // Use the same format as the main app.js file
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-        const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+        
+        // Get the current active edition from the admin page selector
+        const quickEditionSelector = document.querySelector('#quick-edition-selector');
+        let currentActiveEdition = window.currentActiveEdition || 1;
+        
+        if (quickEditionSelector) {
+            currentActiveEdition = quickEditionSelector.value;
+            console.log(`🔧 Fixtures: Using edition from admin selector: ${currentActiveEdition}`);
+        } else {
+            console.log(`🔧 Fixtures: Using fallback edition: ${currentActiveEdition}`);
+        }
+        
+        const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
+        console.log(`🔧 Fixtures: Loading fixtures for key: ${editionGameweekKey}`);
         
         this.db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
             if (doc.exists) {
@@ -740,7 +827,16 @@ class FixturesManager {
 
             // Load fixtures for editing
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            
+            // Get the current active edition from the admin page selector
+            const quickEditionSelector = document.querySelector('#quick-edition-selector');
+            let currentActiveEdition = window.currentActiveEdition || 1;
+            
+            if (quickEditionSelector) {
+                currentActiveEdition = quickEditionSelector.value;
+            }
+            
+            const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
             
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             if (doc.exists) {
@@ -792,7 +888,7 @@ class FixturesManager {
                 <tbody>
         `;
 
-        fixtures.forEach(fixture => {
+        fixtures.forEach((fixture, index) => {
             // Format the date and time properly
             let dateDisplay = 'TBD';
             let timeDisplay = 'TBD';
@@ -944,7 +1040,16 @@ class FixturesManager {
         const gameweek = scoreGameweekSelect.value;
         // Use the same format as the main app.js file
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-        const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+        
+        // Get the current active edition from the admin page selector
+        const quickEditionSelector = document.querySelector('#quick-edition-selector');
+        let currentActiveEdition = window.currentActiveEdition || 1;
+        
+        if (quickEditionSelector) {
+            currentActiveEdition = quickEditionSelector.value;
+        }
+        
+        const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
         
         this.db.collection('fixtures').doc(editionGameweekKey).get().then(doc => {
             if (doc.exists) {
@@ -1007,7 +1112,15 @@ class FixturesManager {
     // Save scores
     async saveScores() {
         try {
-            if (!window.currentActiveEdition) {
+            // Get the current active edition from the admin page selector
+            const quickEditionSelector = document.querySelector('#quick-edition-selector');
+            let currentActiveEdition = window.currentActiveEdition || 1;
+            
+            if (quickEditionSelector) {
+                currentActiveEdition = quickEditionSelector.value;
+            }
+            
+            if (!currentActiveEdition) {
                 alert('No active edition selected. Please select an edition first.');
                 return;
             }
@@ -1020,7 +1133,7 @@ class FixturesManager {
             
             // Use the same format as the main app.js file
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            const editionGameweekKey = `edition${currentActiveEdition}_${gameweekKey}`;
             
             const scoresContainer = document.querySelector('#scores-container');
             if (!scoresContainer) {
@@ -1087,7 +1200,7 @@ class FixturesManager {
             await this.db.collection('fixtures').doc(editionGameweekKey).set({
                 fixtures: fixtures,
                 gameweek: gameweek,
-                edition: window.currentActiveEdition,
+                edition: currentActiveEdition,
                 lastUpdated: new Date()
             });
 
@@ -1133,29 +1246,484 @@ class FixturesManager {
 
     // Load fixtures for deadline
     async loadFixturesForDeadline(gameweek, userData = null, userId = null) {
+        console.log('🔍 loadFixturesForDeadline called with:', { gameweek, userData: userData ? 'exists' : 'null', userId });
+        
         const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
-        if (!fixturesDisplayContainer) return;
-
         const fixturesDisplay = document.querySelector('#fixtures-display');
-        if (!fixturesDisplay) return;
-
+        const deadlineDate = document.querySelector('#deadline-date');
+        const deadlineStatus = document.querySelector('#deadline-status');
+        const pickStatusDisplay = document.querySelector('#pick-status-display');
+        
+        console.log('🔍 Found elements:', {
+            fixturesDisplayContainer: !!fixturesDisplayContainer,
+            fixturesDisplay: !!fixturesDisplay,
+            deadlineDate: !!deadlineDate,
+            deadlineStatus: !!deadlineStatus,
+            pickStatusDisplay: !!pickStatusDisplay
+        });
+        
+        if (!fixturesDisplayContainer || !fixturesDisplay) {
+            console.warn('Fixtures display containers not found');
+            return;
+        }
+        
         try {
-            // Use the same format as the main app.js file
-            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
-            
-            console.log('Loading fixtures for deadline:', editionGameweekKey);
-            
-            // Load edition-specific fixtures only
-            const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
-            if (doc.exists) {
-                const fixtures = doc.data().fixtures;
-                if (fixtures && fixtures.length > 0) {
-                    console.log('Found fixtures:', fixtures.length);
+                                // Handle tiebreak gameweek
+                    const currentGameWeek = gameweek || '1';
+                    const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
                     
-                    // Always render fixtures - let the render method handle status display
-                    this.renderFixturesDisplay(fixtures, userData, gameweek, userId);
+                    console.log('🔍 Current gameweek:', currentGameWeek);
+                    console.log('🔍 Gameweek key:', gameweekKey);
+            
+            // Get user edition using EditionService if available
+            let userEdition;
+            if (window.editionService) {
+                // Use EditionService to get user edition
+                userEdition = window.editionService.getCurrentUserEdition();
+                console.log('🔧 EditionService resolved user edition:', userEdition);
+            } else {
+                // Fallback to old method
+                userEdition = this.getUserEdition(userData);
+                console.log('🔧 Fallback method resolved user edition:', userEdition);
+            }
+            
+            const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
+            
+            console.log('🔍 Loading fixtures for deadline:', editionGameweekKey);
+            
+            const fixturesDoc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            
+            if (fixturesDoc.exists) {
+                const fixtures = fixturesDoc.data().fixtures;
+                console.log('🔍 Found fixtures:', fixtures.length);
+                
+                if (fixtures && fixtures.length > 0) {
+                    // Show the container
                     fixturesDisplayContainer.style.display = 'block';
+                    
+                    // Show the gameweek navigation
+                    const gameweekNavigation = document.querySelector('#gameweek-navigation');
+                    if (gameweekNavigation) {
+                        gameweekNavigation.style.display = 'block';
+                        console.log('🔍 Gameweek navigation shown');
+                    }
+                    
+                    // Add gameweek status indicator
+                    const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                    let statusText = '';
+                    let statusColor = '';
+                    
+                    switch (gameweekStatus) {
+                        case 'not-started':
+                            statusText = 'Gameweek Not Started';
+                            statusColor = '#007bff'; // Blue
+                            break;
+                        case 'in-progress':
+                            statusText = 'Gameweek In Progress';
+                            statusColor = '#ffc107'; // Yellow
+                            break;
+                        case 'completed':
+                            statusText = 'Gameweek Completed';
+                            statusColor = '#28a745'; // Green
+                            break;
+                    }
+                    
+                    // Update or create gameweek status display
+                    let statusDisplay = document.querySelector('#gameweek-status-display');
+                    if (!statusDisplay) {
+                        statusDisplay = document.createElement('div');
+                        statusDisplay.id = 'gameweek-status-display';
+                        statusDisplay.style.cssText = `
+                            padding: 8px 16px;
+                            border-radius: 4px;
+                            font-weight: bold;
+                            text-align: center;
+                            margin: 10px 0;
+                            color: white;
+                        `;
+                        
+                        // Insert after the fixtures display container
+                        const fixturesContainer = document.querySelector('#fixtures-display-container');
+                        if (fixturesContainer) {
+                            fixturesContainer.parentNode.insertBefore(statusDisplay, fixturesContainer.nextSibling);
+                        }
+                    }
+                    
+                    statusDisplay.textContent = statusText;
+                    statusDisplay.style.background = statusColor;
+                    
+                    // Debug: Log all fixture dates
+                    console.log('🔍 All fixture dates:');
+                    fixtures.forEach((fixture, index) => {
+                        console.log(`🔍 Fixture ${index + 1}:`, {
+                            date: fixture.date,
+                            parsed: new Date(fixture.date),
+                            homeTeam: fixture.homeTeam,
+                            awayTeam: fixture.awayTeam
+                        });
+                    });
+                    
+                    // Find the earliest fixture (deadline)
+                    const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                        const fixtureDate = new Date(fixture.date);
+                        const earliestDate = new Date(earliest.date);
+                        return fixtureDate < earliestDate ? fixture : earliest;
+                    });
+                    
+                    console.log('🔍 Earliest fixture (deadline):', earliestFixture);
+                    console.log('🔍 Earliest fixture date:', earliestFixture.date);
+                    console.log('🔍 Deadline date element:', deadlineDate);
+                    console.log('🔍 Deadline date element exists:', !!deadlineDate);
+                    console.log('🔍 Earliest fixture exists:', !!earliestFixture);
+                    console.log('🔍 Earliest fixture date exists:', !!(earliestFixture && earliestFixture.date));
+                    
+                    // Update deadline display using centralized DeadlineService
+                    if (deadlineDate && earliestFixture) {
+                        console.log('🔍 loadFixturesForDeadline: Using DeadlineService for deadline display');
+                        
+                        try {
+                                            // Use DeadlineService to get formatted deadline
+                if (window.deadlineService) {
+                    const formattedDeadline = await window.deadlineService.getFormattedDeadline(currentGameWeek, null, userData, userId);
+                    console.log('🔍 loadFixturesForDeadline: DeadlineService formatted deadline:', formattedDeadline);
+                    
+                    if (formattedDeadline && formattedDeadline !== 'No deadline set') {
+                        deadlineDate.textContent = formattedDeadline;
+                        console.log('🔍 loadFixturesForDeadline: Deadline set via DeadlineService:', formattedDeadline);
+                    } else {
+                        // Fallback to manual formatting if DeadlineService returns no deadline
+                        console.log('🔍 loadFixturesForDeadline: DeadlineService returned no deadline, using fallback');
+                        this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                    }
+                } else {
+                    // Fallback if DeadlineService not available
+                    console.log('🔍 loadFixturesForDeadline: DeadlineService not available, using fallback');
+                    this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                }
+                        } catch (error) {
+                            console.error('🔍 loadFixturesForDeadline: Error using DeadlineService:', error);
+                            // Fallback to manual formatting
+                            this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                        }
+                    } else {
+                        console.log('🔍 loadFixturesForDeadline: No deadline date element or earliest fixture');
+                        console.log('🔍 loadFixturesForDeadline: deadlineDate:', deadlineDate);
+                        console.log('🔍 loadFixturesForDeadline: earliestFixture:', earliestFixture);
+                    }
+                    
+                    // Check if all fixtures are completed
+                    const allFixturesCompleted = fixtures.every(fixture =>
+                        fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                    );
+                    
+                    // Check if all fixtures have finished
+                    const allFixturesFinished = fixtures.every(fixture =>
+                        fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
+                    );
+                    
+                    // Update status display
+                    if (deadlineStatus) {
+                        if (allFixturesCompleted) {
+                            deadlineStatus.textContent = 'All fixtures completed';
+                            deadlineStatus.style.color = '#28a745';
+                        } else if (allFixturesFinished) {
+                            deadlineStatus.textContent = 'All fixtures finished, processing results...';
+                            deadlineStatus.style.color = '#ffc107';
+                        } else {
+                            deadlineStatus.textContent = 'Fixtures in progress';
+                            deadlineStatus.style.color = '#007bff';
+                        }
+                    }
+                    
+                    // Update pick status
+                    if (pickStatusDisplay && userData && userData.picks) {
+                        console.log('🔍 Pick status debug - parameters:', {
+                            currentGameWeek,
+                            currentGameWeekType: typeof currentGameWeek,
+                            userData: !!userData,
+                            userDataPicks: !!userData.picks
+                        });
+                        
+                        const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
+                        const userPick = userData.picks[gameweekKey] || null;
+                        const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                        
+                        console.log('🔍 Pick status debug:', {
+                            gameweekKey,
+                            userPick,
+                            userPickType: typeof userPick,
+                            allPicks: userData.picks,
+                            gameweekStatus
+                        });
+                        
+                        if (userPick) {
+                            let statusText = `Pick made: ${userPick}`;
+                            let statusColor = '#28a745'; // Green for made
+                            
+                            // Add gameweek status to the display
+                            switch (gameweekStatus) {
+                                case 'not-started':
+                                    statusText += ' (Can change)';
+                                    statusColor = '#007bff'; // Blue for editable
+                                    break;
+                                case 'in-progress':
+                                    statusText += ' (Locked)';
+                                    statusColor = '#ffc107'; // Yellow for in progress
+                                    break;
+                                case 'completed':
+                                    statusText += ' (Completed)';
+                                    statusColor = '#6c757d'; // Gray for completed
+                                    break;
+                            }
+                            
+                            pickStatusDisplay.textContent = statusText;
+                            pickStatusDisplay.style.color = statusColor;
+                        } else {
+                            let statusText = 'No pick made yet';
+                            let statusColor = '#dc3545'; // Red for no pick
+                            
+                            // Add gameweek status to the display
+                            switch (gameweekStatus) {
+                                case 'not-started':
+                                    statusText += ' (Deadline: ' + this.getFormattedDeadline(fixtures) + ')';
+                                    break;
+                                case 'in-progress':
+                                    statusText += ' (Gameweek in progress)';
+                                    statusColor = '#ffc107'; // Yellow for in progress
+                                    break;
+                                case 'completed':
+                                    statusText += ' (Gameweek completed)';
+                                    statusColor = '#6c757d'; // Gray for completed
+                                    break;
+                            }
+                            
+                            pickStatusDisplay.textContent = statusText;
+                            pickStatusDisplay.style.color = statusColor;
+                        }
+                    }
+                    
+                    // Render fixtures with interactive team pick buttons
+                    let fixturesHTML = '<div class="fixtures-list">';
+                    fixtures.forEach((fixture, index) => {
+                        // Fix: Combine date and kickOffTime if both are available
+                        let fixtureDateString = fixture.date;
+                        if (fixture.kickOffTime && fixture.kickOffTime !== '00:00:00') {
+                            // Combine date with kick-off time
+                            fixtureDateString = `${fixture.date}T${fixture.kickOffTime}`;
+                            console.log(`🔍 Fixture ${index + 1}: Combined date and time:`, fixtureDateString);
+                        } else if (fixtureDateString && !fixtureDateString.includes('T') && !fixtureDateString.includes(':')) {
+                            // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                            fixtureDateString = `${fixtureDateString}T15:00:00`;
+                            console.log(`🔍 Fixture ${index + 1}: Added default time to date string:`, fixtureDateString);
+                        }
+                        
+                        const fixtureDate = new Date(fixtureDateString);
+                        
+                        // Log fixture date for debugging
+                        console.log(`Fixture ${index + 1} date:`, fixture.date);
+                        console.log(`Fixture ${index + 1} kickOffTime:`, fixture.kickOffTime);
+                        console.log(`Fixture ${index + 1} parsed:`, fixtureDate);
+                        
+                        // Format the date properly - use the original date object directly
+                        // This preserves the exact time without timezone conversion issues
+                        const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Europe/London' // Force UK timezone
+                        });
+                        
+                        console.log(`Fixture ${index + 1} formatted:`, formattedDate);
+
+                        let statusClass = 'fixture-status';
+                        let statusText = fixture.status || 'NS';
+                        
+                        if (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+                            statusClass += ' completed';
+                        } else if (fixture.status === '1H' || fixture.status === 'HT' || fixture.status === '2H') {
+                            statusClass += ' in-progress';
+                        } else if (fixture.status === 'NS') {
+                            statusClass += ' not-started';
+                        }
+                        
+                        // Get team status for pick buttons
+                        let homeTeamClasses = 'team-pick-button';
+                        let awayTeamClasses = 'team-pick-button';
+                        let homeTeamClickable = true;
+                        let awayTeamClickable = true;
+                        let homeTeamTooltip = 'Click to pick this team';
+                        let awayTeamTooltip = 'Click to pick this team';
+                        
+                        // Check if user has already picked these teams
+                        if (userData && userData.picks) {
+                            const existingPicks = Object.values(userData.picks || {});
+                            const currentPick = userData.picks[gameweekKey] || null;
+                            
+                            // Debug: Show what's in the user's picks
+                            console.log('🔍 User picks debug:', {
+                                gameweekKey,
+                                currentPick,
+                                allPicks: userData.picks,
+                                existingPicksArray: existingPicks,
+                                picksKeys: Object.keys(userData.picks)
+                            });
+                            
+                            // Show complete breakdown of picks by gameweek
+                            console.log('🔍 Complete picks breakdown:', {
+                                gw1: userData.picks.gw1,
+                                gw2: userData.picks.gw2,
+                                gw3: userData.picks.gw3,
+                                gwtiebreak: userData.picks.gwtiebreak
+                            });
+                            
+                            // Get gameweek status and locked picks
+                            const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                            const lockedPicks = this.getLockedPicks(userData.picks, currentGameWeek);
+                            
+                            console.log('🔍 Pick validation:', {
+                                gameweek: currentGameWeek,
+                                gameweekStatus,
+                                currentPick,
+                                lockedPicks,
+                                homeTeam: fixture.homeTeam,
+                                awayTeam: fixture.awayTeam,
+                                existingPicks: existingPicks
+                            });
+                            
+                            // Debug specific teams that might be incorrectly flagged
+                            if (fixture.homeTeam === 'Hartlepool' || fixture.homeTeam === 'Gateshead' || 
+                                fixture.awayTeam === 'Hartlepool' || fixture.awayTeam === 'Gateshead') {
+                                console.log('🔍 Special Debug for Hartlepool/Gateshead:', {
+                                    homeTeam: fixture.homeTeam,
+                                    awayTeam: fixture.awayTeam,
+                                    homeTeamInExistingPicks: existingPicks.includes(fixture.homeTeam),
+                                    awayTeamInExistingPicks: existingPicks.includes(fixture.awayTeam),
+                                    homeTeamInLockedPicks: lockedPicks.includes(fixture.homeTeam),
+                                    awayTeamInLockedPicks: lockedPicks.includes(fixture.awayTeam),
+                                    existingPicksArray: existingPicks,
+                                    lockedPicksArray: lockedPicks,
+                                    userDataPicks: userData.picks,
+                                    currentPick: currentPick,
+                                    gameweekKey: gameweekKey
+                                });
+                                
+                                // Show exactly what's happening for each team
+                                if (fixture.homeTeam === 'Hartlepool' || fixture.homeTeam === 'Gateshead') {
+                                    console.log(`🔍 ${fixture.homeTeam} status breakdown:`, {
+                                        isCurrentPick: currentPick === fixture.homeTeam,
+                                        isLocked: lockedPicks.includes(fixture.homeTeam),
+                                        isInExistingPicks: existingPicks.includes(fixture.homeTeam),
+                                        finalClasses: homeTeamClasses,
+                                        finalTooltip: homeTeamTooltip,
+                                        finalClickable: homeTeamClickable
+                                    });
+                                }
+                                
+                                if (fixture.awayTeam === 'Hartlepool' || fixture.awayTeam === 'Gateshead') {
+                                    console.log(`🔍 ${fixture.awayTeam} status breakdown:`, {
+                                        isCurrentPick: currentPick === fixture.awayTeam,
+                                        isLocked: lockedPicks.includes(fixture.awayTeam),
+                                        isInExistingPicks: existingPicks.includes(fixture.awayTeam),
+                                        finalClasses: awayTeamClasses,
+                                        finalTooltip: awayTeamTooltip,
+                                        finalClickable: awayTeamClickable
+                                    });
+                                }
+                            }
+                            
+                            // Check home team status
+                            if (currentPick === fixture.homeTeam) {
+                                homeTeamClasses += ' current-pick';
+                                homeTeamClickable = gameweekStatus === 'not-started'; // Can change if not started
+                                homeTeamTooltip = gameweekStatus === 'not-started' ? 
+                                    'Current pick - click to change' : 
+                                    'Current pick for this gameweek (locked)';
+                            } else if (lockedPicks.includes(fixture.homeTeam)) {
+                                homeTeamClasses += ' locked-pick';
+                                homeTeamClickable = false;
+                                homeTeamTooltip = 'Team locked - picked in previous gameweek';
+                            } else if (existingPicks.includes(fixture.homeTeam)) {
+                                homeTeamClasses += ' future-pick';
+                                homeTeamClickable = false;
+                                homeTeamTooltip = 'Picked in another gameweek';
+                                
+                                // Debug: Show which gameweek this team was picked in
+                                if (fixture.homeTeam === 'Hartlepool' || fixture.homeTeam === 'Gateshead') {
+                                    Object.entries(userData.picks).forEach(([pickGameweek, pickTeam]) => {
+                                        if (pickTeam === fixture.homeTeam) {
+                                            console.log(`🔍 ${fixture.homeTeam} was picked in ${pickGameweek}`);
+                                        }
+                                    });
+                                }
+                            } else {
+                                homeTeamClasses += ' available';
+                                homeTeamClickable = gameweekStatus === 'not-started'; // Can pick if not started
+                            }
+                            
+                            // Check away team status
+                            if (currentPick === fixture.awayTeam) {
+                                awayTeamClasses += ' current-pick';
+                                awayTeamClickable = gameweekStatus === 'not-started'; // Can change if not started
+                                awayTeamTooltip = gameweekStatus === 'not-started' ? 
+                                    'Current pick - click to change' : 
+                                    'Current pick for this gameweek (locked)';
+                            } else if (lockedPicks.includes(fixture.awayTeam)) {
+                                awayTeamClasses += ' locked-pick';
+                                awayTeamClickable = false;
+                                awayTeamTooltip = 'Team locked - picked in previous gameweek';
+                            } else if (existingPicks.includes(fixture.awayTeam)) {
+                                awayTeamClasses += ' future-pick';
+                                awayTeamClickable = false;
+                                awayTeamTooltip = 'Picked in another gameweek';
+                                
+                                // Debug: Show which gameweek this team was picked in
+                                if (fixture.awayTeam === 'Hartlepool' || fixture.awayTeam === 'Gateshead') {
+                                    Object.entries(userData.picks).forEach(([pickGameweek, pickTeam]) => {
+                                        if (pickTeam === fixture.awayTeam) {
+                                            console.log(`🔍 ${fixture.awayTeam} was picked in ${pickGameweek}`);
+                                        }
+                                    });
+                                }
+                            } else {
+                                awayTeamClasses += ' available';
+                                awayTeamClickable = gameweekStatus === 'not-started'; // Can pick if not started
+                            }
+                        }
+                        
+                        // Create click attributes for team buttons
+                        const homeTeamClickAttr = homeTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
+                        const awayTeamClickAttr = awayTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
+                        
+                        fixturesHTML += `
+                            <div class="fixture-item">
+                                <div class="fixture-header">
+                                    <span class="fixture-date">${formattedDate}</span>
+                                    <span class="${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="fixture-teams">
+                                    <button class="${homeTeamClasses}" ${homeTeamClickAttr} ${!homeTeamClickable ? 'disabled' : ''} title="${homeTeamTooltip}">
+                                        ${fixture.homeTeam}
+                                        ${userData && userData.picks && userData.picks[gameweekKey] === fixture.homeTeam ? '<span class="pick-indicator">✓</span>' : ''}
+                                    </button>
+                                    <span class="vs">v</span>
+                                    <button class="${awayTeamClasses}" ${awayTeamClickAttr} ${!awayTeamClickable ? 'disabled' : ''} title="${awayTeamTooltip}">
+                                        ${fixture.awayTeam}
+                                        ${userData && userData.picks && userData.picks[gameweekKey] === fixture.awayTeam ? '<span class="pick-indicator">✓</span>' : ''}
+                                    </button>
+                                </div>
+                                ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 
+                                    `<div class="fixture-score">${fixture.homeScore} - ${fixture.awayScore}</div>` : 
+                                    '<div class="fixture-score">-</div>'
+                                }
+                            </div>
+                        `;
+                    });
+                    
+                    fixturesHTML += '</div>';
+                    fixturesDisplay.innerHTML = fixturesHTML;
+                    
                 } else {
                     console.log('No fixtures found for gameweek');
                     fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
@@ -1165,163 +1733,265 @@ class FixturesManager {
                 console.log('No fixtures document found for:', editionGameweekKey);
                 fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
                 fixturesDisplayContainer.style.display = 'block';
+                
+                // Clear pick status display when no fixtures are available
+                if (pickStatusDisplay) {
+                    pickStatusDisplay.textContent = 'No fixtures available';
+                    pickStatusDisplay.style.color = '#6c757d'; // Gray color for unavailable
+                }
+                
+                // Clear deadline display when no fixtures are available
+                if (deadlineDate) {
+                    deadlineDate.textContent = 'No deadline set';
+                    deadlineDate.style.color = '#6c757d'; // Gray color for unavailable
+                }
+                
+                // Clear deadline status when no fixtures are available
+                if (deadlineStatus) {
+                    deadlineStatus.textContent = 'No fixtures available';
+                    deadlineStatus.style.color = '#6c757d'; // Gray color for unavailable
+                }
             }
         } catch (error) {
             console.error('Error loading fixtures for deadline:', error);
             fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
             fixturesDisplayContainer.style.display = 'block';
+            
+            // Clear pick status display on error
+            if (pickStatusDisplay) {
+                pickStatusDisplay.textContent = 'Error loading fixtures';
+                pickStatusDisplay.style.color = '#dc3545'; // Red color for error
+            }
+            
+            // Clear deadline display on error
+            if (deadlineDate) {
+                deadlineDate.textContent = 'Error loading deadline';
+                deadlineDate.style.color = '#dc3545'; // Red color for error
+            }
+            
+            // Clear deadline status on error
+            if (deadlineStatus) {
+                deadlineStatus.textContent = 'Error loading fixtures';
+                deadlineStatus.style.color = '#dc3545'; // Red color for error
+            }
         }
     }
 
     // Render fixtures display
-    async renderFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
-        const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
-        const fixturesDisplay = document.querySelector('#fixtures-display');
-        const deadlineDate = document.querySelector('#deadline-date');
-        const deadlineStatus = document.querySelector('#deadline-status');
-        const pickStatusDisplay = document.querySelector('#pick-status-display');
-        
-        if (!fixturesDisplayContainer || !fixturesDisplay) {
-            console.warn('Fixtures display containers not found');
-            return;
-        }
-        
-        console.log('Rendering fixtures display for', fixtures.length, 'fixtures');
+    async renderFixturesDisplay(fixtures, userData, currentGameWeek) {
+        console.log('🔍 TEST: renderFixturesDisplay function STARTED');
+        console.log('🔍 TEST: Number of fixtures:', fixtures.length);
+        console.log('🔍 TEST: Current game week:', currentGameWeek);
+        console.log('🔍 TEST: This should definitely appear!');
         
         try {
-            // Show the container
-            fixturesDisplayContainer.style.display = 'block';
+            const fixturesDisplayContainer = document.querySelector('#fixtures-display-container');
+            const fixturesDisplay = document.querySelector('#fixtures-display');
+            const deadlineDate = document.querySelector('#deadline-date');
+            const deadlineStatus = document.querySelector('#deadline-status');
+            const pickStatusDisplay = document.querySelector('#pick-status-display');
             
-            if (!fixtures || fixtures.length === 0) {
-                fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+            if (!fixturesDisplayContainer || !fixturesDisplay) {
+                console.warn('Fixtures display containers not found');
                 return;
             }
             
-            // Find the earliest fixture (deadline)
-            const earliestFixture = fixtures.reduce((earliest, fixture) => {
-                const fixtureDate = new Date(fixture.date);
-                const earliestDate = new Date(earliest.date);
-                return fixtureDate < earliestDate ? fixture : earliest;
-            });
+            console.log('Rendering fixtures display for', fixtures.length, 'fixtures');
             
-            // Update deadline display
-            if (deadlineDate && earliestFixture.date) {
-                const deadlineDateObj = new Date(earliestFixture.date);
-                // Format the date without timezone conversion to preserve the original time
-                const year = deadlineDateObj.getFullYear();
-                const month = deadlineDateObj.getMonth();
-                const day = deadlineDateObj.getDate();
-                const hours = deadlineDateObj.getHours();
-                const minutes = deadlineDateObj.getMinutes();
+            try {
+                // Show the container
+                fixturesDisplayContainer.style.display = 'block';
                 
-                // Create a new date object in the user's local timezone but preserve the original time
-                const localDeadlineDate = new Date(year, month, day, hours, minutes);
-                
-                const formattedDeadline = localDeadlineDate.toLocaleDateString('en-GB', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: 'Europe/London' // Force UK timezone
-                });
-                deadlineDate.textContent = formattedDeadline;
-            }
-            
-            // Check if all fixtures are completed
-            const allFixturesCompleted = fixtures.every(fixture =>
-                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
-            );
-            
-            // Check if all fixtures have finished
-            const allFixturesFinished = fixtures.every(fixture =>
-                fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
-            );
-            
-            // Update status display
-            if (deadlineStatus) {
-                if (allFixturesCompleted) {
-                    deadlineStatus.textContent = 'All fixtures completed';
-                    deadlineStatus.style.color = '#28a745';
-                } else if (allFixturesFinished) {
-                    deadlineStatus.textContent = 'All fixtures finished, processing results...';
-                    deadlineStatus.style.color = '#ffc107';
-                } else {
-                    deadlineStatus.textContent = 'Fixtures in progress';
-                    deadlineStatus.style.color = '#007bff';
+                if (!fixtures || fixtures.length === 0) {
+                    fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                    return;
                 }
-            }
-            
-            // Update pick status
+                
+                // Find the earliest fixture (deadline)
+                const earliestFixture = fixtures.reduce((earliest, fixture) => {
+                    const fixtureDate = new Date(fixture.date);
+                    const earliestDate = new Date(earliest.date);
+                    return fixtureDate < earliestDate ? fixture : earliest;
+                });
+                
+                // Debug: Log all fixture dates
+                console.log('🔍 renderFixturesDisplay - All fixture dates:');
+                fixtures.forEach((fixture, index) => {
+                    console.log(`🔍 renderFixturesDisplay - Fixture ${index + 1}:`, {
+                        date: fixture.date,
+                        parsed: new Date(fixture.date),
+                        homeTeam: fixture.homeTeam,
+                        awayTeam: fixture.awayTeam
+                    });
+                });
+                
+                console.log('🔍 renderFixturesDisplay - Earliest fixture (deadline):', earliestFixture);
+                console.log('🔍 renderFixturesDisplay - Earliest fixture date:', earliestFixture.date);
+                console.log('🔍 renderFixturesDisplay - Deadline date element:', deadlineDate);
+                console.log('🔍 renderFixturesDisplay - Deadline date element exists:', !!deadlineDate);
+                console.log('🔍 renderFixturesDisplay - Earliest fixture exists:', !!earliestFixture);
+                console.log('🔍 renderFixturesDisplay - Earliest fixture date exists:', !!(earliestFixture && earliestFixture.date));
+                
+                // Update deadline display using centralized DeadlineService
+                if (deadlineDate && earliestFixture) {
+                    console.log('🔍 renderFixturesDisplay - Using DeadlineService for deadline display');
+                    
+                    try {
+                        // Use DeadlineService to get formatted deadline
+                        if (window.deadlineService) {
+                            const formattedDeadline = await window.deadlineService.getFormattedDeadline(currentGameWeek, null, userData, userId);
+                            console.log('🔍 renderFixturesDisplay - DeadlineService formatted deadline:', formattedDeadline);
+                            
+                            if (formattedDeadline && formattedDeadline !== 'No deadline set') {
+                                deadlineDate.textContent = formattedDeadline;
+                                console.log('🔍 renderFixturesDisplay - Deadline set via DeadlineService:', formattedDeadline);
+                            } else {
+                                // Fallback to manual formatting if DeadlineService returns no deadline
+                                console.log('🔍 renderFixturesDisplay - DeadlineService returned no deadline, using fallback');
+                                this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                            }
+                        } else {
+                            // Fallback if DeadlineService not available
+                            console.log('🔍 renderFixturesDisplay - DeadlineService not available, using fallback');
+                            this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                        }
+                    } catch (error) {
+                        console.error('🔍 renderFixturesDisplay - Error using DeadlineService:', error);
+                        // Fallback to manual formatting
+                        this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                    }
+                } else {
+                    console.log('🔍 renderFixturesDisplay - No deadline date element or earliest fixture');
+                    console.log('🔍 renderFixturesDisplay - deadlineDate:', deadlineDate);
+                    console.log('🔍 renderFixturesDisplay - earliestFixture:', earliestFixture);
+                }
+                
+                // Check if all fixtures are completed
+                const allFixturesCompleted = fixtures.every(fixture =>
+                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                );
+                
+                // Check if all fixtures have finished
+                const allFixturesFinished = fixtures.every(fixture =>
+                    fixture.status && fixture.status !== 'NS' && fixture.status !== '1H' && fixture.status !== 'HT' && fixture.status !== '2H'
+                );
+                
+                // Update status display
+                if (deadlineStatus) {
+                    if (allFixturesCompleted) {
+                        deadlineStatus.textContent = 'All fixtures completed';
+                        deadlineStatus.style.color = '#28a745';
+                    } else if (allFixturesFinished) {
+                        deadlineStatus.textContent = 'All fixtures finished, processing results...';
+                        deadlineStatus.style.color = '#ffc107';
+                    } else {
+                        deadlineStatus.textContent = 'Fixtures in progress';
+                        deadlineStatus.style.color = '#007bff';
+                    }
+                }
+                
+                            // Update pick status
             if (pickStatusDisplay && userData && userData.picks) {
+                console.log('🔍 Third pick status debug - parameters:', {
+                    currentGameWeek,
+                    currentGameWeekType: typeof currentGameWeek,
+                    userData: !!userData,
+                    userDataPicks: !!userData.picks
+                });
+                
                 const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
-                const userPick = userData.picks[gameweekKey];
+                const userPick = userData.picks[gameweekKey] || null;
+                const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                
+                console.log('🔍 Third pick status debug:', {
+                    gameweekKey,
+                    userPick,
+                    userPickType: typeof userPick,
+                    allPicks: userData.picks
+                });
                 
                 if (userPick) {
-                    pickStatusDisplay.textContent = `Pick made: ${userPick.team}`;
+                    // userPick is the team name directly, not an object with .team property
+                    pickStatusDisplay.textContent = `Pick made: ${userPick}`;
                     pickStatusDisplay.style.color = '#28a745';
                 } else {
                     pickStatusDisplay.textContent = 'No pick made yet';
                     pickStatusDisplay.style.color = '#dc3545';
                 }
             }
-            
-            // Render fixtures
-            let fixturesHTML = '<div class="fixtures-list">';
-            fixtures.forEach((fixture, index) => {
-                const fixtureDate = new Date(fixture.date);
-                // Format the date without timezone conversion to preserve the original time
-                const year = fixtureDate.getFullYear();
-                const month = fixtureDate.getMonth();
-                const day = fixtureDate.getDate();
-                const hours = fixtureDate.getHours();
-                const minutes = fixtureDate.getMinutes();
                 
-                // Create a new date object in the user's local timezone but preserve the original time
-                const localFixtureDate = new Date(year, month, day, hours, minutes);
-                
-                const formattedDate = localFixtureDate.toLocaleDateString('en-GB', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: 'Europe/London' // Force UK timezone
+                // Render fixtures
+                let fixturesHTML = '<div class="fixtures-list">';
+                fixtures.forEach((fixture, index) => {
+                    // Fix: Combine date and kickOffTime if both are available
+                    let fixtureDateString = fixture.date;
+                    if (fixture.kickOffTime && fixture.kickOffTime !== '00:00:00') {
+                        // Combine date with kick-off time
+                        fixtureDateString = `${fixture.date}T${fixture.kickOffTime}`;
+                        console.log(`🔍 Fixture ${index + 1}: Combined date and time:`, fixtureDateString);
+                    } else if (fixtureDateString && !fixtureDateString.includes('T') && !fixtureDateString.includes(':')) {
+                        // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                        fixtureDateString = `${fixtureDateString}T15:00:00`;
+                        console.log(`🔍 Fixture ${index + 1}: Added default time to date string:`, fixtureDateString);
+                    }
+                    
+                    const fixtureDate = new Date(fixtureDateString);
+                    
+                    // Log fixture date for debugging
+                    console.log(`Fixture ${index + 1} date:`, fixture.date);
+                    console.log(`Fixture ${index + 1} kickOffTime:`, fixture.kickOffTime);
+                    console.log(`Fixture ${index + 1} parsed:`, fixtureDate);
+                    
+                    // Format the date properly - use the original date object directly
+                    // This preserves the exact time without timezone conversion issues
+                    const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Europe/London' // Force UK timezone
+                    });
+                    
+                    console.log(`Fixture ${index + 1} formatted:`, formattedDate);
+
+                    let statusClass = 'fixture-status';
+                    let statusText = fixture.status || 'NS';
+                    
+                    if (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+                        statusClass += ' completed';
+                    } else if (fixture.status === '1H' || fixture.status === 'HT' || fixture.status === '2H') {
+                        statusClass += ' in-progress';
+                    } else if (fixture.status === 'NS') {
+                        statusClass += ' not-started';
+                    }
+                    
+                    fixturesHTML += `
+                        <div class="fixture-item">
+                            <div class="fixture-header">
+                                <span class="fixture-date">${formattedDate}</span>
+                                <span class="${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="fixture-teams">
+                                <span class="team home-team">${fixture.homeTeam}</span>
+                                <span class="vs">v</span>
+                                <span class="team away-team">${fixture.awayTeam}</span>
+                            </div>
+                            ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 
+                                `<div class="fixture-score">${fixture.homeScore} - ${fixture.awayScore}</div>` : 
+                                '<div class="fixture-score">-</div>'
+                            }
+                        </div>
+                    `;
                 });
                 
-                let statusClass = 'fixture-status';
-                let statusText = fixture.status || 'NS';
+                fixturesHTML += '</div>';
+                fixturesDisplay.innerHTML = fixturesHTML;
                 
-                if (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
-                    statusClass += ' completed';
-                } else if (fixture.status === '1H' || fixture.status === 'HT' || fixture.status === '2H') {
-                    statusClass += ' in-progress';
-                } else if (fixture.status === 'NS') {
-                    statusClass += ' not-started';
-                }
-                
-                fixturesHTML += `
-                    <div class="fixture-item">
-                        <div class="fixture-header">
-                            <span class="fixture-date">${formattedDate}</span>
-                            <span class="${statusClass}">${statusText}</span>
-                        </div>
-                        <div class="fixture-teams">
-                            <span class="team home-team">${fixture.homeTeam}</span>
-                            <span class="vs">v</span>
-                            <span class="team away-team">${fixture.awayTeam}</span>
-                        </div>
-                        ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 
-                            `<div class="fixture-score">${fixture.homeScore} - ${fixture.awayScore}</div>` : 
-                            '<div class="fixture-score">-</div>'
-                        }
-                    </div>
-                `;
-            });
-            
-            fixturesHTML += '</div>';
-            fixturesDisplay.innerHTML = fixturesHTML;
-            
+            } catch (error) {
+                console.error('Error rendering fixtures display:', error);
+                fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+            }
         } catch (error) {
             console.error('Error rendering fixtures display:', error);
             fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
@@ -1339,7 +2009,20 @@ class FixturesManager {
         try {
             // Use the same format as the main app.js file
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${window.currentActiveEdition}_${gameweekKey}`;
+            
+            // Get user edition using EditionService if available
+            let userEdition;
+            if (window.editionService) {
+                // Use EditionService to get user edition
+                userEdition = window.editionService.getCurrentUserEdition();
+                console.log('🔧 Mobile: EditionService resolved user edition:', userEdition);
+            } else {
+                // Fallback to old method
+                userEdition = window.currentActiveEdition || 1;
+                console.log('🔧 Mobile: Fallback method resolved user edition:', userEdition);
+            }
+            
+            const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
             
             console.log('Loading mobile fixtures for deadline:', editionGameweekKey);
             
@@ -1353,20 +2036,90 @@ class FixturesManager {
                     // Always render fixtures - let the render method handle status display
                     this.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
                     fixturesDisplayContainer.style.display = 'block';
+                    
+                    // Show the mobile gameweek navigation
+                    const mobileGameweekNavigation = document.querySelector('#mobile-gameweek-navigation');
+                    if (mobileGameweekNavigation) {
+                        mobileGameweekNavigation.style.display = 'block';
+                        console.log('🔍 Mobile gameweek navigation shown');
+                    }
                 } else {
                     console.log('No mobile fixtures found for gameweek');
                     fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
                     fixturesDisplayContainer.style.display = 'block';
+                    
+                    // Clear mobile pick status display when no fixtures are available
+                    const mobilePickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+                    if (mobilePickStatusDisplay) {
+                        mobilePickStatusDisplay.textContent = 'No fixtures available';
+                        mobilePickStatusDisplay.style.color = '#6c757d'; // Gray color for unavailable
+                    }
+                    
+                    // Clear mobile deadline display when no fixtures are available
+                    const mobileDeadlineDate = document.querySelector('#mobile-deadline-date');
+                    if (mobileDeadlineDate) {
+                        mobileDeadlineDate.textContent = 'No deadline set';
+                        mobileDeadlineDate.style.color = '#6c757d'; // Gray color for unavailable
+                    }
+                    
+                    // Clear mobile deadline status when no fixtures are available
+                    const mobileDeadlineStatus = document.querySelector('#mobile-deadline-status');
+                    if (mobileDeadlineStatus) {
+                        mobileDeadlineStatus.textContent = 'No fixtures available';
+                        mobileDeadlineStatus.style.color = '#6c757d'; // Gray color for unavailable
+                    }
                 }
             } else {
                 console.log('No mobile fixtures document found for:', editionGameweekKey);
                 fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
                 fixturesDisplayContainer.style.display = 'block';
+                
+                // Clear mobile pick status display when no fixtures document is found
+                const mobilePickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+                if (mobilePickStatusDisplay) {
+                    mobilePickStatusDisplay.textContent = 'No fixtures available';
+                    mobilePickStatusDisplay.style.color = '#6c757d'; // Gray color for unavailable
+                }
+                
+                // Clear mobile deadline display when no fixtures document is found
+                const mobileDeadlineDate = document.querySelector('#mobile-deadline-date');
+                if (mobileDeadlineDate) {
+                    mobileDeadlineDate.textContent = 'No deadline set';
+                    mobileDeadlineDate.style.color = '#6c757d'; // Gray color for unavailable
+                }
+                
+                // Clear mobile deadline status when no fixtures document is found
+                const mobileDeadlineStatus = document.querySelector('#mobile-deadline-status');
+                if (mobileDeadlineStatus) {
+                    mobileDeadlineStatus.textContent = 'No fixtures available';
+                    mobileDeadlineStatus.style.color = '#6c757d'; // Gray color for unavailable
+                }
             }
         } catch (error) {
             console.error('Error loading mobile fixtures for deadline:', error);
             fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
             fixturesDisplayContainer.style.display = 'block';
+            
+            // Clear mobile pick status display on error
+            const mobilePickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+            if (mobilePickStatusDisplay) {
+                mobilePickStatusDisplay.textContent = 'Error loading fixtures';
+                mobilePickStatusDisplay.style.color = '#dc3545'; // Red color for error
+            }
+            
+            // Clear mobile deadline display on error
+            const mobileDeadlineDate = document.querySelector('#mobile-deadline-date');
+            if (mobileDeadlineDate) {
+                mobileDeadlineDate.textContent = 'Error loading deadline';
+                mobileDeadlineDate.style.color = '#dc3545'; // Red color for error
+            }
+            
+            // Clear mobile deadline status on error
+            const mobileDeadlineStatus = document.querySelector('#mobile-deadline-status');
+            if (mobileDeadlineStatus) {
+                mobileDeadlineStatus.textContent = 'Error loading fixtures';
+                mobileDeadlineStatus.style.color = '#dc3545'; // Red color for error
+            }
         }
     }
 
@@ -1394,6 +2147,51 @@ class FixturesManager {
                 return;
             }
             
+            // Add mobile gameweek status indicator
+            const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+            let statusText = '';
+            let statusColor = '';
+            
+            switch (gameweekStatus) {
+                case 'not-started':
+                    statusText = 'Gameweek Not Started';
+                    statusColor = '#007bff'; // Blue
+                    break;
+                case 'in-progress':
+                    statusText = 'Gameweek In Progress';
+                    statusColor = '#ffc107'; // Yellow
+                    break;
+                case 'completed':
+                    statusText = 'Gameweek Completed';
+                    statusColor = '#28a745'; // Green
+                    break;
+            }
+            
+            // Update or create mobile gameweek status display
+            let mobileStatusDisplay = document.querySelector('#mobile-gameweek-status-display');
+            if (!mobileStatusDisplay) {
+                mobileStatusDisplay = document.createElement('div');
+                mobileStatusDisplay.id = 'mobile-gameweek-status-display';
+                mobileStatusDisplay.style.cssText = `
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin: 10px 0;
+                    color: white;
+                    font-size: 0.9rem;
+                `;
+                
+                // Insert after the mobile fixtures display container
+                const mobileFixturesContainer = document.querySelector('#mobile-fixtures-display-container');
+                if (mobileFixturesContainer) {
+                    mobileFixturesContainer.parentNode.insertBefore(mobileStatusDisplay, mobileFixturesContainer.nextSibling);
+                }
+            }
+            
+            mobileStatusDisplay.textContent = statusText;
+            mobileStatusDisplay.style.background = statusColor;
+            
             // Find the earliest fixture (deadline)
             const earliestFixture = fixtures.reduce((earliest, fixture) => {
                 const fixtureDate = new Date(fixture.date);
@@ -1401,28 +2199,34 @@ class FixturesManager {
                 return fixtureDate < earliestDate ? fixture : earliest;
             });
             
-            // Update deadline display
-            if (deadlineDate && earliestFixture.date) {
-                const deadlineDateObj = new Date(earliestFixture.date);
-                // Format the date without timezone conversion to preserve the original time
-                const year = deadlineDateObj.getFullYear();
-                const month = deadlineDateObj.getMonth();
-                const day = deadlineDateObj.getDate();
-                const hours = deadlineDateObj.getHours();
-                const minutes = deadlineDateObj.getMinutes();
+            // Update deadline display using centralized DeadlineService
+            if (deadlineDate && earliestFixture) {
+                console.log('🔍 Mobile fixtures: Using DeadlineService for deadline display');
                 
-                // Create a new date object in the user's local timezone but preserve the original time
-                const localDeadlineDate = new Date(year, month, day, hours, minutes);
-                
-                const formattedDeadline = localDeadlineDate.toLocaleDateString('en-GB', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: 'Europe/London' // Force UK timezone
-                });
-                deadlineDate.textContent = formattedDeadline;
+                try {
+                                            // Use DeadlineService to get formatted deadline
+                        if (window.deadlineService) {
+                            const formattedDeadline = await window.deadlineService.getFormattedDeadline(currentGameWeek, null, userData, userId);
+                            console.log('🔍 Mobile fixtures: DeadlineService formatted deadline:', formattedDeadline);
+                            
+                            if (formattedDeadline && formattedDeadline !== 'No deadline set') {
+                                deadlineDate.textContent = formattedDeadline;
+                                console.log('🔍 Mobile fixtures: Deadline set via DeadlineService:', formattedDeadline);
+                            } else {
+                                // Fallback to manual formatting if DeadlineService returns no deadline
+                                console.log('🔍 Mobile fixtures: DeadlineService returned no deadline, using fallback');
+                                this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                            }
+                        } else {
+                            // Fallback if DeadlineService not available
+                            console.log('🔍 Mobile fixtures: DeadlineService not available, using fallback');
+                            this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                        }
+                } catch (error) {
+                    console.error('🔍 Mobile fixtures: Error using DeadlineService:', error);
+                    // Fallback to manual formatting
+                    this.setDeadlineDisplayFallback(deadlineDate, earliestFixture);
+                }
             }
             
             // Check if all fixtures are completed
@@ -1451,22 +2255,87 @@ class FixturesManager {
             
             // Update pick status
             if (pickStatusDisplay && userData && userData.picks) {
+                console.log('🔍 Mobile pick status debug - parameters:', {
+                    currentGameWeek,
+                    currentGameWeekType: typeof currentGameWeek,
+                    userData: !!userData,
+                    userDataPicks: !!userData.picks
+                });
+                
                 const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
-                const userPick = userData.picks[gameweekKey];
+                const userPick = userData.picks[gameweekKey] || null;
+                const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                
+                console.log('🔍 Mobile pick status debug:', {
+                    gameweekKey,
+                    userPick,
+                    userPickType: typeof userPick,
+                    allPicks: userData.picks,
+                    gameweekStatus
+                });
                 
                 if (userPick) {
-                    pickStatusDisplay.textContent = `Pick made: ${userPick.team}`;
-                    pickStatusDisplay.style.color = '#28a745';
+                    let statusText = `Pick made: ${userPick}`;
+                    let statusColor = '#28a745'; // Green for made
+                    
+                    // Add gameweek status to the display
+                    switch (gameweekStatus) {
+                        case 'not-started':
+                            statusText += ' (Can change)';
+                            statusColor = '#007bff'; // Blue for editable
+                            break;
+                        case 'in-progress':
+                            statusText += ' (Locked)';
+                            statusColor = '#ffc107'; // Yellow for in progress
+                            break;
+                        case 'completed':
+                            statusText += ' (Completed)';
+                            statusColor = '#6c757d'; // Gray for completed
+                            break;
+                    }
+                    
+                    pickStatusDisplay.textContent = statusText;
+                    pickStatusDisplay.style.color = statusColor;
                 } else {
-                    pickStatusDisplay.textContent = 'No pick made yet';
-                    pickStatusDisplay.style.color = '#dc3545';
+                    let statusText = 'No pick made yet';
+                    let statusColor = '#dc3545'; // Red for no pick
+                    
+                    // Add gameweek status to the display
+                    switch (gameweekStatus) {
+                        case 'not-started':
+                            statusText += ' (Deadline: ' + this.getFormattedDeadline(fixtures) + ')';
+                            break;
+                        case 'in-progress':
+                            statusText += ' (Gameweek in progress)';
+                            statusColor = '#ffc107'; // Yellow for in progress
+                            break;
+                        case 'completed':
+                            statusText += ' (Gameweek completed)';
+                            statusColor = '#6c757d'; // Gray for completed
+                            break;
+                    }
+                    
+                    pickStatusDisplay.textContent = statusText;
+                    pickStatusDisplay.style.color = statusColor;
                 }
             }
             
             // Render fixtures
             let fixturesHTML = '<div class="mobile-fixtures-list">';
             fixtures.forEach((fixture, index) => {
-                const fixtureDate = new Date(fixture.date);
+                // Fix: Combine date and kickOffTime if both are available
+                let fixtureDateString = fixture.date;
+                if (fixture.kickOffTime && fixture.kickOffTime !== '00:00:00') {
+                    // Combine date with kick-off time
+                    fixtureDateString = `${fixture.date}T${fixture.kickOffTime}`;
+                    console.log(`🔍 Mobile fixture ${index + 1}: Combined date and time:`, fixtureDateString);
+                } else if (fixtureDateString && !fixtureDateString.includes('T') && !fixtureDateString.includes(':')) {
+                    // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                    fixtureDateString = `${fixtureDateString}T15:00:00`;
+                    console.log(`🔍 Mobile fixture ${index + 1}: Added default time to date string:`, fixtureDateString);
+                }
+                
+                const fixtureDate = new Date(fixtureDateString);
                 // Format the date without timezone conversion to preserve the original time
                 const year = fixtureDate.getFullYear();
                 const month = fixtureDate.getMonth();
@@ -1522,6 +2391,225 @@ class FixturesManager {
             console.error('Error rendering mobile fixtures display:', error);
             fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
         }
+    }
+
+    // === PICK MANAGEMENT HELPER FUNCTIONS ===
+    
+    /**
+     * Get the status of a gameweek based on fixture start times
+     * @param {Array} fixtures - Array of fixtures for the gameweek
+     * @param {string|number} gameweek - The gameweek number
+     * @returns {string} - 'not-started', 'in-progress', or 'completed'
+     */
+    getGameweekStatus(fixtures, gameweek) {
+        if (!fixtures || fixtures.length === 0) return 'not-started';
+        
+        const now = new Date();
+        
+        // Special handling for Test Weeks - we know the exact deadlines
+        if (gameweek === 3) {
+            // Game Week 3 deadline is 19:45 on 19th August 2025
+            const gw3Deadline = new Date('2025-08-19T19:45:00');
+            
+            console.log('🔍 Test Weeks GW3 Status Debug:', {
+                gameweek,
+                now: now.toISOString(),
+                gw3Deadline: gw3Deadline.toISOString(),
+                deadlinePassed: now >= gw3Deadline
+            });
+            
+            if (now >= gw3Deadline) {
+                // Check if all fixtures are completed
+                const allCompleted = fixtures.every(fixture => 
+                    fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+                );
+                
+                if (allCompleted) {
+                    return 'completed';
+                } else {
+                    return 'in-progress';
+                }
+            } else {
+                return 'not-started';
+            }
+        }
+        
+        // For other gameweeks, use the fixture-based logic
+        // Find the earliest fixture (deadline)
+        const earliestFixture = fixtures.reduce((earliest, fixture) => {
+            const fixtureDate = this.createFixtureDateTime(fixture);
+            const earliestDate = this.createFixtureDateTime(earliest);
+            return fixtureDate < earliestDate ? fixture : earliest;
+        });
+        
+        if (!earliestFixture) return 'not-started';
+        
+        const deadline = this.createFixtureDateTime(earliestFixture);
+        
+        // Add debugging for deadline calculation
+        console.log('🔍 Gameweek Status Debug:', {
+            gameweek,
+            now: now.toISOString(),
+            earliestFixture: earliestFixture.date,
+            kickOffTime: earliestFixture.kickOffTime,
+            deadline: deadline ? deadline.toISOString() : 'null',
+            deadlinePassed: deadline ? deadline <= now : 'no deadline'
+        });
+        
+        // Check if deadline has passed
+        if (deadline && deadline <= now) {
+            // Check if all fixtures are completed
+            const allCompleted = fixtures.every(fixture => 
+                fixture.status && (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN')
+            );
+            
+            if (allCompleted) {
+                return 'completed';
+            } else {
+                return 'in-progress';
+            }
+        } else {
+            return 'not-started';
+        }
+    }
+    
+    /**
+     * Get locked picks (teams that can't be picked again)
+     * @param {Object} picks - User's picks object
+     * @param {string|number} currentGameweek - Current gameweek being viewed
+     * @returns {Array} - Array of locked team names
+     */
+    getLockedPicks(picks, currentGameweek) {
+        if (!picks) return [];
+        
+        const lockedPicks = [];
+        
+        // Add debugging for locked picks calculation
+        console.log('🔍 Locked Picks Debug:', {
+            currentGameweek,
+            allPicks: picks,
+            picksKeys: Object.keys(picks)
+        });
+        
+        // Check each gameweek's picks
+        Object.entries(picks).forEach(([gameweekKey, team]) => {
+            if (gameweekKey === 'gwtiebreak') return; // Skip tiebreak for now
+            
+            // Extract gameweek number more carefully
+            let gameweekNum;
+            if (gameweekKey.startsWith('gw')) {
+                gameweekNum = parseInt(gameweekKey.replace('gw', ''));
+            } else {
+                // Handle other formats if they exist
+                gameweekNum = parseInt(gameweekKey);
+            }
+            
+            // For Test Weeks, we know the exact deadlines:
+            // GW1: Started 15:00 on 9th August 2025
+            // GW2: Started 12:30 on 16th August 2025
+            // GW3: Not started yet (deadline 19:45 on 19th August 2025)
+            
+            const now = new Date();
+            console.log('🔍 Current date/time for locked picks calculation:', {
+                now: now.toISOString(),
+                nowLocal: now.toString(),
+                nowUTC: now.toUTCString()
+            });
+            
+            let shouldLock = false;
+            
+            if (gameweekKey === 'gw1') {
+                const gw1Deadline = new Date('2025-08-09T15:00:00');
+                shouldLock = now >= gw1Deadline;
+                console.log(`🔍 GW1 (${team}): deadline ${gw1Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+            } else if (gameweekKey === 'gw2') {
+                const gw2Deadline = new Date('2025-08-16T12:30:00');
+                shouldLock = now >= gw2Deadline;
+                console.log(`🔍 GW2 (${team}): deadline ${gw2Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+            } else if (gameweekKey === 'gw3') {
+                const gw3Deadline = new Date('2025-08-19T19:45:00');
+                shouldLock = now >= gw3Deadline;
+                console.log(`🔍 GW3 (${team}): deadline ${gw3Deadline.toISOString()}, now ${now.toISOString()}, shouldLock: ${shouldLock}`);
+            } else if (gameweekNum && gameweekNum < parseInt(currentGameweek)) {
+                // For other gameweeks, use numeric comparison as fallback
+                shouldLock = true;
+                console.log(`🔒 Locking ${team} from ${gameweekKey} (numeric comparison)`);
+            }
+            
+            if (shouldLock) {
+                lockedPicks.push(team);
+                console.log(`🔒 Locking ${team} from ${gameweekKey} (deadline passed)`);
+            } else {
+                console.log(`✅ Not locking ${team} from ${gameweekKey} (deadline not passed yet)`);
+            }
+        });
+        
+        console.log('🔍 Final locked picks:', lockedPicks);
+        return lockedPicks;
+    }
+    
+    /**
+     * Create a proper datetime object from fixture data
+     * @param {Object} fixture - Fixture object
+     * @returns {Date|null} - Date object or null if invalid
+     */
+    createFixtureDateTime(fixture) {
+        if (!fixture.date) return null;
+        
+        let dateString = fixture.date;
+        
+        // If the date already contains time (has 'T' or ':'), use it as-is
+        if (dateString.includes('T') || dateString.includes(':')) {
+            return new Date(dateString);
+        }
+        
+        // If no time component, check if we have kickOffTime
+        if (fixture.kickOffTime && fixture.kickOffTime !== '00:00:00') {
+            dateString = `${fixture.date}T${fixture.kickOffTime}`;
+        } else {
+            // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+            dateString = `${fixture.date}T15:00:00`;
+        }
+        
+        // Add debugging for date parsing
+        console.log('🔍 Date Parsing Debug:', {
+            originalDate: fixture.date,
+            kickOffTime: fixture.kickOffTime,
+            finalDateString: dateString,
+            parsedDate: new Date(dateString).toISOString()
+        });
+        
+        return new Date(dateString);
+    }
+    
+    /**
+     * Get formatted deadline string for display
+     * @param {Array} fixtures - Array of fixtures for the gameweek
+     * @returns {string} - Formatted deadline string
+     */
+    getFormattedDeadline(fixtures) {
+        if (!fixtures || fixtures.length === 0) return 'No deadline set';
+        
+        // Find the earliest fixture (deadline)
+        const earliestFixture = fixtures.reduce((earliest, fixture) => {
+            const fixtureDate = this.createFixtureDateTime(fixture);
+            const earliestDate = this.createFixtureDateTime(earliest);
+            return fixtureDate < earliestDate ? fixture : earliest;
+        });
+        
+        if (!earliestFixture) return 'No deadline set';
+        
+        const deadline = this.createFixtureDateTime(earliestFixture);
+        if (!deadline) return 'No deadline set';
+        
+        return deadline.toLocaleDateString('en-GB', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/London'
+        });
     }
 
     // Switch to fixtures tab
@@ -1763,6 +2851,56 @@ class FixturesManager {
         }
         console.log('FixturesManager cleaned up');
     }
+
+    // Get user edition
+    getUserEdition(userData) {
+        if (!userData || !userData.registrations) return 1;
+        if (userData.preferredEdition) return userData.preferredEdition;
+        if (userData.registrations.editiontest) return "test";
+        if (userData.registrations.edition1) return 1;
+        for (let i = 2; i <= 10; i++) {
+            if (userData.registrations[`edition${i}`]) return i;
+        }
+        return 1;
+    }
+
+    // Fallback method for deadline display when DeadlineService is not available
+    setDeadlineDisplayFallback(deadlineDate, earliestFixture) {
+        if (!deadlineDate || !earliestFixture) return;
+        
+        console.log('🔍 Using fallback deadline display method');
+        
+        // Fix: Combine date and kickOffTime if both are available
+        let dateString = earliestFixture.date;
+        if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
+            // Combine date with kick-off time
+            dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
+            console.log('🔍 Fallback: Combined date and time:', dateString);
+        } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
+            // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+            dateString = `${dateString}T15:00:00`;
+            console.log('🔍 Fallback: Added default time to date string:', dateString);
+        }
+        
+        const deadlineDateObj = new Date(dateString);
+        console.log('🔍 Fallback: Parsed date object:', deadlineDateObj);
+        
+        // Format the date properly - use the original date object directly
+        // This preserves the exact time without timezone conversion issues
+        const formattedDeadline = deadlineDateObj.toLocaleDateString('en-GB', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/London' // Force UK timezone
+        });
+        
+        console.log('🔍 Fallback: Formatted deadline:', formattedDeadline);
+        deadlineDate.textContent = formattedDeadline;
+    }
+
+    // Load fixtures for a specific deadline
 }
 
 // Export the FixturesManager class
