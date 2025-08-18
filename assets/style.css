@@ -7713,6 +7713,99 @@ a:hover {
         margin: 0;
     }
     
+    /* Mobile dropdown picker styles */
+    .fixture-buttons-desktop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    
+    .fixture-dropdown-mobile {
+        display: none;
+    }
+    
+    /* Show dropdown on small screens, buttons on larger screens */
+    @media (max-width: 480px) {
+        .fixture-buttons-desktop {
+            display: none;
+        }
+        
+        .fixture-dropdown-mobile {
+            display: block;
+        }
+        
+        .team-pick-dropdown {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #007bff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .team-pick-dropdown:hover {
+            background: #f8f9fa;
+            border-color: #0056b3;
+        }
+        
+        .team-pick-dropdown:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        
+        /* Dropdown status styling */
+        .team-pick-dropdown.current-pick {
+            border-color: #28a745;
+            color: #155724;
+            background: #d4edda;
+        }
+        
+        .team-pick-dropdown.saved-pick {
+            border-color: #ffc107;
+            color: #856404;
+            background: #fff3cd;
+        }
+        
+        .team-pick-dropdown.locked-pick {
+            border-color: #6c757d;
+            color: #6c757d;
+            background: #e2e3e5;
+            cursor: not-allowed;
+        }
+        
+        .team-pick-dropdown.available {
+            border-color: #007bff;
+            color: #007bff;
+            background: white;
+        }
+        
+        /* Dropdown option styling */
+        .dropdown-option.current-pick {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .dropdown-option.saved-pick {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .dropdown-option.locked-pick {
+            background: #e2e3e5;
+            color: #6c757d;
+        }
+        
+        .dropdown-option.available {
+            background: white;
+            color: #007bff;
+        }
+    }
+    
     /* Mobile edition selector improvements */
     .mobile-edition-selector {
         padding: 12px;
