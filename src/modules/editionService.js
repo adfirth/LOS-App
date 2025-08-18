@@ -75,14 +75,28 @@ class EditionService {
     async createEditionSelector(userData, userId, containerSelector) {
         console.log('🔧 EditionService: Creating edition selector in container:', containerSelector);
         
-        const container = document.querySelector(containerSelector);
+        // Handle both desktop and mobile containers
+        const isMobile = containerSelector === '#mobile-edition-selector-container';
+        const desktopContainer = document.querySelector('#edition-selector-container');
+        const mobileContainer = document.querySelector('#mobile-edition-selector-container');
+        
+        // Use the appropriate container based on the selector
+        let container;
+        if (isMobile) {
+            container = mobileContainer;
+        } else {
+            container = desktopContainer;
+        }
+        
         if (!container) {
             console.error('❌ Edition selector container not found:', containerSelector);
             return;
         }
         
         // Check if we already have an edition selector in this container
-        const existingSelector = container.querySelector('#dashboard-edition-selector');
+        const existingSelector = isMobile ? 
+            container.querySelector('#mobile-dashboard-edition-selector') : 
+            container.querySelector('#dashboard-edition-selector');
         if (existingSelector) {
             console.log('🔧 EditionService: Existing edition selector found, removing old one...');
             existingSelector.remove();
@@ -101,49 +115,54 @@ class EditionService {
             return;
         }
 
-        // Create the edition selector HTML for both desktop and mobile
-        const selectorHTML = `
-            <!-- Desktop Edition Selector -->
-            <div class="edition-selector-wrapper desktop-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1.1rem;">Select Active Edition:</h4>
-                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                    <select id="dashboard-edition-selector" style="padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; min-width: 200px; background: white;">
-                        ${availableEditions.map(edition => {
-                            const selected = edition.key === this.currentUserEdition ? 'selected' : '';
-                            console.log(`🔧 EditionService: Creating option for edition ${edition.key} (${edition.label}) - selected: ${selected}`);
-                            return `<option value="${edition.key}" ${selected}>${edition.label}</option>`;
-                        }).join('')}
-                    </select>
-                    <button id="save-edition-preference" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s ease;">Save Edition</button>
+        // Create the edition selector HTML based on whether it's mobile or desktop
+        let selectorHTML;
+        if (isMobile) {
+            // Mobile Edition Selector
+            selectorHTML = `
+                <div class="edition-selector-wrapper mobile-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1rem;">Select Active Edition:</h4>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <select id="mobile-dashboard-edition-selector" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; background: white;">
+                            ${availableEditions.map(edition => {
+                                const selected = edition.key === this.currentUserEdition ? 'selected' : '';
+                                return `<option value="${edition.key}" ${selected}>${edition.label}</option>`;
+                            }).join('')}
+                        </select>
+                        <button id="mobile-save-edition-preference" style="width: 100%; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold;">Save Edition</button>
+                    </div>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #6c757d;">
+                        You can change your preferred edition at any time. This affects which fixtures and scores you see.
+                    </p>
+                    <div id="mobile-edition-status" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-size: 0.85rem; color: #6c757d;">
+                        Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>
+                    </div>
                 </div>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #6c757d;">
-                    You can change your preferred edition at any time. This affects which fixtures and scores you see.
-                </p>
-                <div id="edition-status" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-size: 0.85rem; color: #6c757d;">
-                    Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>
+            `;
+        } else {
+            // Desktop Edition Selector
+            selectorHTML = `
+                <div class="edition-selector-wrapper desktop-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1.1rem;">Select Active Edition:</h4>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <select id="dashboard-edition-selector" style="padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; min-width: 200px; background: white;">
+                            ${availableEditions.map(edition => {
+                                const selected = edition.key === this.currentUserEdition ? 'selected' : '';
+                                console.log(`🔧 EditionService: Creating option for edition ${edition.key} (${edition.label}) - selected: ${selected}`);
+                                return `<option value="${edition.key}" ${selected}>${edition.label}</option>`;
+                            }).join('')}
+                        </select>
+                        <button id="save-edition-preference" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s ease;">Save Edition</button>
+                    </div>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #6c757d;">
+                        You can change your preferred edition at any time. This affects which fixtures and scores you see.
+                    </p>
+                    <div id="edition-status" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-size: 0.85rem; color: #6c757d;">
+                        Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Mobile Edition Selector -->
-            <div class="edition-selector-wrapper mobile-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1rem;">Select Active Edition:</h4>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <select id="mobile-dashboard-edition-selector" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; background: white;">
-                        ${availableEditions.map(edition => {
-                            const selected = edition.key === this.currentUserEdition ? 'selected' : '';
-                            return `<option value="${edition.key}" ${selected}>${edition.label}</option>`;
-                        }).join('')}
-                    </select>
-                    <button id="mobile-save-edition-preference" style="width: 100%; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold;">Save Edition</button>
-                </div>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #6c757d;">
-                    You can change your preferred edition at any time. This affects which fixtures and scores you see.
-                </p>
-                <div id="mobile-edition-status" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-size: 0.85rem; color: #6c757d;">
-                    Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>
-                </div>
-            </div>
-        `;
+            `;
+        }
         
         console.log('🔧 EditionService: Generated selector HTML:', selectorHTML);
 

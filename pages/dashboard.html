@@ -249,6 +249,12 @@
                     
                     <!-- Mobile Edition Selection (only shown if user is registered for multiple editions) -->
                     <!-- This is now handled by EditionService in the edition-selector-container below -->
+                    
+                    <!-- Mobile Edition Selector Container for EditionService -->
+                    <div id="mobile-edition-selector-container" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; border: 1px solid #28a745;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #155724;">Active Edition:</h4>
+                        <!-- EditionService will populate this -->
+                    </div>
                 </div>
                 
                 <!-- Mobile Game Week Navigation -->
@@ -579,10 +585,17 @@
                             
                             // Initialize the EditionService with user data first
                             window.editionService.initializeWithUser(userData, user.uid).then(() => {
-                                console.log('🔧 Dashboard: EditionService initialized, creating selector...');
+                                console.log('🔧 Dashboard: EditionService initialized, creating selectors...');
+                                
+                                // Create edition selector for desktop
                                 window.editionService.createEditionSelector(userData, user.uid, '#edition-selector-container').catch(error => {
-                    console.error('❌ Dashboard: Error creating edition selector:', error);
-                });
+                                    console.error('❌ Dashboard: Error creating desktop edition selector:', error);
+                                });
+                                
+                                // Create edition selector for mobile
+                                window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').catch(error => {
+                                    console.error('❌ Dashboard: Error creating mobile edition selector:', error);
+                                });
                                 
                                 // Load fixtures for the current gameweek after edition selector is set up
                                 if (window.loadFixturesForDeadline) {
