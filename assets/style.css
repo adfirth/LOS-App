@@ -7935,3 +7935,154 @@ a:hover {
         font-size: 0.75rem;
     }
 }
+
+/* Mobile Team Picker Dropdown - Single Dropdown Approach */
+.mobile-team-picker-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.mobile-team-picker-header h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mobile-team-picker-dropdown-container {
+    position: relative;
+}
+
+.mobile-team-picker-dropdown {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #007bff;
+    border-radius: 6px;
+    background: white;
+    font-size: 16px;
+    color: #495057;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-team-picker-dropdown:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.mobile-team-picker-dropdown option {
+    padding: 8px;
+    font-size: 14px;
+}
+
+/* Dropdown option status classes */
+.mobile-team-picker-dropdown option.available.pickable {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.mobile-team-picker-dropdown option.available.unavailable {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.mobile-team-picker-dropdown option.current-pick {
+    color: #007bff;
+    font-weight: bold;
+    background-color: #e3f2fd;
+}
+
+.mobile-team-picker-dropdown option.saved-pick.transferable {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+.mobile-team-picker-dropdown option.saved-pick.locked {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.mobile-team-picker-dropdown option.locked-pick {
+    color: #dc3545;
+    font-style: italic;
+}
+
+/* Mobile fixtures list styling */
+.mobile-fixtures-list {
+    margin-bottom: 20px;
+}
+
+.mobile-fixture-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-fixture-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.mobile-fixture-date {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.mobile-fixture-status {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.mobile-fixture-status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.mobile-fixture-status.in-progress {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.mobile-fixture-status.not-started {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.mobile-fixture-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.mobile-team {
+    font-weight: 600;
+    color: #495057;
+}
+
+.mobile-vs {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.mobile-fixture-score {
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    font-size: 16px;
+}

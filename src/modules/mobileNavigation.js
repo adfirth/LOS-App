@@ -247,6 +247,12 @@ class MobileNavigationManager {
                     console.log('🔧 Mobile Navigation: Setting container display to block');
                     fixturesDisplayContainer.style.display = 'block';
                     
+                    // Update mobile pick status header and deadline info
+                    console.log('🔧 Mobile Navigation: Updating mobile pick status header...');
+                    this.updateMobilePickStatusHeader(gameweek, userData, userId).catch(error => {
+                        console.error('🔧 Mobile Navigation: Error updating mobile pick status header:', error);
+                    });
+                    
                     // Show the mobile gameweek navigation
                     const mobileGameweekNavigation = document.querySelector('#mobile-gameweek-navigation');
                     if (mobileGameweekNavigation) {
@@ -356,193 +362,244 @@ class MobileNavigationManager {
             return;
         }
 
-        // Sort fixtures by date
-        const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        let fixturesHTML = '';
-        
-        for (const fixture of sortedFixtures) {
-            const fixtureDate = new Date(fixture.date);
-
-            const homeBadge = this.getTeamBadge(fixture.homeTeam);
-            const awayBadge = this.getTeamBadge(fixture.awayTeam);
+        try {
+            // Create fixtures display with single dropdown approach
+            let fixturesHTML = '<div class="mobile-fixtures-container">';
             
-            const homeBadgeHtml = homeBadge ? `<img src="${homeBadge}" alt="${fixture.homeTeam}">` : '';
-            const awayBadgeHtml = awayBadge ? `<img src="${awayBadge}" alt="${fixture.awayTeam}">` : '';
-
-            // Check if user has already picked either team for this gameweek
-            const gameweekKey = currentGameWeek ? (currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`) : null;
-            const currentPick = userData && gameweekKey ? userData.picks && userData.picks[gameweekKey] : null;
-            
-            // Determine if teams are clickable (not already picked and deadline hasn't passed)
-            const isClickable = userData && currentGameWeek && userId;
-            
-            // Check if teams are already picked by user in other gameweeks
-            const existingPicks = userData ? Object.values(userData.picks || {}) : [];
-            
-            // Check if deadline has passed for this gameweek
-            let deadlinePassed = false;
-            if (currentGameWeek && userData) {
-                const userEdition = this.getUserEdition(userData);
-                try {
-                    deadlinePassed = await this.checkDeadlineForGameweek(currentGameWeek, userEdition);
-                } catch (error) {
-                    console.error('Error checking deadline for mobile fixtures:', error);
-                    deadlinePassed = false;
-                }
-            }
-            
-            // Use EnhancedPickManager for team status if available, otherwise fallback to simple logic
-            let homeTeamStatus, awayTeamStatus;
-            
-            if (window.enhancedPickManager) {
-                // Use fallback status for now - we'll update asynchronously
-                homeTeamStatus = {
-                    status: 'available',
-                    clickable: true,
-                    tooltip: 'Click to pick this team',
-                    classes: 'team-pick-button available',
-                    action: 'pick'
-                };
-                awayTeamStatus = {
-                    status: 'available',
-                    clickable: true,
-                    tooltip: 'Click to pick this team',
-                    classes: 'team-pick-button available',
-                    action: 'pick'
-                };
-            } else {
-                // Fallback to simple logic if EnhancedPickManager not available
-                if (currentPick === fixture.homeTeam) {
-                    homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
-                } else if (existingPicks.includes(fixture.homeTeam)) {
-                    homeTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
-                } else {
-                    homeTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
+            // Add fixtures list first (display only, no picker buttons)
+            fixturesHTML += '<div class="mobile-fixtures-list">';
+            fixtures.forEach((fixture, index) => {
+                // Fix: Combine date and kickOffTime if both are available
+                let fixtureDateString = fixture.date;
+                if (fixture.kickOffTime && fixture.kickOffTime !== '00:00:00') {
+                    // Combine date with kick-off time
+                    fixtureDateString = `${fixture.date}T${fixture.kickOffTime}`;
+                    console.log(`🔧 Mobile Navigation: Fixture ${index + 1}: Combined date and time:`, fixtureDateString);
+                } else if (fixtureDateString && !fixtureDateString.includes('T') && !fixtureDateString.includes(':')) {
+                    // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                    fixtureDateString = `${fixtureDateString}T15:00:00`;
+                    console.log(`🔧 Mobile Navigation: Fixture ${index + 1}: Added default time to date string:`, fixtureDateString);
                 }
                 
-                if (currentPick === fixture.awayTeam) {
-                    awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
-                } else if (existingPicks.includes(fixture.awayTeam)) {
-                    awayTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
-                } else {
-                    awayTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
-                }
-            }
-            
-            // Apply status classes to team buttons
-            const homeTeamClasses = homeTeamStatus.classes || `team-pick-button ${homeTeamStatus.status}`;
-            const awayTeamClasses = awayTeamStatus.classes || `team-pick-button ${awayTeamStatus.status}`;
-            
-            // Add deadline-passed class if deadline has passed (fallback only)
-            if (!window.enhancedPickManager && deadlinePassed) {
-                homeTeamClasses += ' deadline-passed';
-                awayTeamClasses += ' deadline-passed';
-            }
-            
-            // Determine if teams are clickable and create tooltips
-            const homeTeamClickable = homeTeamStatus.clickable;
-            const awayTeamClickable = awayTeamStatus.clickable;
-            const homeTeamTooltip = homeTeamStatus.tooltip || homeTeamStatus.reason;
-            const awayTeamTooltip = awayTeamStatus.tooltip || awayTeamStatus.reason;
-            
-            const homeTeamClickAttr = homeTeamClickable ? `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
-            const awayTeamClickAttr = awayTeamClickable ? `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
-            const homeTeamTitleAttr = homeTeamTooltip ? `title="${homeTeamTooltip}"` : '';
-            const awayTeamTitleAttr = awayTeamTooltip ? `title="${awayTeamTooltip}"` : '';
-
-            // Create dropdown options for mobile picker
-            const dropdownOptions = [];
-            
-            // Add home team option
-            const homeTeamOption = {
-                value: fixture.homeTeam,
-                text: `${fixture.homeTeam} (Home)`,
-                status: homeTeamStatus.status,
-                clickable: homeTeamClickable,
-                tooltip: homeTeamTooltip
-            };
-            dropdownOptions.push(homeTeamOption);
-            
-            // Add away team option
-            const awayTeamOption = {
-                value: fixture.awayTeam,
-                text: `${fixture.awayTeam} (Away)`,
-                status: awayTeamStatus.status,
-                clickable: awayTeamClickable,
-                tooltip: awayTeamTooltip
-            };
-            dropdownOptions.push(awayTeamOption);
-            
-            // Add "No Pick" option
-            dropdownOptions.push({
-                value: '',
-                text: 'No Pick',
-                status: 'available',
-                clickable: true,
-                tooltip: 'Clear your pick for this fixture'
-            });
-            
-            // Create dropdown HTML
-            const dropdownHTML = dropdownOptions.map(option => {
-                const selected = currentPick === option.value ? 'selected' : '';
-                const disabled = !option.clickable ? 'disabled' : '';
-                const statusClass = option.status === 'current-pick' ? 'current-pick' : 
-                                  option.status === 'saved-pick' ? 'saved-pick' : 
-                                  option.status === 'locked-pick' ? 'locked-pick' : 'available';
+                const fixtureDate = new Date(fixtureDateString);
                 
-                return `<option value="${option.value}" ${selected} ${disabled} class="dropdown-option ${statusClass}">${option.text}</option>`;
-            }).join('');
-            
-            console.log('🔧 Mobile Navigation: Created dropdown for fixture:', {
-                fixture: `${fixture.homeTeam} vs ${fixture.awayTeam}`,
-                dropdownHTML: dropdownHTML.substring(0, 100) + '...',
-                currentPick,
-                optionsCount: dropdownOptions.length
+                // Format the date properly
+                const formattedDate = fixtureDate.toLocaleDateString('en-GB', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Europe/London'
+                });
+
+                let statusClass = 'mobile-fixture-status';
+                let statusText = fixture.status || 'NS';
+                
+                if (fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+                    statusClass += ' completed';
+                } else if (fixture.status === '1H' || fixture.status === 'HT' || fixture.status === '2H') {
+                    statusClass += ' in-progress';
+                } else if (fixture.status === 'NS') {
+                    statusClass += ' not-started';
+                }
+                
+                fixturesHTML += `
+                    <div class="mobile-fixture-item">
+                        <div class="mobile-fixture-header">
+                            <span class="mobile-fixture-date">${formattedDate}</span>
+                            <span class="${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="mobile-fixture-teams">
+                            <span class="mobile-team home-team">${fixture.homeTeam}</span>
+                            <span class="mobile-vs">v</span>
+                            <span class="mobile-team away-team">${fixture.awayTeam}</span>
+                        </div>
+                        ${fixture.homeScore !== undefined && fixture.awayScore !== undefined ? 
+                            `<div class="mobile-fixture-score">${fixture.homeScore} - ${fixture.awayScore}</div>` : 
+                            '<div class="mobile-fixture-score">-</div>'
+                        }
+                    </div>
+                `;
             });
+            fixturesHTML += '</div>';
             
+            // Add single team picker dropdown for all teams
             fixturesHTML += `
-                <div class="fixture-item">
-                    <div class="fixture-teams">
-                        <!-- Desktop/Tablet Button Layout -->
-                        <div class="fixture-buttons-desktop">
-                            <button class="${homeTeamClasses}" ${homeTeamClickAttr} ${homeTeamTitleAttr} ${!homeTeamClickable ? 'disabled' : ''}>
-                                ${homeBadgeHtml}${fixture.homeTeam}
-                                ${currentPick === fixture.homeTeam ? '<span class="pick-indicator">✓</span>' : ''}
-                            </button>
-                            <div class="fixture-vs">vs</div>
-                            <button class="${awayTeamClasses}" ${awayTeamClickAttr} ${awayTeamTitleAttr} ${!awayTeamClickable ? 'disabled' : ''}>
-                                ${awayBadgeHtml}${fixture.awayTeam}
-                                ${currentPick === fixture.awayTeam ? '<span class="pick-indicator">✓</span>' : ''}
-                            </button>
-                        </div>
-                        
-                        <!-- Mobile Dropdown Layout -->
-                        <div class="fixture-dropdown-mobile">
-                            <select class="team-pick-dropdown" data-fixture-id="${fixture.homeTeam}-${fixture.awayTeam}" data-gameweek="${currentGameWeek}" data-user-id="${userId}">
-                                ${dropdownHTML}
-                            </select>
-                        </div>
+                <div class="mobile-team-picker-section">
+                    <div class="mobile-team-picker-header">
+                        <h4>Select Your Pick</h4>
                     </div>
-                    <div class="fixture-datetime">
-                        <div class="fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
-                        <div class="fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                    </div>
-                    <div class="fixture-status">
-                        <span class="status-badge ${fixture.status || 'NS'}">${this.getStatusDisplay(fixture.status)}</span>
+                    <div class="mobile-team-picker-dropdown-container">
+                        <select id="mobile-team-picker-dropdown" class="mobile-team-picker-dropdown" data-gameweek="${currentGameWeek}" data-user-id="${userId}">
+                            <option value="">Choose a team...</option>
+                        </select>
                     </div>
                 </div>
             `;
+            
+            fixturesHTML += '</div>';
+            fixturesDisplay.innerHTML = fixturesHTML;
+            
+            // Setup the single team picker dropdown
+            this.setupMobileTeamPickerDropdown(fixtures, userData, currentGameWeek, userId);
+            
+            console.log('🔧 Mobile Navigation: Mobile fixtures display rendered successfully');
+            
+        } catch (error) {
+            console.error('🔧 Mobile Navigation: Error rendering mobile fixtures display:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+        }
+    }
+
+    /**
+     * Setup the single mobile team picker dropdown with all teams alphabetically
+     */
+    async setupMobileTeamPickerDropdown(fixtures, userData, currentGameWeek, userId) {
+        console.log('🔧 Mobile Navigation: Setting up single team picker dropdown');
+        
+        const dropdown = document.querySelector('#mobile-team-picker-dropdown');
+        if (!dropdown) {
+            console.error('🔧 Mobile Navigation: Mobile team picker dropdown not found');
+            return;
         }
 
-        fixturesDisplay.innerHTML = fixturesHTML;
-        
-        // Add event listeners for dropdowns
-        this.setupDropdownEventListeners();
-        
-        // Now update team statuses asynchronously if EnhancedPickManager is available
-        if (window.enhancedPickManager) {
-            this.updateMobileTeamStatusesAsync(fixtures, currentGameWeek, userData, userId);
+        try {
+            // Get all unique teams from fixtures
+            const allTeams = new Set();
+            fixtures.forEach(fixture => {
+                allTeams.add(fixture.homeTeam);
+                allTeams.add(fixture.awayTeam);
+            });
+
+            // Sort teams alphabetically
+            const sortedTeams = Array.from(allTeams).sort();
+
+            // Get current pick for this gameweek
+            const gameweekKey = currentGameWeek ? (currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`) : null;
+            const currentPick = userData && gameweekKey ? userData.picks && userData.picks[gameweekKey] : null;
+
+            // Clear existing options except the first one
+            dropdown.innerHTML = '<option value="">Choose a team...</option>';
+
+            // Add teams to dropdown with proper status
+            for (const team of sortedTeams) {
+                let teamStatus = 'available';
+                let isClickable = true;
+                let statusText = 'Available for picking';
+                let statusClass = 'available';
+
+                if (window.enhancedPickManager) {
+                    // Use EnhancedPickManager to get team status
+                    try {
+                        const status = await window.enhancedPickManager.getTeamStatus(team, currentGameWeek, userData, fixtures);
+                        teamStatus = status.status;
+                        isClickable = status.clickable;
+                        statusText = status.tooltip || status.reason || 'Available for picking';
+                        
+                        // Map status to CSS class
+                        if (status.status === 'current-pick') {
+                            statusClass = 'current-pick';
+                        } else if (status.status === 'saved-pick') {
+                            statusClass = status.clickable ? 'saved-pick transferable' : 'saved-pick locked';
+                        } else if (status.status === 'locked-pick') {
+                            statusClass = 'locked-pick';
+                        } else {
+                            statusClass = status.clickable ? 'available pickable' : 'available unavailable';
+                        }
+                    } catch (error) {
+                        console.error('🔧 Mobile Navigation: Error getting team status for', team, error);
+                        // Fallback to available
+                        teamStatus = 'available';
+                        isClickable = true;
+                        statusText = 'Available for picking';
+                        statusClass = 'available pickable';
+                    }
+                } else {
+                    // Fallback logic if EnhancedPickManager not available
+                    if (currentPick === team) {
+                        teamStatus = 'current-pick';
+                        isClickable = false;
+                        statusText = 'Current pick for this gameweek';
+                        statusClass = 'current-pick';
+                    } else if (userData && userData.picks && Object.values(userData.picks).includes(team)) {
+                        teamStatus = 'saved-pick';
+                        isClickable = true;
+                        statusText = 'Picked in another gameweek';
+                        statusClass = 'saved-pick transferable';
+                    } else {
+                        teamStatus = 'available';
+                        isClickable = true;
+                        statusText = 'Available for picking';
+                        statusClass = 'available pickable';
+                    }
+                }
+
+                // Create option element
+                const option = document.createElement('option');
+                option.value = team;
+                option.textContent = team;
+                option.className = `dropdown-option ${statusClass}`;
+                option.disabled = !isClickable;
+                option.title = statusText;
+
+                // Mark as selected if this is the current pick
+                if (currentPick === team) {
+                    option.selected = true;
+                }
+
+                dropdown.appendChild(option);
+            }
+
+            // Add event listener for dropdown changes
+            dropdown.addEventListener('change', async (event) => {
+                const selectedTeam = event.target.value;
+                console.log('🔧 Mobile Navigation: Team selected in dropdown:', selectedTeam);
+
+                if (selectedTeam === '') {
+                    // Clear pick
+                    if (confirm('Are you sure you want to clear your pick for this gameweek?')) {
+                        await this.clearPickForGameweek(currentGameWeek, userId);
+                    } else {
+                        // Reset dropdown to previous value
+                        event.target.value = currentPick || '';
+                    }
+                } else {
+                    // Make pick
+                    if (window.enhancedPickManager) {
+                        await window.enhancedPickManager.handleTeamSelection(selectedTeam, currentGameWeek, userId);
+                    }
+                }
+            });
+
+            console.log('🔧 Mobile Navigation: Single team picker dropdown setup complete');
+
+        } catch (error) {
+            console.error('🔧 Mobile Navigation: Error setting up mobile team picker dropdown:', error);
+        }
+    }
+
+    /**
+     * Clear pick for a specific gameweek
+     */
+    async clearPickForGameweek(gameweek, userId) {
+        try {
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const db = this.getDb();
+            
+            await db.collection('users').doc(userId).update({
+                [`picks.${gameweekKey}`]: db.FieldValue.delete()
+            });
+            
+            console.log('🔧 Mobile Navigation: Pick cleared for gameweek:', gameweek);
+            
+            // Refresh the display
+            if (window.updateMobilePickStatusHeader) {
+                window.updateMobilePickStatusHeader(gameweek, null, userId);
+            }
+            
+        } catch (error) {
+            console.error('🔧 Mobile Navigation: Error clearing pick for gameweek:', error);
         }
     }
 
