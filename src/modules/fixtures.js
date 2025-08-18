@@ -1554,8 +1554,21 @@ class FixturesManager {
                         let homeTeamStatus, awayTeamStatus;
                         
                         if (window.enhancedPickManager) {
-                            homeTeamStatus = window.enhancedPickManager.getTeamStatus(fixture.homeTeam, currentGameWeek, userData, fixtures);
-                            awayTeamStatus = window.enhancedPickManager.getTeamStatus(fixture.awayTeam, currentGameWeek, userData, fixtures);
+                            // Use fallback status for now - we'll handle async calls separately
+                            homeTeamStatus = {
+                                classes: 'team-pick-button available',
+                                clickable: true,
+                                tooltip: 'Click to pick this team',
+                                action: 'pick',
+                                status: 'available'
+                            };
+                            awayTeamStatus = {
+                                classes: 'team-pick-button available',
+                                clickable: true,
+                                tooltip: 'Click to pick this team',
+                                action: 'pick',
+                                status: 'available'
+                            };
                         } else {
                             // Fallback to old logic if EnhancedPickManager not available
                             homeTeamStatus = {
@@ -1609,6 +1622,11 @@ class FixturesManager {
                     
                     fixturesHTML += '</div>';
                     fixturesDisplay.innerHTML = fixturesHTML;
+                    
+                    // Now update team statuses asynchronously if EnhancedPickManager is available
+                    if (window.enhancedPickManager) {
+                        this.updateTeamStatusesAsync(fixtures, currentGameWeek, userData, userId);
+                    }
                     
                 } else {
                     console.log('No fixtures found for gameweek');
@@ -2800,6 +2818,92 @@ class FixturesManager {
     }
 
     // Load fixtures for a specific deadline
+    
+    /**
+     * Update team statuses asynchronously using EnhancedPickManager
+     * @param {Array} fixtures - Array of fixtures
+     * @param {string} currentGameWeek - Current gameweek
+     * @param {Object} userData - User data
+     * @param {string} userId - User ID
+     */
+    async updateTeamStatusesAsync(fixtures, currentGameWeek, userData, userId) {
+        if (!window.enhancedPickManager) return;
+        
+        try {
+            for (const fixture of fixtures) {
+                // Get async team statuses
+                const homeTeamStatus = await window.enhancedPickManager.getTeamStatus(fixture.homeTeam, currentGameWeek, userData, fixtures);
+                const awayTeamStatus = await window.enhancedPickManager.getTeamStatus(fixture.awayTeam, currentGameWeek, userData, fixtures);
+                
+                // Find the team buttons for this fixture
+                const homeTeamButton = document.querySelector(`button[onclick*="${fixture.homeTeam}"]`);
+                const awayTeamButton = document.querySelector(`button[onclick*="${fixture.awayTeam}"]`);
+                
+                if (homeTeamButton) {
+                    this.updateTeamButton(homeTeamButton, homeTeamStatus, fixture.homeTeam, currentGameWeek, userId);
+                }
+                
+                if (awayTeamButton) {
+                    this.updateTeamButton(awayTeamButton, awayTeamStatus, fixture.awayTeam, currentGameWeek, userId);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating team statuses asynchronously:', error);
+        }
+    }
+    
+    /**
+     * Update a team button with the correct status
+     * @param {HTMLElement} button - The team button element
+     * @param {Object} teamStatus - Team status object from EnhancedPickManager
+     * @param {string} teamName - Team name
+     * @param {string} currentGameWeek - Current gameweek
+     * @param {string} userId - User ID
+     */
+    updateTeamButton(button, teamStatus, teamName, currentGameWeek, userId) {
+        // Update classes
+        button.className = teamStatus.classes;
+        
+        // Update clickable state
+        if (teamStatus.clickable) {
+            button.onclick = () => window.enhancedPickManager.handleTeamSelection(teamName, currentGameWeek, userId);
+            button.disabled = false;
+        } else {
+            button.onclick = null;
+            button.disabled = true;
+        }
+        
+        // Update tooltip
+        button.title = teamStatus.tooltip;
+        
+        // Update visual indicators
+        const pickIndicator = button.querySelector('.pick-indicator');
+        const savedPickIndicator = button.querySelector('.saved-pick-indicator');
+        const lockedPickIndicator = button.querySelector('.locked-pick-indicator');
+        
+        // Remove existing indicators
+        if (pickIndicator) pickIndicator.remove();
+        if (savedPickIndicator) savedPickIndicator.remove();
+        if (lockedPickIndicator) lockedPickIndicator.remove();
+        
+        // Add appropriate indicator
+        if (teamStatus.status === 'current-pick') {
+            const indicator = document.createElement('span');
+            indicator.className = 'pick-indicator';
+            indicator.textContent = '✓';
+            button.appendChild(indicator);
+        } else if (teamStatus.status === 'saved-pick') {
+            const indicator = document.createElement('span');
+            indicator.className = 'saved-pick-indicator';
+            indicator.textContent = '💾';
+            button.appendChild(indicator);
+        } else if (teamStatus.status === 'locked-pick') {
+            const indicator = document.createElement('span');
+            indicator.className = 'locked-pick-indicator';
+            indicator.textContent = '🔒';
+            button.appendChild(indicator);
+        }
+    }
 }
 
 // Export the FixturesManager class
