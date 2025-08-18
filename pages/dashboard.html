@@ -649,9 +649,16 @@
                                     alert(`OnePlus Device Detected!\nWidth: ${window.innerWidth}\nHeight: ${window.innerHeight}\nUser Agent: ${userAgent.substring(0, 50)}...`);
                                 }
                                 
+                                // Debug edition selector creation
+                                alert(`About to create edition selectors...\nUser data: ${JSON.stringify(userData.registrations)}\nEdition service available: ${!!window.editionService}`);
+                                
                                 // Create edition selector for mobile
-                                window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').catch(error => {
+                                window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').then(() => {
+                                    console.log('✅ Mobile edition selector created successfully');
+                                    alert('Mobile edition selector created successfully!');
+                                }).catch(error => {
                                     console.error('❌ Dashboard: Error creating mobile edition selector:', error);
+                                    alert('Error creating mobile edition selector: ' + error.message);
                                 });
                                 
                                 // Force mobile layout for OnePlus and similar devices
