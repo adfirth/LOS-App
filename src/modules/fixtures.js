@@ -1963,6 +1963,12 @@ class FixturesManager {
 
         const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
         if (!fixturesDisplay) return;
+        
+        // Check if gameweek is valid
+        if (!gameweek) {
+            console.log('🔧 Mobile fixtures not loaded - gameweek is undefined');
+            return;
+        }
 
         try {
             // Use the same format as the main app.js file

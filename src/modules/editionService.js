@@ -104,7 +104,7 @@ class EditionService {
         // Create the edition selector HTML for both desktop and mobile
         const selectorHTML = `
             <!-- Desktop Edition Selector -->
-            <div class="edition-selector-wrapper desktop-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: block;">
+            <div class="edition-selector-wrapper desktop-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                 <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1.1rem;">Select Active Edition:</h4>
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     <select id="dashboard-edition-selector" style="padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; min-width: 200px; background: white;">
@@ -125,7 +125,7 @@ class EditionService {
             </div>
             
             <!-- Mobile Edition Selector -->
-            <div class="edition-selector-wrapper mobile-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: none;">
+            <div class="edition-selector-wrapper mobile-edition-selector" style="background: #e8f5e8; border: 1px solid #28a745; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                 <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1rem;">Select Active Edition:</h4>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <select id="mobile-dashboard-edition-selector" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; background: white;">
@@ -161,6 +161,8 @@ class EditionService {
         
         // Show the container since it now has content
         container.style.display = 'block';
+        
+
         
         console.log('🔧 EditionService: Container HTML set and displayed');
         
@@ -649,6 +651,8 @@ class EditionService {
             mobileStatusElement.innerHTML = `Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>`;
         }
     }
+
+
 }
 
 // Export the EditionService class

@@ -293,8 +293,10 @@ class UIManager {
                 }
                 
                 // Load mobile fixtures for current gameweek
-                if (typeof loadMobileFixturesForDeadline === 'function') {
+                if (typeof loadMobileFixturesForDeadline === 'function' && currentGameWeek) {
                     loadMobileFixturesForDeadline(currentGameWeek, userData, user.uid);
+                } else {
+                    console.log('🔧 Mobile fixtures not loaded - currentGameWeek:', currentGameWeek);
                 }
                 
                 // Update pick status headers for both desktop and mobile
