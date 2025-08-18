@@ -609,20 +609,37 @@
                                 // Enhanced mobile detection for OnePlus and similar devices
                                 const userAgent = navigator.userAgent.toLowerCase();
                                 const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-                                const isOnePlus = userAgent.includes('oneplus') || userAgent.includes('one plus');
+                                const isOnePlus = userAgent.includes('oneplus') || userAgent.includes('one plus') || userAgent.includes('oneplus12') || userAgent.includes('one plus 12');
                                 const isHighResMobile = window.innerWidth <= 1440 && isMobileDevice;
+                                
+                                // Additional OnePlus detection methods
+                                const isOnePlusByScreen = window.innerWidth >= 1440 && window.innerHeight >= 3000; // OnePlus 12 dimensions
+                                const isOnePlusByPlatform = navigator.platform && navigator.platform.toLowerCase().includes('android');
+                                const isOnePlusByVendor = navigator.vendor && navigator.vendor.toLowerCase().includes('google');
+                                
+                                // Combined OnePlus detection
+                                const isOnePlusDevice = isOnePlus || isOnePlusByScreen || (isOnePlusByPlatform && isOnePlusByVendor && window.innerWidth >= 1440);
                                 
                                 console.log('🔧 Dashboard: Device detection:', {
                                     userAgent: userAgent.substring(0, 100) + '...',
                                     isMobileDevice,
                                     isOnePlus,
+                                    isOnePlusByScreen,
+                                    isOnePlusByPlatform,
+                                    isOnePlusByVendor,
+                                    isOnePlusDevice,
                                     isHighResMobile,
                                     windowWidth: window.innerWidth,
-                                    windowHeight: window.innerHeight
+                                    windowHeight: window.innerHeight,
+                                    platform: navigator.platform,
+                                    vendor: navigator.vendor
                                 });
                                 
+                                // Show device info for ALL devices to debug
+                                alert(`Device Info:\nWidth: ${window.innerWidth}\nHeight: ${window.innerHeight}\nUser Agent: ${userAgent.substring(0, 100)}...\nPlatform: ${navigator.platform}\nVendor: ${navigator.vendor}\nIs Mobile: ${isMobileDevice}\nIs OnePlus: ${isOnePlus}\nIs OnePlus By Screen: ${isOnePlusByScreen}\nIs OnePlus Device: ${isOnePlusDevice}\nIs High Res Mobile: ${isHighResMobile}`);
+                                
                                 // Temporary alert for OnePlus testing
-                                if (isOnePlus || isHighResMobile) {
+                                if (isOnePlusDevice || isHighResMobile) {
                                     alert(`OnePlus Device Detected!\nWidth: ${window.innerWidth}\nHeight: ${window.innerHeight}\nUser Agent: ${userAgent.substring(0, 50)}...`);
                                 }
                                 
@@ -632,7 +649,7 @@
                                 });
                                 
                                 // Force mobile layout for OnePlus and similar devices
-                                if (isOnePlus || isHighResMobile) {
+                                if (isOnePlusDevice || isHighResMobile) {
                                     console.log('🔧 Dashboard: Detected OnePlus or high-res mobile device, forcing mobile layout');
                                     document.body.classList.add('force-mobile-layout');
                                     
