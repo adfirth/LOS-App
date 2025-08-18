@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple EditionService Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        .console-output {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #edition-selector-container {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple EditionService Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button class="test-button" onclick="testEditionService()">Test EditionService</button>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Edition Selector Container</h2>
+        <div id="edition-selector-container" style="display: none;">
+            <!-- Edition selector will be created here -->
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console-output" class="console-output"></div>
+    </div>
+
+    <script type="module">
+        // Simple test function
+        window.testEditionService = async function() {
+            try {
+                log('🔧 Testing EditionService...');
+                
+                // Import EditionService
+                log('🔧 Importing EditionService...');
+                const editionModule = await import('./src/modules/editionService.js');
+                const EditionService = editionModule.default;
+                log('✅ EditionService imported successfully');
+                
+                // Create instance
+                log('🔧 Creating EditionService instance...');
+                const editionService = new EditionService();
+                log('✅ EditionService instance created');
+                
+                // Test with mock user data
+                const mockUserData = {
+                    registrations: {
+                        editiontest: true,
+                        edition1: true
+                    }
+                };
+                
+                log('🔧 Testing with mock user data:', mockUserData);
+                
+                // Initialize
+                log('🔧 Initializing EditionService...');
+                await editionService.initializeWithUser(mockUserData, 'test-user-1');
+                log('✅ EditionService initialized');
+                
+                // Create selector
+                log('🔧 Creating edition selector...');
+                await editionService.createEditionSelector(mockUserData, 'test-user-1', '#edition-selector-container');
+                log('✅ Edition selector created');
+                
+                // Show container
+                document.getElementById('edition-selector-container').style.display = 'block';
+                
+                log('🎉 All tests passed! EditionService is working correctly.');
+                
+            } catch (error) {
+                log('❌ Error testing EditionService:', error);
+                console.error('Full error:', error);
+            }
+        };
+        
+        // Helper function to log to our console
+        function log(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            
+            // Log to browser console
+            if (data) {
+                console.log(logMessage, data);
+            } else {
+                console.log(logMessage);
+            }
+            
+            // Log to our display
+            const consoleOutput = document.getElementById('console-output');
+            const logLine = document.createElement('div');
+            logLine.textContent = logMessage;
+            if (data) {
+                logLine.textContent += ' ' + JSON.stringify(data, null, 2);
+            }
+            consoleOutput.appendChild(logLine);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        // Clear console function
+        window.clearConsole = function() {
+            document.getElementById('console-output').innerHTML = '';
+        };
+        
+        // Log when page loads
+        log('🚀 Simple EditionService test page loaded');
+        log('🔧 Click "Test EditionService" to run the test');
+    </script>
+</body>
+</html>

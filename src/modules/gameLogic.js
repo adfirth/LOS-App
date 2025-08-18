@@ -359,6 +359,25 @@ class GameLogicManager {
             }
             
             const userData = userDoc.data();
+            const currentPick = userData.picks?.[gameweekKey];
+            
+            // Check if this is a pick change for the current gameweek
+            if (currentPick && currentPick !== teamName) {
+                // User is changing their pick for the current gameweek
+                if (confirm(`You currently have ${currentPick} selected for Game Week ${gameweek}. Would you like to change your pick to ${teamName}?`)) {
+                    await this.db.collection('users').doc(userId).update({
+                        [`picks.${gameweekKey}`]: teamName
+                    });
+                    
+                    console.log(`Pick changed from ${currentPick} to ${teamName} for Game Week ${gameweek}`);
+                    
+                    // Refresh the display with updated data
+                    await this.refreshDisplayAfterPickUpdate(gameweek, userId);
+                }
+                return;
+            }
+            
+            // Check if user has already picked this team in another gameweek
             const existingPicks = Object.values(userData.picks || {});
             
             if (existingPicks.includes(teamName)) {
@@ -589,7 +608,19 @@ class GameLogicManager {
                         return fixtureDate < earliestDate ? fixture : earliest;
                     });
 
-                    const deadlineDate = new Date(earliestFixture.date);
+                    // Fix: Combine date and kickOffTime if both are available
+                    let dateString = earliestFixture.date;
+                    if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
+                        // Combine date with kick-off time
+                        dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
+                        console.log('🔍 GameLogic auto-pick: Combined date and time:', dateString);
+                    } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
+                        // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                        dateString = `${dateString}T15:00:00`;
+                        console.log('🔍 GameLogic auto-pick: Added default time to date string:', dateString);
+                    }
+                    
+                    const deadlineDate = new Date(dateString);
                     const now = new Date();
 
                     if (deadlineDate <= now) {
@@ -660,7 +691,19 @@ class GameLogicManager {
                             return fixtureDate < earliestDate ? fixture : earliest;
                         });
 
-                        resolve(new Date(earliestFixture.date));
+                        // Fix: Combine date and kickOffTime if both are available
+                        let dateString = earliestFixture.date;
+                        if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
+                            // Combine date with kick-off time
+                            dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
+                            console.log('🔍 GameLogic getDeadlineDateForGameweek: Combined date and time:', dateString);
+                        } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
+                            // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                            dateString = `${dateString}T15:00:00`;
+                            console.log('🔍 GameLogic getDeadlineDateForGameweek: Added default time to date string:', dateString);
+                        }
+                        
+                        resolve(new Date(dateString));
                     } else {
                         resolve(null);
                     }
@@ -744,7 +787,19 @@ class GameLogicManager {
                             return fixtureDate < earliestDate ? fixture : earliest;
                         });
 
-                        const deadlineDate = new Date(earliestFixture.date);
+                        // Fix: Combine date and kickOffTime if both are available
+                        let dateString = earliestFixture.date;
+                        if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
+                            // Combine date with kick-off time
+                            dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
+                            console.log('🔍 GameLogic checkDeadlineForGameweek: Combined date and time:', dateString);
+                        } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
+                            // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                            dateString = `${dateString}T15:00:00`;
+                            console.log('🔍 GameLogic checkDeadlineForGameweek: Added default time to date string:', dateString);
+                        }
+                        
+                        const deadlineDate = new Date(dateString);
                         const now = new Date();
                         const isDeadlinePassed = deadlineDate <= now;
                         resolve(isDeadlinePassed);

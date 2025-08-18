@@ -1433,6 +1433,37 @@ class AdminManagementManager {
     initializeAdminApiIntegration() {
         console.log('🔧 Initializing admin API integration...');
         
+        // Set up button event listeners directly
+        console.log('🔧 Setting up button event listeners directly...');
+        
+        // Fetch Fixtures by Date Range button
+        const fetchDateRangeBtn = document.querySelector('#fetch-date-range-fixtures-btn');
+        console.log('🔍 Fetch date range button found:', !!fetchDateRangeBtn);
+        if (fetchDateRangeBtn) {
+            console.log('🔍 Button details:', {
+                id: fetchDateRangeBtn.id,
+                text: fetchDateRangeBtn.textContent,
+                visible: fetchDateRangeBtn.offsetParent !== null
+            });
+            fetchDateRangeBtn.addEventListener('click', () => {
+                console.log('📅 Fetch fixtures by date range button clicked!');
+                if (window.app && window.app.apiManager && window.app.apiManager.footballWebPagesAPI) {
+                    window.app.apiManager.footballWebPagesAPI.fetchDateRangeFixtures();
+                } else {
+                    console.log('⚠️ API Manager not available, using fallback method');
+                    // Fallback: try to find the method on other global objects
+                    if (window.footballWebPagesAPI && window.footballWebPagesAPI.fetchDateRangeFixtures) {
+                        window.footballWebPagesAPI.fetchDateRangeFixtures();
+                    } else {
+                        console.error('❌ No API method found for fetchDateRangeFixtures');
+                    }
+                }
+            });
+            console.log('✅ Fetch fixtures by date range button event listener attached');
+        } else {
+            console.log('⚠️ Fetch fixtures by date range button not found');
+        }
+        
         // Check if the API manager is available
         if (window.app && window.app.apiManager) {
             console.log('✅ API manager found, initializing Football Web Pages API integration');

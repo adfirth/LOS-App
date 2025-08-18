@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOS App - Real Data Testing</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .nav-tab.active {
+            border-bottom-color: #007acc;
+            background: #f8f9fa;
+        }
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            background: white;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .test-info {
+            background: #f0f8ff;
+            border: 1px solid #007acc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        .module-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .real-data-section {
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f8fff8;
+        }
+        .real-data-section h3 {
+            color: #28a745;
+            margin-top: 0;
+        }
+        .function-call {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .function-call h4 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        .function-result {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error-result {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        .success-result {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        .test-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #005a9e;
+        }
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="test-info">
+            <h2>🧪 LOS App - Real Data Testing</h2>
+            <p><strong>Status:</strong> <span id="appStatus" class="module-status status-warning">Initializing...</span></p>
+            <p><strong>Environment:</strong> Local Development (Real Function Calls)</p>
+            <p><strong>Modules Loaded:</strong> <span id="modulesLoaded">0/7</span></p>
+            <p><strong>Note:</strong> This calls actual module functions to show real data and functionality.</p>
+        </div>
+
+        <h1>LOS App - Real Data Testing</h1>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard (Real UI)</button>
+            <button class="nav-tab" onclick="showTab('fixtures')">Fixtures (Real Data)</button>
+            <button class="nav-tab" onclick="showTab('table')">Table (Real Data)</button>
+            <button class="nav-tab" onclick="showTab('admin')">Admin (Real Data)</button>
+            <button class="nav-tab" onclick="showTab('live-test')">Live Function Test</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <h2>Dashboard - Real UI Functions</h2>
+            <div class="real-data-section">
+                <h3>Testing Real UI Module Functions</h3>
+                <p>This tab calls actual functions from your UI module to show real functionality.</p>
+                <div id="dashboardContent">
+                    <p>Loading real dashboard content...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fixtures Tab -->
+        <div id="fixtures" class="tab-content">
+            <h2>Fixtures - Real Data</h2>
+            <div class="real-data-section">
+                <h3>Testing Real Fixtures Module Functions</h3>
+                <p>This tab calls actual functions from your fixtures module to show real data.</p>
+                <div id="fixturesContent">
+                    <p>Loading real fixtures data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Tab -->
+        <div id="table" class="tab-content">
+            <h2>League Table - Real Data</h2>
+            <div class="real-data-section">
+                <h3>Testing Real Scores Module Functions</h3>
+                <p>This tab calls actual functions from your scores module to show real table data.</p>
+                <div id="tableContent">
+                    <p>Loading real league table...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin" class="tab-content">
+            <h2>Admin Panel - Real Data</h2>
+            <div class="real-data-section">
+                <h3>Testing Real Admin Module Functions</h3>
+                <p>This tab calls actual functions from your admin module to show real admin data.</p>
+                <div id="adminContent">
+                    <p>Loading real admin panel...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Function Test Tab -->
+        <div id="live-test" class="tab-content">
+            <h2>Live Function Testing</h2>
+            <div class="real-data-section">
+                <h3>Test Real Module Functions Live</h3>
+                <p>Click buttons to test actual module functions and see real results.</p>
+                <div id="liveTestContent">
+                    <p>Setting up live function tests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Local testing environment setup
+        window.LOCAL_ENV = {
+            RAPIDAPI_KEY: 'local-test-key',
+            BUILD_TIME: new Date().toISOString(),
+            ENVIRONMENT: 'local-test'
+        };
+
+        // Global app state
+        window.APP_STATE = {
+            modules: {},
+            currentUser: null,
+            fixtures: [],
+            table: [],
+            debug: []
+        };
+
+        // Tab management
+        window.showTab = function(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab content
+            loadTabContent(tabName);
+        };
+
+        // Load tab content with real function calls
+        async function loadTabContent(tabName) {
+            try {
+                switch(tabName) {
+                    case 'dashboard':
+                        await testRealDashboard();
+                        break;
+                    case 'fixtures':
+                        await testRealFixtures();
+                        break;
+                    case 'table':
+                        await testRealTable();
+                        break;
+                    case 'admin':
+                        await testRealAdmin();
+                        break;
+                    case 'live-test':
+                        await setupLiveTests();
+                        break;
+                }
+            } catch (error) {
+                console.error(`Error loading ${tabName}:`, error);
+                logDebug(`Error loading ${tabName}: ${error.message}`);
+            }
+        }
+
+        // Test real dashboard functions
+        async function testRealDashboard() {
+            const content = document.getElementById('dashboardContent');
+            try {
+                if (window.APP_STATE.modules.ui) {
+                    const uiModule = window.APP_STATE.modules.ui;
+                    
+                    // Handle ES6 module imports - they might have a default export
+                    let actualUIModule = uiModule;
+                    if (uiModule.default) {
+                        actualUIModule = uiModule.default;
+                    }
+                    
+                    let dashboardHTML = `
+                        <div class="function-call">
+                            <h4>UI Module Functions Available</h4>
+                            <p><strong>Module:</strong> ${typeof actualUIModule}</p>
+                            <p><strong>Functions:</strong> ${Object.keys(actualUIModule).join(', ')}</p>
+                        </div>
+                    `;
+
+                    // Try to call actual UI functions
+                    try {
+                        // Test if UI module has specific functions
+                        if (typeof actualUIModule.initializeUI === 'function') {
+                            dashboardHTML += `
+                                <div class="function-call">
+                                    <h4>Testing initializeUI() Function</h4>
+                                    <button class="test-button" onclick="testUIInit()">Test initializeUI()</button>
+                                    <div id="uiInitResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        if (typeof actualUIModule.showDashboard === 'function') {
+                            dashboardHTML += `
+                                <div class="function-call">
+                                    <h4>Testing showDashboard() Function</h4>
+                                    <button class="test-button" onclick="testShowDashboard()">Test showDashboard()</button>
+                                    <div id="showDashboardResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        // Show any other available functions
+                        const otherFunctions = Object.keys(actualUIModule).filter(func => 
+                            typeof actualUIModule[func] === 'function' && 
+                            !['initializeUI', 'showDashboard'].includes(func)
+                        );
+
+                        if (otherFunctions.length > 0) {
+                            dashboardHTML += `
+                                <div class="function-call">
+                                    <h4>Other Available Functions</h4>
+                                    <p>${otherFunctions.map(func => `<code>${func}()</code>`).join(', ')}</p>
+                                </div>
+                            `;
+                        }
+
+                    } catch (error) {
+                        dashboardHTML += `
+                            <div class="function-call">
+                                <h4>Function Call Error</h4>
+                                <div class="function-result error-result">${error.message}</div>
+                            </div>
+                        `;
+                    }
+
+                    content.innerHTML = dashboardHTML;
+                } else {
+                    content.innerHTML = `
+                        <div class="function-call">
+                            <h4>UI Module Not Available</h4>
+                            <div class="function-result error-result">UI module failed to load</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error testing dashboard: ${error.message}</p>`;
+            }
+        }
+
+        // Test real fixtures functions
+        async function testRealFixtures() {
+            const content = document.getElementById('fixturesContent');
+            try {
+                if (window.APP_STATE.modules.fixtures) {
+                    const fixturesModule = window.APP_STATE.modules.fixtures;
+                    
+                    // Handle ES6 module imports - they might have a default export
+                    let actualFixturesModule = fixturesModule;
+                    if (fixturesModule.default) {
+                        actualFixturesModule = fixturesModule.default;
+                    }
+                    
+                    let fixturesHTML = `
+                        <div class="function-call">
+                            <h4>Fixtures Module Functions Available</h4>
+                            <p><strong>Module:</strong> ${typeof actualFixturesModule}</p>
+                            <p><strong>Functions:</strong> ${Object.keys(actualFixturesModule).join(', ')}</p>
+                        </div>
+                    `;
+
+                    // Try to call actual fixtures functions
+                    try {
+                        if (typeof actualFixturesModule.getFixtures === 'function') {
+                            fixturesHTML += `
+                                <div class="function-call">
+                                    <h4>Testing getFixtures() Function</h4>
+                                    <button class="test-button" onclick="testGetFixtures()">Test getFixtures()</button>
+                                    <div id="getFixturesResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        if (typeof actualFixturesModule.loadFixtures === 'function') {
+                            fixturesHTML += `
+                                <div class="function-call">
+                                    <h4>Testing loadFixtures() Function</h4>
+                                    <button class="test-button" onclick="testLoadFixtures()">Test loadFixtures()</button>
+                                    <div id="loadFixturesResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        // Show other available functions
+                        const otherFunctions = Object.keys(actualFixturesModule).filter(func => 
+                            typeof actualFixturesModule[func] === 'function' && 
+                            !['getFixtures', 'loadFixtures'].includes(func)
+                        );
+
+                        if (otherFunctions.length > 0) {
+                            fixturesHTML += `
+                                <div class="function-call">
+                                    <h4>Other Available Functions</h4>
+                                    <p>${otherFunctions.map(func => `<code>${func}()</code>`).join(', ')}</p>
+                                </div>
+                            `;
+                        }
+
+                    } catch (error) {
+                        fixturesHTML += `
+                            <div class="function-call">
+                                <h4>Function Call Error</h4>
+                                <div class="function-result error-result">${error.message}</div>
+                            </div>
+                        `;
+                    }
+
+                    content.innerHTML = fixturesHTML;
+                } else {
+                    content.innerHTML = `
+                        <div class="function-call">
+                            <h4>Fixtures Module Not Available</h4>
+                            <div class="function-result error-result">Fixtures module failed to load</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error testing fixtures: ${error.message}</p>`;
+            }
+        }
+
+        // Test real table functions
+        async function testRealTable() {
+            const content = document.getElementById('tableContent');
+            try {
+                if (window.APP_STATE.modules.scores) {
+                    const scoresModule = window.APP_STATE.modules.scores;
+                    let tableHTML = `
+                        <div class="function-call">
+                            <h4>Scores Module Functions Available</h4>
+                            <p><strong>Module:</strong> ${typeof scoresModule}</p>
+                            <p><strong>Functions:</strong> ${Object.keys(scoresModule).join(', ')}</p>
+                        </div>
+                    `;
+
+                    // Try to call actual scores functions
+                    try {
+                        if (typeof scoresModule.getTable === 'function') {
+                            tableHTML += `
+                                <div class="function-call">
+                                    <h4>Testing getTable() Function</h4>
+                                    <button class="test-button" onclick="testGetTable()">Test getTable()</button>
+                                    <div id="getTableResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        if (typeof scoresModule.loadTable === 'function') {
+                            tableHTML += `
+                                <div class="function-call">
+                                    <h4>Testing loadTable() Function</h4>
+                                    <button class="test-button" onclick="testLoadTable()">Test loadTable()</button>
+                                    <div id="loadTableResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        // Show other available functions
+                        const otherFunctions = Object.keys(scoresModule).filter(func => 
+                            typeof scoresModule[func] === 'function' && 
+                            !['getTable', 'loadTable'].includes(func)
+                        );
+
+                        if (otherFunctions.length > 0) {
+                            tableHTML += `
+                                <div class="function-call">
+                                    <h4>Other Available Functions</h4>
+                                    <p>${otherFunctions.map(func => `<code>${func}()</code>`).join(', ')}</p>
+                                </div>
+                            `;
+                        }
+
+                    } catch (error) {
+                        tableHTML += `
+                            <div class="function-call">
+                                <h4>Function Call Error</h4>
+                                <div class="function-result error-result">${error.message}</div>
+                            </div>
+                        `;
+                    }
+
+                    content.innerHTML = tableHTML;
+                } else {
+                    content.innerHTML = `
+                        <div class="function-call">
+                            <h4>Scores Module Not Available</h4>
+                            <div class="function-result error-result">Scores module failed to load</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error testing table: ${error.message}</p>`;
+            }
+        }
+
+        // Test real admin functions
+        async function testRealAdmin() {
+            const content = document.getElementById('adminContent');
+            try {
+                if (window.APP_STATE.modules.admin) {
+                    const adminModule = window.APP_STATE.modules.admin;
+                    let adminHTML = `
+                        <div class="function-call">
+                            <h4>Admin Module Functions Available</h4>
+                            <p><strong>Module:</strong> ${typeof adminModule}</p>
+                            <p><strong>Functions:</strong> ${Object.keys(adminModule).join(', ')}</p>
+                        </div>
+                    `;
+
+                    // Try to call actual admin functions
+                    try {
+                        if (typeof adminModule.getAdminData === 'function') {
+                            adminHTML += `
+                                <div class="function-call">
+                                    <h4>Testing getAdminData() Function</h4>
+                                    <button class="test-button" onclick="testGetAdminData()">Test getAdminData()</button>
+                                    <div id="getAdminDataResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        if (typeof adminModule.loadAdminPanel === 'function') {
+                            adminHTML += `
+                                <div class="function-call">
+                                    <h4>Testing loadAdminPanel() Function</h4>
+                                    <button class="test-button" onclick="testLoadAdminPanel()">Test loadAdminPanel()</button>
+                                    <div id="loadAdminPanelResult" class="function-result">Click button to test</div>
+                                </div>
+                            `;
+                        }
+
+                        // Show other available functions
+                        const otherFunctions = Object.keys(adminModule).filter(func => 
+                            typeof adminModule[func] === 'function' && 
+                            !['getAdminData', 'loadAdminPanel'].includes(func)
+                        );
+
+                        if (otherFunctions.length > 0) {
+                            adminHTML += `
+                                <div class="function-call">
+                                    <h4>Other Available Functions</h4>
+                                    <p>${otherFunctions.map(func => `<code>${func}()</code>`).join(', ')}</p>
+                                </div>
+                            `;
+                        }
+
+                    } catch (error) {
+                        adminHTML += `
+                            <div class="function-call">
+                                <h4>Function Call Error</h4>
+                                <div class="function-result error-result">${error.message}</div>
+                            </div>
+                        `;
+                    }
+
+                    content.innerHTML = adminHTML;
+                } else {
+                    content.innerHTML = `
+                        <div class="function-call">
+                            <h4>Admin Module Not Available</h4>
+                            <div class="function-result error-result">Admin module failed to load</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error testing admin: ${error.message}</p>`;
+            }
+        }
+
+        // Setup live function tests
+        async function setupLiveTests() {
+            const content = document.getElementById('liveTestContent');
+            try {
+                let liveTestHTML = `
+                    <div class="function-call">
+                        <h4>Live Function Testing</h4>
+                        <p>Test actual module functions in real-time to see real data and functionality.</p>
+                    </div>
+                `;
+
+                // Create test buttons for each module
+                const modules = [
+                    { name: 'UI', module: 'ui', functions: ['initializeUI', 'showDashboard'] },
+                    { name: 'Fixtures', module: 'fixtures', functions: ['getFixtures', 'loadFixtures'] },
+                    { name: 'Scores', module: 'scores', functions: ['getTable', 'loadTable'] },
+                    { name: 'Admin', module: 'admin', functions: ['getAdminData', 'loadAdminPanel'] }
+                ];
+
+                modules.forEach(({ name, module, functions }) => {
+                    if (window.APP_STATE.modules[module]) {
+                        liveTestHTML += `
+                            <div class="function-call">
+                                <h4>${name} Module Tests</h4>
+                                <p>Module: <strong>${module}</strong></p>
+                                <p>Available functions: ${functions.map(f => `<code>${f}()</code>`).join(', ')}</p>
+                                <button class="test-button" onclick="testModule('${module}')">Test ${name} Module</button>
+                                <div id="${module}TestResult" class="function-result">Click button to test</div>
+                            </div>
+                        `;
+                    } else {
+                        liveTestHTML += `
+                            <div class="function-call">
+                                <h4>${name} Module Tests</h4>
+                                <div class="function-result error-result">${name} module not available</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                content.innerHTML = liveTestHTML;
+            } catch (error) {
+                content.innerHTML = `<p>Error setting up live tests: ${error.message}</p>`;
+            }
+        }
+
+        // Global test functions (accessible from HTML)
+        window.testUIInit = async function() {
+            const resultDiv = document.getElementById('uiInitResult');
+            try {
+                if (window.APP_STATE.modules.ui) {
+                    const uiModule = window.APP_STATE.modules.ui;
+                    
+                    // Handle ES6 module imports - they might have a default export
+                    let actualUIModule = uiModule;
+                    if (uiModule.default) {
+                        actualUIModule = uiModule.default;
+                    }
+                    
+                    // Check if it's a class constructor
+                    if (typeof actualUIModule === 'function' && actualUIModule.prototype && actualUIModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const uiInstance = new actualUIModule();
+                            if (typeof uiInstance.initializeUI === 'function') {
+                                const result = await uiInstance.initializeUI();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and initializeUI() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(uiInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof actualUIModule.initializeUI === 'function') {
+                        // It's a regular object with methods
+                        const result = await actualUIModule.initializeUI();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ initializeUI function not available</div><p>Module type: ${typeof actualUIModule}</p><p>Available: ${Object.keys(actualUIModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ UI module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testShowDashboard = async function() {
+            const resultDiv = document.getElementById('showDashboardResult');
+            try {
+                if (window.APP_STATE.modules.ui) {
+                    const uiModule = window.APP_STATE.modules.ui;
+                    
+                    // Check if it's a class constructor
+                    if (typeof uiModule === 'function' && uiModule.prototype && uiModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const uiInstance = new uiModule();
+                            if (typeof uiInstance.showDashboard === 'function') {
+                                const result = await uiInstance.showDashboard();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and showDashboard() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(uiInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof uiModule.showDashboard === 'function') {
+                        // It's a regular object with methods
+                        const result = await uiModule.showDashboard();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ showDashboard function not available</div><p>Module type: ${typeof uiModule}</p><p>Available: ${Object.keys(uiModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ UI module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testGetFixtures = async function() {
+            const resultDiv = document.getElementById('getFixturesResult');
+            try {
+                if (window.APP_STATE.modules.fixtures) {
+                    const fixturesModule = window.APP_STATE.modules.fixtures;
+                    
+                    // Handle ES6 module imports - they might have a default export
+                    let actualFixturesModule = fixturesModule;
+                    if (fixturesModule.default) {
+                        actualFixturesModule = fixturesModule.default;
+                    }
+                    
+                    // Check if it's a class constructor
+                    if (typeof actualFixturesModule === 'function' && actualFixturesModule.prototype && actualFixturesModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const fixturesInstance = new actualFixturesModule();
+                            if (typeof fixturesInstance.getFixtures === 'function') {
+                                const result = await fixturesInstance.getFixtures();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and getFixtures() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(fixturesInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof actualFixturesModule.getFixtures === 'function') {
+                        // It's a regular object with methods
+                        const result = await actualFixturesModule.getFixtures();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ getFixtures function not available</div><p>Module type: ${typeof actualFixturesModule}</p><p>Available: ${Object.keys(actualFixturesModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Fixtures module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testLoadFixtures = async function() {
+            const resultDiv = document.getElementById('loadFixturesResult');
+            try {
+                if (window.APP_STATE.modules.fixtures) {
+                    const fixturesModule = window.APP_STATE.modules.fixtures;
+                    
+                    // Check if it's a class constructor
+                    if (typeof fixturesModule === 'function' && fixturesModule.prototype && fixturesModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const fixturesInstance = new fixturesModule();
+                            if (typeof fixturesInstance.loadFixtures === 'function') {
+                                const result = await fixturesInstance.loadFixtures();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and loadFixtures() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(fixturesInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof fixturesModule.loadFixtures === 'function') {
+                        // It's a regular object with methods
+                        const result = await fixturesModule.loadFixtures();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ loadFixtures function not available</div><p>Module type: ${typeof fixturesModule}</p><p>Available: ${Object.keys(fixturesModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Fixtures module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testGetTable = async function() {
+            const resultDiv = document.getElementById('getTableResult');
+            try {
+                if (window.APP_STATE.modules.scores) {
+                    const scoresModule = window.APP_STATE.modules.scores;
+                    
+                    // Check if it's a class constructor
+                    if (typeof scoresModule === 'function' && scoresModule.prototype && scoresModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const scoresInstance = new scoresModule();
+                            if (typeof scoresInstance.getTable === 'function') {
+                                const result = await scoresInstance.getTable();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and getTable() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(scoresInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof scoresModule.getTable === 'function') {
+                        // It's a regular object with methods
+                        const result = await scoresModule.getTable();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ getTable function not available</div><p>Module type: ${typeof scoresModule}</p><p>Available: ${Object.keys(scoresModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Scores module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testLoadTable = async function() {
+            const resultDiv = document.getElementById('loadTableResult');
+            try {
+                if (window.APP_STATE.modules.scores) {
+                    const scoresModule = window.APP_STATE.modules.scores;
+                    
+                    // Check if it's a class constructor
+                    if (typeof scoresModule === 'function' && scoresModule.prototype && scoresModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const scoresInstance = new scoresModule();
+                            if (typeof scoresInstance.loadTable === 'function') {
+                                const result = await scoresInstance.loadTable();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and loadTable() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(scoresInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof scoresModule.loadTable === 'function') {
+                        // It's a regular object with methods
+                        const result = await scoresModule.loadTable();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ loadTable function not available</div><p>Module type: ${typeof scoresModule}</p><p>Available: ${Object.keys(scoresModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Scores module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testGetAdminData = async function() {
+            const resultDiv = document.getElementById('getAdminDataResult');
+            try {
+                if (window.APP_STATE.modules.admin) {
+                    const adminModule = window.APP_STATE.modules.admin;
+                    
+                    // Check if it's a class constructor
+                    if (typeof adminModule === 'function' && adminModule.prototype && adminModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const adminInstance = new adminModule();
+                            if (typeof adminInstance.getAdminData === 'function') {
+                                const result = await adminInstance.getAdminData();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and getAdminData() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(adminInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof adminModule.getAdminData === 'function') {
+                        // It's a regular object with methods
+                        const result = await adminModule.getAdminData();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ getAdminData function not available</div><p>Module type: ${typeof adminModule}</p><p>Available: ${Object.keys(adminModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Admin module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testLoadAdminPanel = async function() {
+            const resultDiv = document.getElementById('loadAdminPanelResult');
+            try {
+                if (window.APP_STATE.modules.admin) {
+                    const adminModule = window.APP_STATE.modules.admin;
+                    
+                    // Check if it's a class constructor
+                    if (typeof adminModule === 'function' && adminModule.prototype && adminModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const adminInstance = new adminModule();
+                            if (typeof adminInstance.loadAdminPanel === 'function') {
+                                const result = await adminInstance.loadAdminPanel();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and loadAdminPanel() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>Available methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(adminInstance)).join(', ')}</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else if (typeof adminModule.loadAdminPanel === 'function') {
+                        // It's a regular object with methods
+                        const result = await adminModule.loadAdminPanel();
+                        resultDiv.innerHTML = `<div class="success-result">✅ Function called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error-result">❌ loadAdminPanel function not available</div><p>Module type: ${typeof adminModule}</p><p>Available: ${Object.keys(adminModule).join(', ')}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Admin module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testModule = async function(moduleName) {
+            const resultDiv = document.getElementById(moduleName + 'TestResult');
+            try {
+                const module = window.APP_STATE.modules[moduleName];
+                if (module) {
+                    // Handle ES6 module imports - they might have a default export
+                    let actualModule = module;
+                    if (module.default) {
+                        actualModule = module.default;
+                    }
+                    
+                    // Check if it's a class constructor
+                    if (typeof actualModule === 'function' && actualModule.prototype && actualModule.prototype.constructor) {
+                        // It's a class constructor, instantiate it
+                        try {
+                            const instance = new actualModule();
+                            const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(instance)).filter(name => 
+                                name !== 'constructor' && typeof instance[name] === 'function'
+                            );
+                            
+                            if (methods.length > 0) {
+                                const testMethod = methods[0];
+                                const result = await instance[testMethod]();
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated and ${testMethod}() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                            } else {
+                                resultDiv.innerHTML = `<div class="success-result">✅ Class instantiated successfully!</div><p>No methods available</p>`;
+                            }
+                        } catch (instantiateError) {
+                            resultDiv.innerHTML = `<div class="error-result">❌ Failed to instantiate class: ${instantiateError.message}</div>`;
+                        }
+                    } else {
+                        // It's a regular object, try to call a function
+                        const functions = Object.keys(actualModule).filter(key => typeof actualModule[key] === 'function');
+                        if (functions.length > 0) {
+                            const testFunction = functions[0];
+                            const result = await actualModule[testFunction]();
+                            resultDiv.innerHTML = `<div class="success-result">✅ ${testFunction}() called successfully!</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                        } else {
+                            resultDiv.innerHTML = '<div class="error-result">❌ No functions available in module</div>';
+                        }
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error-result">❌ Module not available</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-result">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Debug logging
+        function logDebug(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            window.APP_STATE.debug.push(`[${timestamp}] ${message}`);
+            if (window.APP_STATE.debug.length > 50) {
+                window.APP_STATE.debug.shift();
+            }
+        }
+
+        // Test module loading
+        async function testModules() {
+            const modulesToTest = [
+                { name: 'ui', path: './src/modules/ui.js', critical: true },
+                { name: 'auth', path: './src/modules/auth.js', critical: true },
+                { name: 'database', path: './src/modules/database.js', critical: true },
+                { name: 'gameLogic', path: './src/modules/gameLogic.js', critical: false },
+                { name: 'fixtures', path: './src/modules/fixtures.js', critical: false },
+                { name: 'scores', path: './src/modules/scores/index.js', critical: false },
+                { name: 'admin', path: './src/modules/admin/index.js', critical: false }
+            ];
+
+            let successCount = 0;
+            const statusElement = document.getElementById('appStatus');
+            const modulesLoadedElement = document.getElementById('modulesLoaded');
+
+            for (const module of modulesToTest) {
+                try {
+                    const moduleInstance = await import(module.path);
+                    window.APP_STATE.modules[module.name] = moduleInstance;
+                    successCount++;
+                    logDebug(`✅ ${module.name} loaded successfully`);
+                } catch (error) {
+                    window.APP_STATE.modules[module.name] = null;
+                    logDebug(`❌ ${module.name} failed: ${error.message}`);
+                }
+            }
+
+            // Update status
+            modulesLoadedElement.textContent = `${successCount}/${modulesToTest.length}`;
+            
+            if (successCount === modulesToTest.length) {
+                statusElement.textContent = 'All Modules Loaded';
+                statusElement.className = 'module-status status-success';
+            } else if (successCount > 0) {
+                statusElement.textContent = 'Partial Success';
+                statusElement.className = 'module-status status-warning';
+            } else {
+                statusElement.textContent = 'All Modules Failed';
+                statusElement.className = 'module-status status-error';
+            }
+
+            // Load initial tab content
+            await loadTabContent('dashboard');
+        }
+
+        // Initialize app
+        async function initApp() {
+            try {
+                logDebug('🧪 Starting real data testing');
+                await testModules();
+                logDebug('🚀 App initialization complete');
+            } catch (error) {
+                logDebug(`❌ App initialization failed: ${error.message}`);
+                console.error('App initialization error:', error);
+            }
+        }
+
+        // Start the app
+        initApp();
+    </script>
+</body>
+</html>

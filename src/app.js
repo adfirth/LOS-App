@@ -15,6 +15,12 @@ import DatabaseManager from './modules/database.js'; // New Database Module impo
 import ApiManager from './modules/api/index.js'; // New modular API Module import
 import UtilitiesManager, { DOMReadyManager } from './modules/utilities.js'; // New Utilities Module import
 import { appState } from './modules/state.js'; // New State Management import
+import DeadlineService from './modules/deadlineService.js'; // New centralized deadline service
+import StatusService from './modules/statusService.js'; // New centralized status service
+import PickStatusService from './modules/pickStatusService.js'; // New centralized pick status service
+import GameweekService from './modules/gameweekService.js'; // New centralized gameweek service
+import ButtonTextService from './modules/buttonTextService.js'; // New centralized button text service
+import EditionService from './modules/editionService.js'; // New centralized edition service
 
 console.log('🔍 Imports completed, about to define App class...');
 
@@ -35,6 +41,12 @@ class App {
         this.apiManager = null; // New API Manager
         this.utilitiesManager = null; // New Utilities Manager
         this.domReadyManager = null; // New DOM Ready Manager
+        this.deadlineService = null; // New centralized deadline service
+        this.statusService = null; // New centralized status service
+        this.pickStatusService = null; // New centralized pick status service
+        this.gameweekService = null; // New centralized gameweek service
+        this.buttonTextService = null; // New centralized button text service
+        this.editionService = null; // New centralized edition service
         this.initialized = false;
         
         // Use state management instead of global variables
@@ -101,6 +113,12 @@ class App {
         this.adminManagementManager = new AdminManager(this.db, this.fixturesManager, this.scoresManager);
         this.databaseManager = new DatabaseManager(); // Initialize Database Manager
         this.utilitiesManager = new UtilitiesManager(); // Initialize Utilities Manager
+        this.editionService = new EditionService(); // Initialize centralized edition service
+        this.deadlineService = new DeadlineService(this.db, this.editionService); // Initialize centralized deadline service
+        this.statusService = new StatusService(); // Initialize centralized status service
+        this.pickStatusService = new PickStatusService(this.db, this.deadlineService); // Initialize centralized pick status service
+        this.gameweekService = new GameweekService(this.db, this.deadlineService); // Initialize centralized gameweek service
+        this.buttonTextService = new ButtonTextService(); // Initialize centralized button text service
         
         // Initialize auth manager
         await this.authManager.initialize(this.db, this.auth);
@@ -135,6 +153,8 @@ class App {
         // Set up global references for backward compatibility
         this.setupGlobalReferences();
         
+
+        
         // Now initialize registration window display after global references are set
         if (this.uiManager) {
             this.uiManager.initializeRegistrationWindowDisplay();
@@ -156,6 +176,12 @@ class App {
         window.apiManager = this.apiManager; // Expose API Manager
         window.utilitiesManager = this.utilitiesManager; // Expose Utilities Manager
         window.adminManagementManager = this.adminManagementManager; // Expose Admin Management Manager
+        window.deadlineService = this.deadlineService; // Expose centralized deadline service
+        window.statusService = this.statusService; // Expose centralized status service
+        window.pickStatusService = this.pickStatusService; // Expose centralized pick status service
+        window.gameweekService = this.gameweekService; // Expose centralized gameweek service
+        window.buttonTextService = this.buttonTextService; // Expose centralized button text service
+        window.editionService = this.editionService; // Expose centralized edition service
         
         // Global app instance
         window.app = this;

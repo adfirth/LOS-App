@@ -6,6 +6,7 @@ export class UserManagement {
         this.db = db;
         this.allPlayers = [];
         this.currentPlayerManagementType = 'total';
+        this.currentEditingPlayerId = null; // Add this for edition editing
     }
 
     // Show player management interface
@@ -149,18 +150,22 @@ The user's data in Firestore will remain unless manually deleted.
     
     // Get current active edition
     getCurrentActiveEdition() {
-        // Get the current active edition from the edition selector
-        const editionSelector = document.querySelector('#edition-selector');
+        // Get the current active edition from the quick edition selector
+        const editionSelector = document.querySelector('#quick-edition-selector');
         if (editionSelector) {
-            return editionSelector.value;
+            const edition = editionSelector.value;
+            console.log(`🔍 UserManagement: Current active edition from selector: ${edition}`);
+            return edition;
         }
         
         // Fallback to checking window.currentActiveEdition
         if (window.currentActiveEdition) {
+            console.log(`🔍 UserManagement: Current active edition from window: ${window.currentActiveEdition}`);
             return window.currentActiveEdition;
         }
         
         // Default fallback
+        console.log('🔍 UserManagement: Using default edition: 1');
         return 1;
     }
 
@@ -207,7 +212,7 @@ The user's data in Firestore will remain unless manually deleted.
                     <td>${player.lives || 2}</td>
                     <td>${editionDisplay}</td>
                     <td>
-                        <button class="edit-btn" onclick="window.adminManagementManager.userManagement.editPlayer('${player.id}')">Edit</button>
+                        <button class="edit-btn" onclick="console.log('🔍 Edit button clicked for player:', '${player.id}'); console.log('🔍 adminManagementManager available:', !!window.adminManagementManager); console.log('🔍 userManagement available:', !!(window.adminManagementManager && window.adminManagementManager.userManagement)); window.adminManagementManager.userManagement.editPlayer('${player.id}')">Edit</button>
                         ${normalizedStatus === 'active' ? 
                             `<button class="archive-btn" onclick="window.adminManagementManager.userManagement.archivePlayer('${player.id}')">Archive</button>` :
                             `<button class="unarchive-btn" onclick="window.adminManagementManager.userManagement.unarchivePlayer('${player.id}')">Unarchive</button>`
@@ -287,6 +292,11 @@ The user's data in Firestore will remain unless manually deleted.
 
     // Edit player
     async editPlayer(playerId) {
+        console.log(`🚀 editPlayer method called with playerId: ${playerId}`);
+        console.log(`🔍 this context:`, this);
+        console.log(`🔍 window.adminManagementManager:`, window.adminManagementManager);
+        console.log(`🔍 window.adminManagementManager.userManagement:`, window.adminManagementManager?.userManagement);
+        
         try {
             console.log(`🔧 Editing player: ${playerId}`);
             
@@ -297,7 +307,22 @@ The user's data in Firestore will remain unless manually deleted.
             }
             
             const playerData = playerDoc.data();
-            this.showPlayerEditForm(playerId, playerData);
+            console.log(`🔍 Player data retrieved:`, {
+                id: playerId,
+                firstName: playerData.firstName,
+                surname: playerData.surname,
+                email: playerData.email,
+                registrations: playerData.registrations,
+                status: playerData.status
+            });
+            
+            console.log('🔍 About to call showPlayerEditForm...');
+            try {
+                this.showPlayerEditForm(playerId, playerData);
+                console.log('🔍 showPlayerEditForm call completed');
+            } catch (error) {
+                console.error('❌ Error calling showPlayerEditForm:', error);
+            }
             
         } catch (error) {
             console.error('❌ Error editing player:', error);
@@ -307,8 +332,14 @@ The user's data in Firestore will remain unless manually deleted.
 
     // Show player edit form
     showPlayerEditForm(playerId, playerData) {
+        console.log('🔍 === METHOD ENTRY POINT ===');
+        console.log('🚀 showPlayerEditForm method entered with playerId:', playerId, 'and playerData:', playerData);
+        console.log('🔍 === SHOW PLAYER EDIT FORM METHOD START ===');
+        console.log('🔍 Method execution started - this should appear immediately');
+        console.log('🔍 Full playerData object:', JSON.stringify(playerData, null, 2));
         const playerEditModal = document.querySelector('#player-edit-modal');
         const playerManagementModal = document.querySelector('#player-management-modal');
+        console.log('🔍 Modal elements found - playerEditModal:', !!playerEditModal, 'playerManagementModal:', !!playerManagementModal);
         
         if (playerEditModal) {
             playerEditModal.style.display = 'block';
@@ -317,6 +348,9 @@ The user's data in Firestore will remain unless manually deleted.
         if (playerManagementModal) {
             playerManagementModal.style.display = 'none';
         }
+        
+        // Store the current player ID for edition editing
+        this.currentEditingPlayerId = playerId;
         
         // Populate the existing form fields
         const firstNameInput = document.querySelector('#edit-first-name');
@@ -332,6 +366,29 @@ The user's data in Firestore will remain unless manually deleted.
         if (livesInput) livesInput.value = playerData.lives || 2;
         if (statusSelect) statusSelect.value = playerData.status || 'active';
         if (notesTextarea) notesTextarea.value = playerData.adminNotes || '';
+        
+        // Set edition checkboxes based on current registrations
+        const editionCheckboxes = document.querySelectorAll('.edition-checkboxes input[type="checkbox"]');
+        console.log(`🔍 Setting edition checkboxes for player: ${playerData.displayName || playerData.firstName}`);
+        console.log(`🔍 Player registrations data:`, playerData.registrations);
+        console.log(`🔍 Found ${editionCheckboxes.length} edition checkboxes`);
+        
+        // First, uncheck all checkboxes to reset state
+        editionCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Then populate based on player's actual registrations
+        if (playerData.registrations && typeof playerData.registrations === 'object') {
+            editionCheckboxes.forEach(checkbox => {
+                const editionKey = `edition${checkbox.value}`;
+                const isChecked = playerData.registrations[editionKey] !== undefined;
+                checkbox.checked = isChecked;
+                console.log(`🔍 Checkbox ${checkbox.id} (${editionKey}): ${isChecked ? 'checked' : 'unchecked'}`);
+            });
+        } else {
+            console.log(`⚠️ Player ${playerData.displayName || playerData.firstName} has no registrations data:`, playerData.registrations);
+        }
         
         // Set up form submission
         const form = document.querySelector('#player-edit-form');
@@ -355,6 +412,25 @@ The user's data in Firestore will remain unless manually deleted.
             const status = document.querySelector('#edit-status').value;
             const adminNotes = document.querySelector('#edit-notes').value;
             
+            // Get edition checkbox values
+            const editionRegistrations = {};
+            const editionCheckboxes = document.querySelectorAll('.edition-checkboxes input[type="checkbox"]');
+            
+            console.log('🔍 Collecting edition checkbox values:');
+            console.log(`🔍 Found ${editionCheckboxes.length} edition checkboxes to process`);
+            
+            editionCheckboxes.forEach(checkbox => {
+                const editionKey = `edition${checkbox.value}`;
+                if (checkbox.checked) {
+                    editionRegistrations[editionKey] = true;
+                    console.log(`✅ Checkbox ${checkbox.id} (${editionKey}): checked`);
+                } else {
+                    console.log(`⏭️ Checkbox ${checkbox.id} (${editionKey}): unchecked`);
+                }
+            });
+            
+            console.log('🔍 Final edition registrations:', editionRegistrations);
+            
             const updateData = {
                 firstName,
                 surname,
@@ -363,16 +439,26 @@ The user's data in Firestore will remain unless manually deleted.
                 lives,
                 status,
                 adminNotes,
+                registrations: editionRegistrations, // Add edition registrations
                 lastUpdated: new Date()
             };
             
+            console.log('🔧 Saving player with edition registrations:', editionRegistrations);
+            console.log('🔧 Full update data:', updateData);
+            
             await this.db.collection('users').doc(playerId).update(updateData);
             
-            console.log(`✅ Player ${playerId} updated successfully`);
+            console.log(`✅ Player ${playerId} updated successfully with editions:`, editionRegistrations);
             alert('Player updated successfully!');
             
             this.closePlayerEdit();
             this.loadPlayersForManagement();
+            
+            // Refresh registration statistics to update the Current Edition count
+            if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
+                console.log('🔄 Refreshing registration statistics after player edit...');
+                await window.adminManagementManager.refreshRegistrationStatistics();
+            }
             
         } catch (error) {
             console.error('❌ Error saving player edit:', error);
@@ -398,6 +484,12 @@ The user's data in Firestore will remain unless manually deleted.
             
             this.loadPlayersForManagement();
             
+            // Refresh registration statistics to update the Current Edition count
+            if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
+                console.log('🔄 Refreshing registration statistics after player archive...');
+                await window.adminManagementManager.refreshRegistrationStatistics();
+            }
+            
         } catch (error) {
             console.error('❌ Error archiving player:', error);
             alert('Error archiving player: ' + error.message);
@@ -421,6 +513,12 @@ The user's data in Firestore will remain unless manually deleted.
             alert('Player unarchived successfully!');
             
             this.loadPlayersForManagement();
+            
+            // Refresh registration statistics to update the Current Edition count
+            if (window.adminManagementManager && window.adminManagementManager.refreshRegistrationStatistics) {
+                console.log('🔄 Refreshing registration statistics after player unarchive...');
+                await window.adminManagementManager.refreshRegistrationStatistics();
+            }
             
         } catch (error) {
             console.error('❌ Error unarchiving player:', error);
@@ -508,5 +606,16 @@ The user's data in Firestore will remain unless manually deleted.
     // Cleanup method
     cleanup() {
         console.log('🧹 UserManagement cleanup completed');
+    }
+
+    // Close player edit modal
+    closePlayerEdit() {
+        const playerEditModal = document.querySelector('#player-edit-modal');
+        if (playerEditModal) {
+            playerEditModal.style.display = 'none';
+        }
+        
+        // Clear the current editing player ID
+        this.currentEditingPlayerId = null;
     }
 }

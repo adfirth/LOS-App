@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOS App - Local App Testing</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .nav-tab.active {
+            border-bottom-color: #007acc;
+            background: #f8f9fa;
+        }
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            background: white;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .test-info {
+            background: #f0f8ff;
+            border: 1px solid #007acc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        .module-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .fixtures-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .fixture-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .fixture-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .fixture-details {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .fixture-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #28a745;
+            color: white;
+        }
+        .player-view {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .admin-panel {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #6c757d;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .dashboard-widget {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .widget-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .league-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .league-table th,
+        .league-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .league-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .league-table tr:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="test-info">
+            <h2>🧪 LOS App - Local App Testing Environment</h2>
+            <p><strong>Status:</strong> <span id="appStatus" class="module-status status-warning">Initializing...</span></p>
+            <p><strong>Environment:</strong> Local Development (No Build Required)</p>
+            <p><strong>Modules Loaded:</strong> <span id="modulesLoaded">0/7</span></p>
+            <p><strong>Note:</strong> This is a local testing environment. Changes here won't affect production.</p>
+        </div>
+
+        <h1>LOS App - Local Testing</h1>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="nav-tab" onclick="showTab('fixtures')">Fixtures</button>
+            <button class="nav-tab" onclick="showTab('table')">Table</button>
+            <button class="nav-tab" onclick="showTab('admin')">Admin</button>
+            <button class="nav-tab" onclick="showTab('debug')">Debug</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <h2>Dashboard</h2>
+            <div id="dashboardContent">
+                <p>Loading dashboard content...</p>
+            </div>
+        </div>
+
+        <!-- Fixtures Tab -->
+        <div id="fixtures" class="tab-content">
+            <h2>Fixtures</h2>
+            <div class="player-view">
+                <h3>Player View</h3>
+                <p>This is the player's view of the fixtures tab. You can test changes here.</p>
+                <div id="fixturesContent">
+                    <p>Loading fixtures...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Tab -->
+        <div id="table" class="tab-content">
+            <h2>League Table</h2>
+            <div id="tableContent">
+                <p>Loading league table...</p>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin" class="tab-content">
+            <h2>Admin Panel</h2>
+            <div class="admin-panel">
+                <h3>Administrative Functions</h3>
+                <p>Test admin functionality here.</p>
+                <div id="adminContent">
+                    <p>Loading admin panel...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debug Tab -->
+        <div id="debug" class="tab-content">
+            <h2>Debug Information</h2>
+            <div class="debug-info">
+                <h3>Module Status</h3>
+                <div id="moduleStatus"></div>
+                <h3>App State</h3>
+                <div id="appState"></div>
+                <h3>Console Log</h3>
+                <div id="consoleLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Local testing environment setup
+        window.LOCAL_ENV = {
+            RAPIDAPI_KEY: 'local-test-key',
+            BUILD_TIME: new Date().toISOString(),
+            ENVIRONMENT: 'local-test'
+        };
+
+        // Global app state
+        window.APP_STATE = {
+            modules: {},
+            currentUser: null,
+            fixtures: [],
+            table: [],
+            debug: []
+        };
+
+        // Tab management
+        window.showTab = function(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab content
+            loadTabContent(tabName);
+        };
+
+        // Load tab content
+        async function loadTabContent(tabName) {
+            try {
+                switch(tabName) {
+                    case 'dashboard':
+                        await loadDashboard();
+                        break;
+                    case 'fixtures':
+                        await loadFixtures();
+                        break;
+                    case 'table':
+                        await loadTable();
+                        break;
+                    case 'admin':
+                        await loadAdmin();
+                        break;
+                    case 'debug':
+                        loadDebug();
+                        break;
+                }
+            } catch (error) {
+                console.error(`Error loading ${tabName}:`, error);
+                logDebug(`Error loading ${tabName}: ${error.message}`);
+            }
+        }
+
+        // Load dashboard with real content
+        async function loadDashboard() {
+            const content = document.getElementById('dashboardContent');
+            try {
+                // Create realistic dashboard content
+                const dashboardHTML = `
+                    <div class="dashboard-widget">
+                        <div class="widget-title">Welcome to LOS App</div>
+                        <p>This is your personalized dashboard for the Last One Standing football game.</p>
+                        <p><strong>Current Status:</strong> <span class="fixture-status">Active</span></p>
+                    </div>
+                    
+                    <div class="dashboard-widget">
+                        <div class="widget-title">Quick Stats</div>
+                        <p><strong>Games Played:</strong> 15</p>
+                        <p><strong>Current Position:</strong> 3rd</p>
+                        <p><strong>Points:</strong> 32</p>
+                    </div>
+                    
+                    <div class="dashboard-widget">
+                        <div class="widget-title">Next Fixture</div>
+                        <p><strong>Altrincham vs Chester</strong></p>
+                        <p><strong>Date:</strong> 2024-01-15</p>
+                        <p><strong>Time:</strong> 15:00</p>
+                    </div>
+                `;
+                content.innerHTML = dashboardHTML;
+            } catch (error) {
+                content.innerHTML = `<p>Error loading dashboard: ${error.message}</p>`;
+            }
+        }
+
+        // Load fixtures with realistic data
+        async function loadFixtures() {
+            const content = document.getElementById('fixturesContent');
+            try {
+                // Create realistic fixtures data
+                const fixtures = [
+                    {
+                        home: 'Altrincham',
+                        away: 'Chester',
+                        date: '2024-01-15',
+                        time: '15:00',
+                        status: 'Upcoming',
+                        venue: 'Moss Lane'
+                    },
+                    {
+                        home: 'Altrincham',
+                        away: 'Stockport County',
+                        date: '2024-01-22',
+                        time: '15:00',
+                        status: 'Upcoming',
+                        venue: 'Moss Lane'
+                    },
+                    {
+                        home: 'Altrincham',
+                        away: 'Wrexham',
+                        date: '2024-01-29',
+                        time: '15:00',
+                        status: 'Upcoming',
+                        venue: 'Moss Lane'
+                    },
+                    {
+                        home: 'Altrincham',
+                        away: 'Notts County',
+                        date: '2024-02-05',
+                        time: '15:00',
+                        status: 'Upcoming',
+                        venue: 'Moss Lane'
+                    }
+                ];
+                
+                let fixturesHTML = '<div class="fixtures-list">';
+                fixtures.forEach(fixture => {
+                    fixturesHTML += `
+                        <div class="fixture-item">
+                            <div class="fixture-header">${fixture.home} vs ${fixture.away}</div>
+                            <div class="fixture-details">
+                                <strong>Date:</strong> ${fixture.date}<br>
+                                <strong>Time:</strong> ${fixture.time}<br>
+                                <strong>Venue:</strong> ${fixture.venue}
+                            </div>
+                            <div class="fixture-status">${fixture.status}</div>
+                        </div>
+                    `;
+                });
+                fixturesHTML += '</div>';
+                content.innerHTML = fixturesHTML;
+            } catch (error) {
+                content.innerHTML = `<p>Error loading fixtures: ${error.message}</p>`;
+            }
+        }
+
+        // Load table with realistic data
+        async function loadTable() {
+            const content = document.getElementById('tableContent');
+            try {
+                // Create realistic league table
+                const tableHTML = `
+                    <div class="table-container">
+                        <table class="league-table">
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Team</th>
+                                    <th>P</th>
+                                    <th>W</th>
+                                    <th>D</th>
+                                    <th>L</th>
+                                    <th>GF</th>
+                                    <th>GA</th>
+                                    <th>GD</th>
+                                    <th>Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Stockport County</td>
+                                    <td>20</td>
+                                    <td>15</td>
+                                    <td>3</td>
+                                    <td>2</td>
+                                    <td>45</td>
+                                    <td>18</td>
+                                    <td>+27</td>
+                                    <td>48</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Wrexham</td>
+                                    <td>20</td>
+                                    <td>14</td>
+                                    <td>4</td>
+                                    <td>2</td>
+                                    <td>42</td>
+                                    <td>20</td>
+                                    <td>+22</td>
+                                    <td>46</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Altrincham</td>
+                                    <td>20</td>
+                                    <td>12</td>
+                                    <td>4</td>
+                                    <td>4</td>
+                                    <td>38</td>
+                                    <td>22</td>
+                                    <td>+16</td>
+                                    <td>40</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Chester</td>
+                                    <td>20</td>
+                                    <td>11</td>
+                                    <td>5</td>
+                                    <td>4</td>
+                                    <td>35</td>
+                                    <td>25</td>
+                                    <td>+10</td>
+                                    <td>38</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                content.innerHTML = tableHTML;
+            } catch (error) {
+                content.innerHTML = `<p>Error loading table: ${error.message}</p>`;
+            }
+        }
+
+        // Load admin with realistic content
+        async function loadAdmin() {
+            const content = document.getElementById('adminContent');
+            try {
+                const adminHTML = `
+                    <div class="admin-panel">
+                        <h4>User Management</h4>
+                        <p><strong>Total Users:</strong> 1,247</p>
+                        <p><strong>Active Users:</strong> 892</p>
+                        <p><strong>New Users Today:</strong> 15</p>
+                    </div>
+                    
+                    <div class="admin-panel">
+                        <h4>Game Management</h4>
+                        <p><strong>Active Games:</strong> 8</p>
+                        <p><strong>Completed Games:</strong> 156</p>
+                        <p><strong>Total Prizes Awarded:</strong> £12,450</p>
+                    </div>
+                    
+                    <div class="admin-panel">
+                        <h4>System Status</h4>
+                        <p><strong>API Status:</strong> <span class="fixture-status">Healthy</span></p>
+                        <p><strong>Database:</strong> <span class="fixture-status">Connected</span></p>
+                        <p><strong>Last Backup:</strong> 2 hours ago</p>
+                    </div>
+                `;
+                content.innerHTML = adminHTML;
+            } catch (error) {
+                content.innerHTML = `<p>Error loading admin: ${error.message}</p>`;
+            }
+        }
+
+        // Load debug info
+        function loadDebug() {
+            const moduleStatus = document.getElementById('moduleStatus');
+            const appState = document.getElementById('appState');
+            const consoleLog = document.getElementById('consoleLog');
+
+            // Module status
+            let statusHTML = '';
+            Object.entries(window.APP_STATE.modules).forEach(([name, module]) => {
+                const status = module ? 'success' : 'error';
+                statusHTML += `<span class="module-status status-${status}">${name}</span> `;
+            });
+            moduleStatus.innerHTML = statusHTML || 'No modules loaded';
+
+            // App state
+            appState.innerHTML = `<pre>${JSON.stringify(window.APP_STATE, null, 2)}</pre>`;
+
+            // Console log
+            consoleLog.innerHTML = window.APP_STATE.debug.map(log => 
+                `<div>${log}</div>`
+            ).join('');
+        }
+
+        // Debug logging
+        function logDebug(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            window.APP_STATE.debug.push(`[${timestamp}] ${message}`);
+            if (window.APP_STATE.debug.length > 50) {
+                window.APP_STATE.debug.shift();
+            }
+        }
+
+        // Test module loading
+        async function testModules() {
+            const modulesToTest = [
+                { name: 'ui', path: './src/modules/ui.js', critical: true },
+                { name: 'auth', path: './src/modules/auth.js', critical: true },
+                { name: 'database', path: './src/modules/database.js', critical: true },
+                { name: 'gameLogic', path: './src/modules/gameLogic.js', critical: false },
+                { name: 'fixtures', path: './src/modules/fixtures.js', critical: false },
+                { name: 'scores', path: './src/modules/scores/index.js', critical: false },
+                { name: 'admin', path: './src/modules/admin/index.js', critical: false }
+            ];
+
+            let successCount = 0;
+            const statusElement = document.getElementById('appStatus');
+            const modulesLoadedElement = document.getElementById('modulesLoaded');
+
+            for (const module of modulesToTest) {
+                try {
+                    const moduleInstance = await import(module.path);
+                    window.APP_STATE.modules[module.name] = moduleInstance;
+                    successCount++;
+                    logDebug(`✅ ${module.name} loaded successfully`);
+                } catch (error) {
+                    window.APP_STATE.modules[module.name] = null;
+                    logDebug(`❌ ${module.name} failed: ${error.message}`);
+                }
+            }
+
+            // Update status
+            modulesLoadedElement.textContent = `${successCount}/${modulesToTest.length}`;
+            
+            if (successCount === modulesToTest.length) {
+                statusElement.textContent = 'All Modules Loaded';
+                statusElement.className = 'module-status status-success';
+            } else if (successCount > 0) {
+                statusElement.textContent = 'Partial Success';
+                statusElement.className = 'module-status status-warning';
+            } else {
+                statusElement.textContent = 'All Modules Failed';
+                statusElement.className = 'module-status status-error';
+            }
+
+            // Load initial tab content
+            await loadTabContent('dashboard');
+        }
+
+        // Initialize app
+        async function initApp() {
+            try {
+                logDebug('🧪 Starting local app testing environment');
+                await testModules();
+                logDebug('🚀 App initialization complete');
+            } catch (error) {
+                logDebug(`❌ App initialization failed: ${error.message}`);
+                console.error('App initialization error:', error);
+            }
+        }
+
+        // Start the app
+        initApp();
+    </script>
+</body>
+</html>
+
+

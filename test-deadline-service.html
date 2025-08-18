@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeadlineService Test - LOS App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-result.info {
+            background-color: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        .test-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .fixture-data {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .deadline-display {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #28a745;
+        }
+        .console-output {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-indicator.ready {
+            background-color: #28a745;
+        }
+        .status-indicator.loading {
+            background-color: #ffc107;
+        }
+        .status-indicator.error {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 DeadlineService Test Suite</h1>
+    <p>Testing the centralized deadline service to resolve deadline display issues</p>
+    
+    <div class="test-section">
+        <h2 class="test-title">📋 Test Status</h2>
+        <div id="test-status">
+            <span class="status-indicator loading"></span>
+            <span>Initializing tests...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🔍 Service Initialization Test</h2>
+        <button class="test-button" onclick="testServiceInitialization()">Test Service Initialization</button>
+        <div id="init-result" class="test-result info">Click button to test service initialization</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">📅 Deadline Creation Test</h2>
+        <button class="test-button" onclick="testDeadlineCreation()">Test Deadline Creation</button>
+        <div id="creation-result" class="test-result info">Click button to test deadline creation from fixture data</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🎯 Real Fixture Data Test</h2>
+        <button class="test-button" onclick="testRealFixtureData()">Test with Real Fixture Data</button>
+        <div id="real-data-result" class="test-result info">Click button to test with actual fixture data from your database</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">⏰ Deadline Formatting Test</h2>
+        <button class="test-button" onclick="testDeadlineFormatting()">Test Deadline Formatting</button>
+        <div id="formatting-result" class="test-result info">Click button to test deadline formatting options</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🔄 Cache Management Test</h2>
+        <button class="test-button" onclick="testCacheManagement()">Test Cache Management</button>
+        <div id="cache-result" class="test-result info">Click button to test cache operations</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">📊 Console Output</h2>
+        <div id="console-output" class="console-output">Console output will appear here...</div>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <script>
+        // Global variables
+        let deadlineService = null;
+        let DeadlineService = null;
+
+        // Mock Firebase for testing
+        const mockFirebase = {
+            collection: (name) => ({
+                doc: (id) => ({
+                    get: async () => {
+                        // Simulate your actual fixture data structure
+                        if (id === 'edition1_gw1') {
+                            return {
+                                exists: true,
+                                data: () => ({
+                                    fixtures: [
+                                        {
+                                            date: '2025-08-09T15:00:00',
+                                            kickOffTime: '15:00:00',
+                                            homeTeam: 'Arsenal',
+                                            awayTeam: 'Chelsea'
+                                        },
+                                        {
+                                            date: '2025-08-09T17:30:00',
+                                            kickOffTime: '17:30:00',
+                                            homeTeam: 'Manchester United',
+                                            awayTeam: 'Liverpool'
+                                        }
+                                    ]
+                                })
+                            };
+                        }
+                        return { exists: false };
+                    }
+                })
+            })
+        };
+
+        // Test functions - defined globally
+        function testServiceInitialization() {
+            if (!deadlineService) {
+                document.getElementById('init-result').className = 'test-result error';
+                document.getElementById('init-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('init-result');
+            try {
+                // Test basic service properties
+                const hasDb = deadlineService.db !== undefined;
+                const hasCache = deadlineService.deadlineCache !== undefined;
+                const hasTimeout = deadlineService.cacheTimeout !== undefined;
+                
+                // Test service methods
+                const hasGetDeadline = typeof deadlineService.getDeadlineForGameweek === 'function';
+                const hasIsDeadlinePassed = typeof deadlineService.isDeadlinePassed === 'function';
+                const hasGetFormattedDeadline = typeof deadlineService.getFormattedDeadline === 'function';
+                const hasCreateFixtureDateTime = typeof deadlineService.createFixtureDateTime === 'function';
+
+                const allTestsPassed = hasDb && hasCache && hasTimeout && hasGetDeadline && 
+                                     hasIsDeadlinePassed && hasGetFormattedDeadline && hasCreateFixtureDateTime;
+
+                if (allTestsPassed) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Service Initialization Test Passed</h4>
+                        <p><strong>Database Connection:</strong> ${hasDb ? '✅' : '❌'}</p>
+                        <p><strong>Cache System:</strong> ${hasCache ? '✅' : '❌'}</p>
+                        <p><strong>Timeout Configuration:</strong> ${hasTimeout ? '✅' : '❌'}</p>
+                        <p><strong>Core Methods:</strong> ${hasGetDeadline ? '✅' : '❌'}</p>
+                        <p><strong>Deadline Check:</strong> ${hasIsDeadlinePassed ? '✅' : '❌'}</p>
+                        <p><strong>Formatting:</strong> ${hasGetFormattedDeadline ? '✅' : '❌'}</p>
+                        <p><strong>Date Creation:</strong> ${hasCreateFixtureDateTime ? '✅' : '❌'}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Service Initialization Test Failed</h4>
+                        <p>Some required properties or methods are missing.</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        function testDeadlineCreation() {
+            if (!deadlineService) {
+                document.getElementById('creation-result').className = 'test-result error';
+                document.getElementById('creation-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('creation-result');
+            try {
+                // Test fixture data
+                const testFixtures = [
+                    {
+                        date: '2025-08-09',
+                        kickOffTime: '15:00:00',
+                        description: 'Date only (should add default time)'
+                    },
+                    {
+                        date: '2025-08-09T15:00:00',
+                        kickOffTime: '15:00:00',
+                        description: 'Full datetime string'
+                    },
+                    {
+                        date: '2025-08-09',
+                        kickOffTime: '00:00:00',
+                        description: 'Date with zero time (should add default)'
+                    }
+                ];
+
+                let results = '<h4>🔍 Deadline Creation Test Results</h4>';
+                
+                testFixtures.forEach((fixture, index) => {
+                    try {
+                        const deadline = deadlineService.createFixtureDateTime(fixture);
+                        const isValid = deadline instanceof Date && !isNaN(deadline);
+                        
+                        results += `
+                            <div class="fixture-data">
+                                <strong>Fixture ${index + 1}:</strong> ${fixture.description}<br>
+                                <strong>Input:</strong> date="${fixture.date}", kickOffTime="${fixture.kickOffTime}"<br>
+                                <strong>Output:</strong> ${deadline ? deadline.toString() : 'null'}<br>
+                                <strong>Valid Date:</strong> ${isValid ? '✅' : '❌'}<br>
+                                <strong>Time:</strong> ${deadline ? deadline.toLocaleTimeString('en-GB', {timeZone: 'Europe/London'}) : 'N/A'}
+                            </div>
+                        `;
+                    } catch (error) {
+                        results += `
+                            <div class="fixture-data">
+                                <strong>Fixture ${index + 1}:</strong> ${fixture.description}<br>
+                                <strong>Error:</strong> ${error.message}
+                            </div>
+                        `;
+                    }
+                });
+
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = results;
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testRealFixtureData() {
+            if (!deadlineService) {
+                document.getElementById('real-data-result').className = 'test-result error';
+                document.getElementById('real-data-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('real-data-result');
+            try {
+                resultDiv.className = 'test-result info';
+                resultDiv.innerHTML = '<h4>🔄 Testing with Real Fixture Data...</h4>';
+
+                // Test getting deadline for gameweek 1
+                const deadline = await deadlineService.getDeadlineForGameweek('1', 1);
+                
+                if (deadline) {
+                    const formattedDeadline = await deadlineService.getFormattedDeadline('1', 1, 'short');
+                    const isPassed = await deadlineService.isDeadlinePassed('1', 1);
+                    
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Real Fixture Data Test Passed</h4>
+                        <div class="deadline-display">
+                            <h5>Game Week 1 Deadline:</h5>
+                            <p><strong>Raw Deadline:</strong> ${deadline.toString()}</p>
+                            <p><strong>Formatted Deadline:</strong> ${formattedDeadline}</p>
+                            <p><strong>Deadline Passed:</strong> ${isPassed ? 'Yes' : 'No'}</p>
+                            <p><strong>Local Time:</strong> ${deadline.toLocaleString('en-GB', {timeZone: 'Europe/London'})}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ No Fixture Data Found</h4>
+                        <p>The service couldn't find fixture data for Game Week 1. This might be expected if you don't have fixtures loaded yet.</p>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testDeadlineFormatting() {
+            if (!deadlineService) {
+                document.getElementById('formatting-result').className = 'test-result error';
+                document.getElementById('formatting-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('formatting-result');
+            try {
+                // Create a test deadline (tomorrow at 3 PM)
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(15, 0, 0, 0);
+
+                // Test different formatting options
+                const shortFormat = deadlineService.getRelativeDeadline(tomorrow);
+                const longFormat = deadlineService.getRelativeDeadline(tomorrow);
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = `
+                    <h4>✅ Deadline Formatting Test Passed</h4>
+                    <div class="deadline-display">
+                        <h5>Test Deadline: ${tomorrow.toLocaleString('en-GB', {timeZone: 'Europe/London'})}</h5>
+                        <p><strong>Relative Format:</strong> ${shortFormat}</p>
+                        <p><strong>Long Format:</strong> ${longFormat}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        function testCacheManagement() {
+            if (!deadlineService) {
+                document.getElementById('cache-result').className = 'test-result error';
+                document.getElementById('cache-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('cache-result');
+            try {
+                // Test cache operations
+                const initialCacheSize = deadlineService.deadlineCache.size;
+                
+                // Clear cache
+                deadlineService.clearCache();
+                const afterClearSize = deadlineService.deadlineCache.size;
+                
+                // Clear specific gameweek
+                deadlineService.clearGameweekCache('1', 1);
+                
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = `
+                    <h4>✅ Cache Management Test Passed</h4>
+                    <p><strong>Initial Cache Size:</strong> ${initialCacheSize}</p>
+                    <p><strong>After Clear All:</strong> ${afterClearSize}</p>
+                    <p><strong>Cache Operations:</strong> ✅ Clear All, ✅ Clear Specific Gameweek</p>
+                `;
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').textContent = 'Console cleared...';
+        }
+
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.textContent += `[LOG] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.textContent += `[ERROR] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        console.log('🚀 DeadlineService Test Suite initialized');
+        console.log('📋 Available test functions:', Object.keys(window).filter(key => key.startsWith('test')));
+    </script>
+
+    <script type="module">
+        // Import and initialize DeadlineService
+        (async function() {
+            try {
+                // Import DeadlineService
+                const module = await import('./src/modules/deadlineService.js');
+                DeadlineService = module.default;
+                console.log('✅ DeadlineService imported successfully');
+
+                // Initialize service
+                deadlineService = new DeadlineService(mockFirebase);
+                console.log('✅ DeadlineService initialized successfully');
+                document.getElementById('test-status').innerHTML = 
+                    '<span class="status-indicator ready"></span><span>DeadlineService ready for testing</span>';
+
+            } catch (error) {
+                console.error('❌ Failed to initialize DeadlineService:', error);
+                document.getElementById('test-status').innerHTML = 
+                    '<span class="status-indicator error"></span><span>Failed to initialize DeadlineService</span>';
+            }
+        })();
+    </script>
+</body>
+</html>

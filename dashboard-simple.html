@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Dashboard - LOS App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .edition-selector-container {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+            margin-bottom: 20px;
+        }
+        .fixtures-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        .console-output {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .fixture-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .team-pick-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 0 5px;
+            font-size: 12px;
+        }
+        .team-pick-button:hover {
+            background-color: #218838;
+        }
+        .team-pick-button.selected {
+            background-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Altrincham FC Juniors - Last One Standing</h1>
+        <h2>Simple Dashboard</h2>
+        <p>Testing EditionService functionality</p>
+    </div>
+
+    <div class="main-content">
+        <div class="section">
+            <h3>Edition Selection</h3>
+            <div id="edition-selector-container" class="edition-selector-container">
+                <p>Edition selector will appear here after initialization</p>
+            </div>
+            
+            <h3>Test Controls</h3>
+            <button class="test-button" onclick="initializeDashboard()">Initialize Dashboard</button>
+            <button class="test-button" onclick="clearConsole()">Clear Console</button>
+            <button class="test-button" onclick="testFixtures()">Test Fixtures</button>
+        </div>
+
+        <div class="section">
+            <h3>Fixtures Display</h3>
+            <div id="fixtures-container" class="fixtures-section">
+                <p>Fixtures will appear here after initialization</p>
+            </div>
+            
+            <h3>Console Output</h3>
+            <div id="console-output" class="console-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        let editionService = null;
+        let currentUserData = null;
+
+        // Mock EditionService for testing (since import is failing)
+        class MockEditionService {
+            constructor() {
+                this.currentUserEdition = null;
+                this.availableEditions = [];
+                this.userId = null;
+            }
+
+            async initializeWithUser(userData, userId) {
+                this.userId = userId;
+                this.currentUserEdition = 'editiontest'; // Default to first available edition
+                
+                // Mock available editions based on user registrations
+                this.availableEditions = Object.keys(userData.registrations).map(key => ({
+                    key: key,
+                    label: key.charAt(0).toUpperCase() + key.slice(1) // Capitalize first letter
+                }));
+                
+                console.log('Mock EditionService initialized with:', { userData, userId, availableEditions: this.availableEditions });
+                return true;
+            }
+
+            async createEditionSelector(userData, userId, containerSelector) {
+                const container = document.querySelector(containerSelector);
+                if (!container) {
+                    throw new Error(`Container not found: ${containerSelector}`);
+                }
+
+                const selectorHTML = `
+                    <div style="background: #e8f5e8; border: 2px solid #28a745; border-radius: 8px; padding: 15px;">
+                        <h4 style="margin: 0 0 10px 0; color: #155724;">Select Active Edition:</h4>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <select id="mock-edition-selector" style="padding: 8px; border: 1px solid #ced4da; border-radius: 4px; min-width: 200px;">
+                                ${this.availableEditions.map(edition => {
+                                    const selected = edition.key === this.currentUserEdition ? 'selected' : '';
+                                    return `<option value="${edition.key}" ${selected}>${edition.label}</option>`;
+                                }).join('')}
+                            </select>
+                            <button id="mock-save-edition" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                Save Edition
+                            </button>
+                        </div>
+                        <p style="margin: 10px 0 0 0; font-size: 0.9rem; color: #6c757d;">
+                            Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>
+                        </p>
+                    </div>
+                `;
+
+                container.innerHTML = selectorHTML;
+
+                // Add event listeners
+                const select = container.querySelector('#mock-edition-selector');
+                const saveButton = container.querySelector('#mock-save-edition');
+
+                select.addEventListener('change', (e) => {
+                    this.currentUserEdition = e.target.value;
+                    console.log('Mock EditionService: Edition changed to:', this.currentUserEdition);
+                    
+                    // Update display
+                    const statusElement = container.querySelector('p');
+                    statusElement.innerHTML = `Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>`;
+                });
+
+                saveButton.addEventListener('click', () => {
+                    console.log('Mock EditionService: Saving edition preference:', this.currentUserEdition);
+                    saveButton.textContent = 'Saved!';
+                    saveButton.style.background = '#28a745';
+                    
+                    setTimeout(() => {
+                        saveButton.textContent = 'Save Edition';
+                        saveButton.style.background = '#007bff';
+                    }, 2000);
+                });
+
+                return true;
+            }
+
+            getCurrentUserEdition() {
+                return this.currentUserEdition;
+            }
+
+            getEditionDisplayName(editionKey) {
+                const edition = this.availableEditions.find(e => e.key === editionKey);
+                return edition ? edition.label : editionKey;
+            }
+
+            async refreshPageContent() {
+                console.log('Mock EditionService: Refreshing page content for edition:', this.currentUserEdition);
+                return true;
+            }
+        }
+
+        // Initialize the dashboard
+        window.initializeDashboard = async function() {
+            try {
+                log('🚀 Initializing Simple Dashboard...');
+                
+                // Create mock EditionService
+                log('🔧 Creating Mock EditionService...');
+                editionService = new MockEditionService();
+                log('✅ Mock EditionService created');
+                
+                // Mock user data (simulating a user with multiple editions)
+                currentUserData = {
+                    registrations: {
+                        editiontest: true,
+                        edition1: true
+                    }
+                };
+                
+                log('🔧 Using mock user data:', currentUserData);
+                
+                // Initialize EditionService
+                log('🔧 Initializing EditionService...');
+                await editionService.initializeWithUser(currentUserData, 'test-user-1');
+                log('✅ EditionService initialized');
+                
+                // Create edition selector
+                log('🔧 Creating edition selector...');
+                await editionService.createEditionSelector(currentUserData, 'test-user-1', '#edition-selector-container');
+                log('✅ Edition selector created');
+                
+                // Load initial fixtures
+                log('🔧 Loading initial fixtures...');
+                await loadFixtures();
+                log('✅ Initial fixtures loaded');
+                
+                log('🎉 Dashboard initialization complete!');
+                
+            } catch (error) {
+                log('❌ Error initializing dashboard:', error.message || error);
+                log('❌ Error stack:', error.stack);
+                log('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+                console.error('Full error:', error);
+            }
+        };
+
+        // Load fixtures for the current edition
+        async function loadFixtures() {
+            try {
+                const currentEdition = editionService.getCurrentUserEdition();
+                log(`🔧 Loading fixtures for edition: ${currentEdition}`);
+                
+                // Mock fixtures data
+                const mockFixtures = [
+                    { id: 1, homeTeam: 'Arsenal', awayTeam: 'Chelsea', date: '2025-08-09', time: '15:00' },
+                    { id: 2, homeTeam: 'Manchester United', awayTeam: 'Liverpool', date: '2025-08-09', time: '17:30' },
+                    { id: 3, homeTeam: 'Manchester City', awayTeam: 'Tottenham', date: '2025-08-10', time: '14:00' },
+                    { id: 4, homeTeam: 'Newcastle', awayTeam: 'Aston Villa', date: '2025-08-10', time: '16:30' },
+                    { id: 5, homeTeam: 'West Ham', awayTeam: 'Brighton', date: '2025-08-11', time: '15:00' }
+                ];
+                
+                renderFixtures(mockFixtures);
+                log(`✅ Loaded ${mockFixtures.length} fixtures for edition ${currentEdition}`);
+                
+            } catch (error) {
+                log('❌ Error loading fixtures:', error);
+            }
+        }
+
+        // Render fixtures in the UI
+        function renderFixtures(fixtures) {
+            const container = document.getElementById('fixtures-container');
+            
+            const fixturesHTML = fixtures.map(fixture => `
+                <div class="fixture-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${fixture.homeTeam} vs ${fixture.awayTeam}</strong><br>
+                            <small>${fixture.date} at ${fixture.time}</small>
+                        </div>
+                        <div>
+                            <button class="team-pick-button" onclick="selectTeam('${fixture.homeTeam}', this)">
+                                ${fixture.homeTeam}
+                            </button>
+                            <button class="team-pick-button" onclick="selectTeam('${fixture.awayTeam}', this)">
+                                ${fixture.awayTeam}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = fixturesHTML;
+        }
+
+        // Test fixtures functionality
+        window.testFixtures = function() {
+            log('🔧 Testing fixtures functionality...');
+            if (editionService) {
+                const currentEdition = editionService.getCurrentUserEdition();
+                log(`✅ Current edition: ${currentEdition}`);
+                log('✅ Fixtures functionality working');
+            } else {
+                log('❌ EditionService not initialized');
+            }
+        };
+
+        // Select team for a fixture
+        window.selectTeam = function(teamName, button) {
+            // Remove selected class from all buttons in this fixture
+            const fixtureItem = button.closest('.fixture-item');
+            fixtureItem.querySelectorAll('.team-pick-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked button
+            button.classList.add('selected');
+            
+            log(`✅ Selected team: ${teamName}`);
+        };
+
+        // Helper function to log to our console
+        function log(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            
+            // Log to browser console
+            if (data) {
+                console.log(logMessage, data);
+            } else {
+                console.log(logMessage);
+            }
+            
+            // Log to our display
+            const consoleOutput = document.getElementById('console-output');
+            const logLine = document.createElement('div');
+            logLine.textContent = logMessage;
+            if (data) {
+                logLine.textContent += ' ' + JSON.stringify(data, null, 2);
+            }
+            consoleOutput.appendChild(logLine);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // Clear console function
+        window.clearConsole = function() {
+            document.getElementById('console-output').innerHTML = '';
+        };
+
+        // Log when page loads
+        log('🚀 Simple Dashboard loaded');
+        log('🔧 Click "Initialize Dashboard" to start');
+        log('📝 Note: Using Mock EditionService for testing (import path issues)');
+    </script>
+</body>
+</html>

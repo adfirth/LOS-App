@@ -326,6 +326,16 @@ class UIManager {
 
     // Setup edition selection
     setupEditionSelection(userData, userEdition, userRegisteredEditions, userId) {
+        // Use EditionService if available
+        if (window.editionService && typeof window.editionService.createEditionSelector === 'function') {
+            console.log('🔧 Using EditionService to create edition selector');
+            window.editionService.createEditionSelector(userData, userId, '#edition-selector-container').catch(error => {
+                console.error('❌ UI: Error creating edition selector:', error);
+            });
+            return;
+        }
+        
+        // Fallback to legacy edition selection logic
         if (userRegisteredEditions.length > 1) {
             const desktopContainer = document.getElementById('edition-selection-container');
             const mobileContainer = document.getElementById('mobile-edition-selection-container');

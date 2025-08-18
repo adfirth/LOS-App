@@ -4,17 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Last One Standing</title>
-    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        /* Edition selector responsive display */
+        @media (max-width: 768px) {
+            .desktop-edition-selector {
+                display: none !important;
+            }
+            .mobile-edition-selector {
+                display: block !important;
+            }
+        }
+        @media (min-width: 769px) {
+            .desktop-edition-selector {
+                display: block !important;
+            }
+            .mobile-edition-selector {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body>
 
     <header>
-        <img src="/assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
+        <img src="../assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
         <div class="header-text">
             <h1>Altrincham FC Juniors<br>Last One Standing</h1>
             <h2>The Ultimate National League Challenge</h2>
         </div>
-        <img src="/assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
+        <img src="../assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
     </header>
 
     <div class="container">
@@ -77,13 +96,12 @@
                         <p>Make your picks for each game week below. You can make picks in advance and edit any pick up until that week's deadline.</p>
                         
                         <!-- Edition Selection (only shown if user is registered for multiple editions) -->
-                        <div id="edition-selection-container" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #495057;">Select Edition to Participate In:</h4>
-                            <select id="dashboard-edition-selector" style="padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; min-width: 200px;">
-                                <option value="">Loading editions...</option>
-                            </select>
-                            <button id="save-edition-preference" style="margin-left: 0.5rem; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Save</button>
-                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #6c757d;">You can change your preferred edition at any time.</p>
+                        <!-- This is now handled by EditionService in the edition-selector-container below -->
+                        
+                        <!-- Edition Selector Container for EditionService -->
+                        <div id="edition-selector-container" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; border: 1px solid #28a745;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: #155724;">Active Edition:</h4>
+                            <!-- EditionService will populate this -->
                         </div>
                         
                         <!-- Game Week Navigation -->
@@ -124,6 +142,37 @@
                                 <p>Loading fixtures...</p>
                             </div>
                         </div>
+                        
+                        <script>
+                        // Debug script to track deadline changes
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const deadlineElement = document.getElementById('deadline-date');
+                            if (deadlineElement) {
+                                console.log('🔍 Setting up deadline change observer');
+                                
+                                // Create a MutationObserver to watch for changes
+                                const observer = new MutationObserver(function(mutations) {
+                                    mutations.forEach(function(mutation) {
+                                        if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                                            console.log('🔍 Deadline element changed!');
+                                            console.log('🔍 New value:', deadlineElement.textContent);
+                                            console.log('🔍 Mutation type:', mutation.type);
+                                            console.log('🔍 Mutation target:', mutation.target);
+                                        }
+                                    });
+                                });
+                                
+                                // Start observing
+                                observer.observe(deadlineElement, {
+                                    childList: true,
+                                    characterData: true,
+                                    subtree: true
+                                });
+                                
+                                console.log('🔍 Deadline observer started');
+                            }
+                        });
+                        </script>
                     </div>
                 </div>
 
@@ -199,14 +248,7 @@
                     <p>Make your picks for each game week below. You can make picks in advance and edit any pick up until that week's deadline.</p>
                     
                     <!-- Mobile Edition Selection (only shown if user is registered for multiple editions) -->
-                    <div id="mobile-edition-selection-container" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #495057; font-size: 1rem;">Select Edition to Participate In:</h4>
-                        <select id="mobile-dashboard-edition-selector" style="width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; margin-bottom: 0.5rem;">
-                            <option value="">Loading editions...</option>
-                        </select>
-                        <button id="mobile-save-edition-preference" style="width: 100%; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">Save</button>
-                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #6c757d;">You can change your preferred edition at any time.</p>
-                    </div>
+                    <!-- This is now handled by EditionService in the edition-selector-container below -->
                 </div>
                 
                 <!-- Mobile Game Week Navigation -->
@@ -234,17 +276,47 @@
                 <!-- Mobile Fixtures Display -->
                 <div id="mobile-fixtures-display-container" class="mobile-fixtures-section" style="display: none;">
                     <div class="mobile-deadline-section">
-                        <div class="deadline-header">
-                            <h3><strong>Game Week Deadline - <span class="deadline-date" id="mobile-deadline-date" style="color: #dc3545;">--</span></strong></h3>
-                        </div>
+                        <h3><strong>Game Week Deadline - <span class="deadline-date" id="mobile-deadline-date" style="color: #dc3545;">--</span></strong></h3>
                         <p class="deadline-status"><strong>Game Week Status:</strong> <span id="mobile-deadline-status" style="color: inherit;">--</span></p>
                         <div class="pick-status-header">
                             <span id="mobile-pick-status-display" class="pick-status-text">--</span>
                         </div>
                     </div>
+                    
                     <div id="mobile-fixtures-display">
                         <p>Loading fixtures...</p>
                     </div>
+                    
+                    <script>
+                    // Debug script to track mobile deadline changes
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const mobileDeadlineElement = document.getElementById('mobile-deadline-date');
+                        if (mobileDeadlineElement) {
+                            console.log('🔍 Setting up mobile deadline change observer');
+                            
+                            // Create a MutationObserver to watch for changes
+                            const observer = new MutationObserver(function(mutations) {
+                                mutations.forEach(function(mutation) {
+                                    if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                                        console.log('🔍 Mobile deadline element changed!');
+                                        console.log('🔍 New value:', mobileDeadlineElement.textContent);
+                                        console.log('🔍 Mutation type:', mutation.type);
+                                        console.log('🔍 Mutation target:', mutation.target);
+                                    }
+                                });
+                            });
+                            
+                            // Start observing
+                            observer.observe(mobileDeadlineElement, {
+                                childList: true,
+                                characterData: true,
+                                subtree: true
+                            });
+                            
+                            console.log('🔍 Mobile deadline observer started');
+                        }
+                    });
+                    </script>
                 </div>
             </div>
 
@@ -313,7 +385,240 @@
     <script src="/config/netlify-env.js"></script>
     <script src="/config/teams-config.js"></script>
     <script src="/config/football-webpages-config.js"></script>
-                <script type="module" src="/app.bundle.js"></script>
+    
+    <!-- Team Pick Button Styles -->
+    <style>
+        .team-pick-button {
+            padding: 8px 16px;
+            margin: 4px;
+            border: 2px solid #007bff;
+            border-radius: 6px;
+            background: white;
+            color: #007bff;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-width: 120px;
+        }
+        
+        .team-pick-button:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+        
+        .team-pick-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(0, 123, 255, 0.3);
+        }
+        
+        .team-pick-button.selected,
+        .team-pick-button.current-pick {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+            cursor: default;
+        }
+        
+        .team-pick-button.future-pick {
+            background: #6c757d;
+            border-color: #6c757d;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .team-pick-button.locked-pick {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.8;
+            position: relative;
+        }
+        
+        .team-pick-button.locked-pick::after {
+            content: "🔒";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 12px;
+            background: #dc3545;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .team-pick-button.available {
+            background: white;
+            border-color: #007bff;
+            color: #007bff;
+        }
+        
+        .team-pick-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .pick-indicator {
+            margin-left: 8px;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .fixture-teams {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin: 12px 0;
+        }
+        
+        .vs {
+            font-weight: bold;
+            color: #6c757d;
+            margin: 0 8px;
+        }
+        
+        .fixture-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            background: white;
+        }
+        
+        .fixture-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .fixture-date {
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .fixture-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .fixture-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .fixture-status.in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .fixture-status.not-started {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .fixture-score {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #495057;
+            margin-top: 8px;
+        }
+    </style>
+    
+    <!-- Source modules -->
+    <script type="module" src="../src/app.js"></script>
+    
+    <!-- Dashboard initialization script -->
+    <script>
+        // Wait for the app to be fully initialized
+        function waitForApp() {
+            console.log('🔧 Dashboard: Checking for app initialization...');
+            console.log('🔧 Dashboard: editionService available:', !!window.editionService);
+            console.log('🔧 Dashboard: authManager available:', !!window.authManager);
+            
+            if (window.editionService && window.authManager) {
+                console.log('🔧 Dashboard: App initialized, setting up edition selector');
+                setupDashboard();
+            } else {
+                console.log('🔧 Dashboard: Waiting for app to initialize...');
+                setTimeout(waitForApp, 100);
+            }
+        }
+        
+        function setupDashboard() {
+            console.log('🔧 Dashboard: Setting up dashboard...');
+            
+            // Check if user is authenticated
+            if (window.authManager && window.authManager.currentUser) {
+                const user = window.authManager.currentUser;
+                console.log('🔧 Dashboard: User authenticated, setting up edition selector for:', user.email);
+                console.log('🔧 Dashboard: User UID:', user.uid);
+                
+                // Get user data and create edition selector
+                window.authManager.db.collection('users').doc(user.uid).get().then(userDoc => {
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        console.log('🔧 Dashboard: User data loaded:', userData);
+                        console.log('🔧 Dashboard: User registrations:', userData.registrations);
+                        
+                        // Create edition selector using EditionService
+                        if (window.editionService) {
+                            console.log('🔧 Dashboard: Creating edition selector...');
+                            
+                            // Initialize the EditionService with user data first
+                            window.editionService.initializeWithUser(userData, user.uid).then(() => {
+                                console.log('🔧 Dashboard: EditionService initialized, creating selector...');
+                                window.editionService.createEditionSelector(userData, user.uid, '#edition-selector-container').catch(error => {
+                    console.error('❌ Dashboard: Error creating edition selector:', error);
+                });
+                                
+                                // Load fixtures for the current gameweek after edition selector is set up
+                                if (window.loadFixturesForDeadline) {
+                                    console.log('🔧 Dashboard: Loading fixtures after edition selector setup...');
+                                    const currentGameweek = '1'; // Default to gameweek 1
+                                    window.loadFixturesForDeadline(currentGameweek, userData, user.uid);
+                                }
+                            }).catch(error => {
+                                console.error('❌ Dashboard: Error initializing EditionService:', error);
+                            });
+                        } else {
+                            console.error('❌ Dashboard: EditionService not available');
+                        }
+                    } else {
+                        console.log('🔧 Dashboard: User document does not exist');
+                    }
+                }).catch(error => {
+                    console.error('🔧 Dashboard: Error loading user data:', error);
+                });
+            } else {
+                console.log('🔧 Dashboard: No authenticated user found');
+                console.log('🔧 Dashboard: authManager:', window.authManager);
+                if (window.authManager) {
+                    console.log('🔧 Dashboard: authManager.currentUser:', window.authManager.currentUser);
+                }
+            }
+        }
+        
+        // Start waiting for app initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Dashboard: DOM loaded, waiting for app initialization...');
+            waitForApp();
+        });
+    </script>
+    
+    <!-- Using bundled app.bundle.js for local testing -->
 
 </body>
 </html>

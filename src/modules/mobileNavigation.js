@@ -116,7 +116,19 @@ class MobileNavigationManager {
                     });
 
                     // Display deadline
-                    const deadlineDateObj = new Date(earliestFixture.date);
+                    // Fix: Combine date and kickOffTime if both are available
+                    let dateString = earliestFixture.date;
+                    if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
+                        // Combine date with kick-off time
+                        dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
+                        console.log('🔍 Mobile: Combined date and time:', dateString);
+                    } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
+                        // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                        dateString = `${dateString}T15:00:00`;
+                        console.log('🔍 Mobile: Added default time to date string:', dateString);
+                    }
+                    
+                    const deadlineDateObj = new Date(dateString);
                     const formattedDeadline = this.formatDeadlineDate(deadlineDateObj);
                     
                     if (deadlineDate) deadlineDate.textContent = formattedDeadline;
@@ -673,7 +685,19 @@ class MobileNavigationManager {
                 return fixtureDate < earliestDate ? fixture : earliest;
             });
             
-            const deadlineDate = new Date(earliestFixture.date);
+            // Fix: Combine date and kickOffTime if both are available
+            let dateString = earliestFixture.date;
+            if (earliestFixture.kickOffTime && earliestFixture.kickOffTime !== '00:00:00') {
+                // Combine date with kick-off time
+                dateString = `${earliestFixture.date}T${earliestFixture.kickOffTime}`;
+                console.log('🔍 MobileNav checkDeadlineForGameweek: Combined date and time:', dateString);
+            } else if (dateString && !dateString.includes('T') && !dateString.includes(':')) {
+                // Fallback: If no kick-off time, assume 15:00 (3 PM) for Saturday fixtures
+                dateString = `${dateString}T15:00:00`;
+                console.log('🔍 MobileNav checkDeadlineForGameweek: Added default time to date string:', dateString);
+            }
+            
+            const deadlineDate = new Date(dateString);
             const now = new Date();
             
             return now >= deadlineDate;
@@ -684,14 +708,30 @@ class MobileNavigationManager {
     }
 
     formatDeadlineDate(date) {
-        const day = date.getDate();
-        const month = date.toLocaleDateString('en-GB', { month: 'long' });
-        const year = date.getFullYear();
-        const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        // Log the date for debugging
+        console.log('MobileNav - Original date:', date);
+        console.log('MobileNav - Date object:', new Date(date));
+        console.log('MobileNav - UTC time:', new Date(date).toISOString());
+        console.log('MobileNav - Local time:', new Date(date).toString());
+        
+        const day = new Date(date).getDate();
+        const month = new Date(date).toLocaleDateString('en-GB', { 
+            month: 'long',
+            timeZone: 'Europe/London'
+        });
+        const year = new Date(date).getFullYear();
+        const time = new Date(date).toLocaleTimeString('en-GB', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            timeZone: 'Europe/London'
+        });
         
         const ordinalSuffix = this.getOrdinalSuffix(day);
         
-        return `${day}${ordinalSuffix} ${month} ${year} at ${time}`;
+        const formattedDate = `${day}${ordinalSuffix} ${month} ${year} at ${time}`;
+        console.log('MobileNav - Formatted date:', formattedDate);
+        
+        return formattedDate;
     }
 
     getOrdinalSuffix(day) {

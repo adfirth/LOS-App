@@ -18,22 +18,37 @@ class UtilitiesManager {
     formatDeadlineDate(date) {
         if (!date) return 'TBD';
         
-        const hours = date.getHours();
-        const minutes = date.getMinutes().toString().padStart(2, '0');
+        // Log the date for debugging
+        console.log('Utilities - Original date:', date);
+        console.log('Utilities - Date object:', new Date(date));
+        console.log('Utilities - UTC time:', new Date(date).toISOString());
+        console.log('Utilities - Local time:', new Date(date).toString());
         
-        // Convert to 12-hour format
-        const ampm = hours >= 12 ? 'pm' : 'am';
-        const displayHours = hours % 12 || 12;
+        // Use toLocaleTimeString to get the correct local time
+        const timeString = new Date(date).toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/London' // Force UK timezone
+        });
         
         // Get day of week and date
-        const dayOfWeek = date.toLocaleDateString('en-GB', { weekday: 'long' });
-        const day = date.getDate();
-        const month = date.toLocaleDateString('en-GB', { month: 'long' });
+        const dayOfWeek = new Date(date).toLocaleDateString('en-GB', { 
+            weekday: 'long',
+            timeZone: 'Europe/London'
+        });
+        const day = new Date(date).getDate();
+        const month = new Date(date).toLocaleDateString('en-GB', { 
+            month: 'long',
+            timeZone: 'Europe/London'
+        });
         
         // Add ordinal suffix to day
         const ordinalSuffix = this.getOrdinalSuffix(day);
         
-        return `${displayHours}:${minutes}${ampm} ${dayOfWeek} ${day}${ordinalSuffix} ${month}`;
+        const formattedDate = `${timeString} ${dayOfWeek} ${day}${ordinalSuffix} ${month}`;
+        console.log('Utilities - Formatted date:', formattedDate);
+        
+        return formattedDate;
     }
 
     /**

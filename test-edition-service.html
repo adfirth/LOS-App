@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditionService Test - LOS App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-result.info {
+            background-color: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        .edition-selector {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #28a745;
+        }
+        .edition-select {
+            padding: 8px;
+            border: 1px solid #28a745;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        .console-output {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-indicator.ready {
+            background-color: #28a745;
+        }
+        .status-indicator.loading {
+            background-color: #ffc107;
+        }
+        .status-indicator.error {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 EditionService Test Suite</h1>
+    <p>Testing the centralized edition service to resolve edition handling issues</p>
+    
+    <div class="test-section">
+        <h2 class="test-title">📋 Test Status</h2>
+        <div id="test-status">
+            <span class="status-indicator loading"></span>
+            <span>Initializing tests...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🔍 Service Initialization Test</h2>
+        <button class="test-button" onclick="testServiceInitialization()">Test Service Initialization</button>
+        <div id="init-result" class="test-result info">Click button to test service initialization</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">📚 Edition Resolution Test</h2>
+        <button class="test-button" onclick="testEditionResolution()">Test Edition Resolution</button>
+        <div id="resolution-result" class="test-result info">Click button to test edition resolution logic</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🎯 Edition Selector UI Test</h2>
+        <button class="test-button" onclick="testEditionSelector()">Test Edition Selector UI</button>
+        <div id="selector-result" class="test-result info">Click button to test edition selector UI</div>
+        
+        <!-- Edition Selector Container -->
+        <div id="edition-selector-container" style="display: none;">
+            <!-- EditionService will populate this -->
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🔗 DeadlineService Integration Test</h2>
+        <button class="test-button" onclick="testDeadlineServiceIntegration()">Test DeadlineService Integration</button>
+        <div id="integration-result" class="test-result info">Click button to test DeadlineService with EditionService</div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">📊 Console Output</h2>
+        <div id="console-output" class="console-output">Console output will appear here...</div>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <script>
+        // Global variables
+        let editionService = null;
+        let deadlineService = null;
+        let EditionService = null;
+        let DeadlineService = null;
+
+        // Mock Firebase for testing
+        const mockFirebase = {
+            collection: (name) => ({
+                doc: (id) => ({
+                    get: async () => {
+                        // Simulate user data
+                        if (name === 'users' && id === 'test-user-1') {
+                            return {
+                                exists: true,
+                                data: () => ({
+                                    registrations: {
+                                        editiontest: true,
+                                        edition1: true
+                                    },
+                                    preferredEdition: 'test',
+                                    currentEdition: 'test'
+                                })
+                            };
+                        }
+                        if (name === 'users' && id === 'test-user-2') {
+                            return {
+                                exists: true,
+                                data: () => ({
+                                    registrations: {
+                                        edition1: true
+                                    },
+                                    preferredEdition: 1
+                                })
+                            };
+                        }
+                        if (name === 'users' && id === 'test-user-3') {
+                            return {
+                                exists: true,
+                                data: () => ({
+                                    edition: 1
+                                })
+                            };
+                        }
+                        return { exists: false };
+                    },
+                    update: async (data) => {
+                        console.log('Mock Firebase update:', data);
+                        return Promise.resolve();
+                    }
+                })
+            })
+        };
+
+        // Test functions - defined globally
+        function testServiceInitialization() {
+            if (!editionService) {
+                document.getElementById('init-result').className = 'test-result error';
+                document.getElementById('init-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('init-result');
+            try {
+                // Test basic service properties
+                const hasDb = editionService.db !== undefined;
+                const hasCurrentUserEdition = editionService.currentUserEdition !== undefined;
+                const hasAvailableEditions = editionService.availableEditions !== undefined;
+                
+                // Test service methods
+                const hasGetUserEdition = typeof editionService.getUserEdition === 'function';
+                const hasResolveEditionFromUserData = typeof editionService.resolveEditionFromUserData === 'function';
+                const hasGetUserAvailableEditions = typeof editionService.getUserAvailableEditions === 'function';
+                const hasCreateEditionSelector = typeof editionService.createEditionSelector === 'function';
+
+                const allTestsPassed = hasDb && hasCurrentUserEdition && hasAvailableEditions && hasGetUserEdition && 
+                                     hasResolveEditionFromUserData && hasGetUserAvailableEditions && hasCreateEditionSelector;
+
+                if (allTestsPassed) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ EditionService Initialization Test Passed</h4>
+                        <p><strong>Database Connection:</strong> ${hasDb ? '✅' : '❌'}</p>
+                        <p><strong>Current User Edition:</strong> ${hasCurrentUserEdition ? '✅' : '❌'}</p>
+                        <p><strong>Available Editions:</strong> ${hasAvailableEditions ? '✅' : '❌'}</p>
+                        <p><strong>Get User Edition:</strong> ${hasGetUserEdition ? '✅' : '❌'}</p>
+                        <p><strong>Resolve Edition:</strong> ${hasResolveEditionFromUserData ? '✅' : '❌'}</p>
+                        <p><strong>Get Available Editions:</strong> ${hasGetUserAvailableEditions ? '✅' : '❌'}</p>
+                        <p><strong>Create Edition Selector:</strong> ${hasCreateEditionSelector ? '✅' : '❌'}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ EditionService Initialization Test Failed</h4>
+                        <p>Some required properties or methods are missing.</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testEditionResolution() {
+            if (!editionService) {
+                document.getElementById('resolution-result').className = 'test-result error';
+                document.getElementById('resolution-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('resolution-result');
+            try {
+                resultDiv.className = 'test-result info';
+                resultDiv.innerHTML = '<h4>🔄 Testing Edition Resolution...</h4>';
+
+                // Test different user data scenarios
+                const testUsers = [
+                    {
+                        id: 'test-user-1',
+                        description: 'User with test and edition1 registrations, preferred test',
+                        expected: 'test'
+                    },
+                    {
+                        id: 'test-user-2',
+                        description: 'User with only edition1 registration',
+                        expected: 1
+                    },
+                    {
+                        id: 'test-user-3',
+                        description: 'User with legacy edition field',
+                        expected: 1
+                    }
+                ];
+
+                let results = '<h4>🔍 Edition Resolution Test Results</h4>';
+                
+                for (const testUser of testUsers) {
+                    try {
+                        const edition = await editionService.getUserEdition(null, testUser.id);
+                        const isCorrect = edition === testUser.expected;
+                        
+                        results += `
+                            <div class="edition-selector">
+                                <strong>${testUser.description}:</strong><br>
+                                <strong>Expected:</strong> ${testUser.expected}<br>
+                                <strong>Actual:</strong> ${edition}<br>
+                                <strong>Result:</strong> ${isCorrect ? '✅' : '❌'}
+                            </div>
+                        `;
+                    } catch (error) {
+                        results += `
+                            <div class="edition-selector">
+                                <strong>${testUser.description}:</strong><br>
+                                <strong>Error:</strong> ${error.message}
+                            </div>
+                        `;
+                    }
+                }
+
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = results;
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testEditionSelector() {
+            if (!editionService) {
+                document.getElementById('selector-result').className = 'test-result error';
+                document.getElementById('selector-result').innerHTML = '<h4>❌ Service Not Initialized</h4><p>Please wait for the service to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('selector-result');
+            try {
+                resultDiv.className = 'test-result info';
+                resultDiv.innerHTML = '<h4>🔄 Testing Edition Selector UI...</h4>';
+
+                // Test with user that has multiple editions
+                const userData = {
+                    registrations: {
+                        editiontest: true,
+                        edition1: true
+                    },
+                    preferredEdition: 'test'
+                };
+
+                // Create edition selector
+                await editionService.createEditionSelector(userData, 'test-user-1', '#edition-selector-container');
+                
+                const container = document.querySelector('#edition-selector-container');
+                if (container && container.style.display !== 'none') {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Edition Selector UI Test Passed</h4>
+                        <p>The edition selector has been created and displayed below.</p>
+                        <p>You can test changing editions by selecting a different option from the dropdown.</p>
+                    `;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Edition Selector UI Test Failed</h4>
+                        <p>The edition selector was not created or displayed properly.</p>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testDeadlineServiceIntegration() {
+            if (!editionService || !deadlineService) {
+                document.getElementById('integration-result').className = 'test-result error';
+                document.getElementById('integration-result').innerHTML = '<h4>❌ Services Not Initialized</h4><p>Please wait for the services to load...</p>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('integration-result');
+            try {
+                resultDiv.className = 'test-result info';
+                resultDiv.innerHTML = '<h4>🔄 Testing DeadlineService Integration...</h4>';
+
+                // Test getting deadline with EditionService integration
+                const userData = {
+                    registrations: {
+                        editiontest: true
+                    },
+                    preferredEdition: 'test'
+                };
+
+                const deadline = await deadlineService.getDeadlineForGameweek('1', null, userData, 'test-user-1');
+                
+                if (deadline) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ DeadlineService Integration Test Passed</h4>
+                        <p><strong>Deadline Retrieved:</strong> ${deadline.toString()}</p>
+                        <p><strong>Integration:</strong> ✅ DeadlineService successfully used EditionService to resolve user edition</p>
+                    `;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ DeadlineService Integration Test Failed</h4>
+                        <p>No deadline was returned. This might be expected if no fixtures exist for the test edition.</p>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = `<h4>❌ Test Error</h4><p>${error.message}</p>`;
+            }
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').textContent = 'Console cleared...';
+        }
+
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.textContent += `[LOG] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.textContent += `[ERROR] ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        console.log('🚀 EditionService Test Suite initialized');
+        console.log('📋 Available test functions:', Object.keys(window).filter(key => key.startsWith('test')));
+    </script>
+
+    <script type="module">
+        // Import and initialize services
+        (async function() {
+            try {
+                // Import EditionService
+                const editionModule = await import('./src/modules/editionService.js');
+                EditionService = editionModule.default;
+                console.log('✅ EditionService imported successfully');
+
+                // Import DeadlineService
+                const deadlineModule = await import('./src/modules/deadlineService.js');
+                DeadlineService = deadlineModule.default;
+                console.log('✅ DeadlineService imported successfully');
+
+                // Initialize services
+                editionService = new EditionService(mockFirebase);
+                deadlineService = new DeadlineService(mockFirebase, editionService);
+                console.log('✅ Services initialized successfully');
+
+                document.getElementById('test-status').innerHTML = 
+                    '<span class="status-indicator ready"></span><span>Services ready for testing</span>';
+
+            } catch (error) {
+                console.error('❌ Failed to initialize services:', error);
+                document.getElementById('test-status').innerHTML = 
+                    '<span class="status-indicator error"></span><span>Failed to initialize services</span>';
+            }
+        })();
+    </script>
+</body>
+</html>

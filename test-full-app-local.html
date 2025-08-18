@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOS App - Full App Local Testing</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        .nav-tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+            color: #667eea;
+        }
+        .tab-content {
+            padding: 20px;
+            min-height: 400px;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .status-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .error-info {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .success-info {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .module-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>🏆 LOS App - Full App Local Testing</h1>
+            <p>Testing the complete application with real modules and functionality</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="nav-tab" onclick="showTab('fixtures')">Fixtures</button>
+            <button class="nav-tab" onclick="showTab('table')">Table</button>
+            <button class="nav-tab" onclick="showTab('admin')">Admin</button>
+            <button class="nav-tab" onclick="showTab('status')">Module Status</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-pane active">
+                <div class="status-info">
+                    <h3>📊 Dashboard</h3>
+                    <p>This tab will show the real dashboard with actual data from your modules.</p>
+                </div>
+                <div id="dashboardContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading dashboard...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fixtures Tab -->
+            <div id="fixtures" class="tab-pane">
+                <div class="status-info">
+                    <h3>⚽ Fixtures</h3>
+                    <p>This tab will show real fixtures data and allow you to test the fixtures functionality.</p>
+                </div>
+                <div id="fixturesContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading fixtures...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Tab -->
+            <div id="table" class="tab-pane">
+                <div class="status-info">
+                    <h3>🏆 League Table</h3>
+                    <p>This tab will show the real league table with actual standings data.</p>
+                </div>
+                <div id="tableContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading table...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Tab -->
+            <div id="admin" class="tab-pane">
+                <div class="status-info">
+                    <h3>⚙️ Admin Panel</h3>
+                    <p>This tab will show the admin functionality with real management tools.</p>
+                </div>
+                <div id="adminContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading admin panel...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Status Tab -->
+            <div id="status" class="tab-pane">
+                <div class="status-info">
+                    <h3>🔍 Module Status</h3>
+                    <p>Check the status of all loaded modules and their functionality.</p>
+                </div>
+                <div id="statusContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Checking module status...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Global app state
+        window.APP_STATE = {
+            modules: {},
+            currentUser: null,
+            fixtures: [],
+            table: [],
+            debug: []
+        };
+
+        // Tab management
+        window.showTab = function(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            // Show selected tab
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // Load content for the tab
+            loadTabContent(tabName);
+        };
+
+        // Load tab content
+        async function loadTabContent(tabName) {
+            switch(tabName) {
+                case 'dashboard':
+                    await loadDashboard();
+                    break;
+                case 'fixtures':
+                    await loadFixtures();
+                    break;
+                case 'table':
+                    await loadTable();
+                    break;
+                case 'admin':
+                    await loadAdmin();
+                    break;
+                case 'status':
+                    await loadModuleStatus();
+                    break;
+            }
+        }
+
+        // Load dashboard with real data
+        async function loadDashboard() {
+            const content = document.getElementById('dashboardContent');
+            try {
+                if (window.APP_STATE.modules.ui) {
+                    const uiModule = window.APP_STATE.modules.ui;
+                    let actualUIModule = uiModule.default || uiModule;
+                    
+                    if (typeof actualUIModule === 'function') {
+                        // It's a class, instantiate it
+                        const uiInstance = new actualUIModule();
+                        if (typeof uiInstance.showDashboard === 'function') {
+                            const result = await uiInstance.showDashboard();
+                            content.innerHTML = `
+                                <div class="success-info">
+                                    <h4>✅ Dashboard Loaded Successfully</h4>
+                                    <p><strong>Result:</strong> ${JSON.stringify(result, null, 2)}</p>
+                                </div>
+                            `;
+                        } else {
+                            content.innerHTML = `
+                                <div class="error-info">
+                                    <h4>❌ Dashboard Function Not Available</h4>
+                                    <p>showDashboard method not found on UI module</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        content.innerHTML = `
+                            <div class="error-info">
+                                <h4>❌ UI Module Not Available</h4>
+                                <p>UI module is not properly loaded</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    content.innerHTML = `
+                        <div class="error-info">
+                            <h4>❌ UI Module Not Loaded</h4>
+                            <p>Please wait for modules to load or check the Module Status tab</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-info">
+                        <h4>❌ Error Loading Dashboard</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load fixtures with real data
+        async function loadFixtures() {
+            const content = document.getElementById('fixturesContent');
+            try {
+                if (window.APP_STATE.modules.fixtures) {
+                    const fixturesModule = window.APP_STATE.modules.fixtures;
+                    let actualFixturesModule = fixturesModule.default || fixturesModule;
+                    
+                    if (typeof actualFixturesModule === 'function') {
+                        const fixturesInstance = new actualFixturesModule();
+                        if (typeof fixturesInstance.getFixtures === 'function') {
+                            const result = await fixturesInstance.getFixtures();
+                            content.innerHTML = `
+                                <div class="success-info">
+                                    <h4>✅ Fixtures Loaded Successfully</h4>
+                                    <p><strong>Result:</strong> ${JSON.stringify(result, null, 2)}</p>
+                                </div>
+                            `;
+                        } else {
+                            content.innerHTML = `
+                                <div class="error-info">
+                                    <h4>❌ Fixtures Function Not Available</h4>
+                                    <p>getFixtures method not found on Fixtures module</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        content.innerHTML = `
+                            <div class="error-info">
+                                <h4>❌ Fixtures Module Not Available</h4>
+                                <p>Fixtures module is not properly loaded</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    content.innerHTML = `
+                        <div class="error-info">
+                            <h4>❌ Fixtures Module Not Loaded</h4>
+                            <p>Please wait for modules to load or check the Module Status tab</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-info">
+                        <h4>❌ Error Loading Fixtures</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load table with real data
+        async function loadTable() {
+            const content = document.getElementById('tableContent');
+            try {
+                if (window.APP_STATE.modules.scores) {
+                    const scoresModule = window.APP_STATE.modules.scores;
+                    let actualScoresModule = scoresModule.default || scoresModule;
+                    
+                    if (typeof actualScoresModule === 'function') {
+                        const scoresInstance = new actualScoresModule();
+                        if (typeof scoresInstance.getTable === 'function') {
+                            const result = await scoresInstance.getTable();
+                            content.innerHTML = `
+                                <div class="success-info">
+                                    <h4>✅ Table Loaded Successfully</h4>
+                                    <p><strong>Result:</strong> ${JSON.stringify(result, null, 2)}</p>
+                                </div>
+                            `;
+                        } else {
+                            content.innerHTML = `
+                                <div class="error-info">
+                                    <h4>❌ Table Function Not Available</h4>
+                                    <p>getTable method not found on Scores module</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        content.innerHTML = `
+                            <div class="error-info">
+                                <h4>❌ Scores Module Not Available</h4>
+                                <p>Scores module is not properly loaded</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    content.innerHTML = `
+                        <div class="error-info">
+                            <h4>❌ Scores Module Not Loaded</h4>
+                            <p>Please wait for modules to load or check the Module Status tab</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-info">
+                        <h4>❌ Error Loading Table</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load admin with real data
+        async function loadAdmin() {
+            const content = document.getElementById('adminContent');
+            try {
+                if (window.APP_STATE.modules.admin) {
+                    const adminModule = window.APP_STATE.modules.admin;
+                    let actualAdminModule = adminModule.default || adminModule;
+                    
+                    if (typeof actualAdminModule === 'function') {
+                        const adminInstance = new actualAdminModule();
+                        if (typeof adminInstance.getAdminData === 'function') {
+                            const result = await adminInstance.getAdminData();
+                            content.innerHTML = `
+                                <div class="success-info">
+                                    <h4>✅ Admin Panel Loaded Successfully</h4>
+                                    <p><strong>Result:</strong> ${JSON.stringify(result, null, 2)}</p>
+                                </div>
+                            `;
+                        } else {
+                            content.innerHTML = `
+                                <div class="error-info">
+                                    <h4>❌ Admin Function Not Available</h4>
+                                    <p>getAdminData method not found on Admin module</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        content.innerHTML = `
+                            <div class="error-info">
+                                <h4>❌ Admin Module Not Available</h4>
+                                <p>Admin module is not properly loaded</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    content.innerHTML = `
+                        <div class="error-info">
+                            <h4>❌ Admin Module Not Loaded</h4>
+                            <p>Please wait for modules to load or check the Module Status tab</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="error-info">
+                        <h4>❌ Error Loading Admin Panel</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load module status
+        async function loadModuleStatus() {
+            const content = document.getElementById('statusContent');
+            const modules = window.APP_STATE.modules;
+            
+            let statusHTML = '<h4>🔍 Module Status Overview</h4>';
+            
+            if (Object.keys(modules).length === 0) {
+                statusHTML += '<div class="error-info">No modules loaded yet</div>';
+            } else {
+                for (const [moduleName, module] of Object.entries(modules)) {
+                    const hasDefault = module.default !== undefined;
+                    const isClass = typeof (module.default || module) === 'function';
+                    const status = hasDefault && isClass ? 'success' : 'warning';
+                    const statusText = hasDefault && isClass ? '✅ Ready' : '⚠️ Partial';
+                    
+                    statusHTML += `
+                        <div class="module-status ${status === 'success' ? 'status-success' : 'status-warning'}">
+                            <strong>${moduleName}</strong>: ${statusText}
+                            ${hasDefault ? ' (Has default export)' : ' (No default export)'}
+                            ${isClass ? ' (Class constructor)' : ' (Not a class)'}
+                        </div>
+                    `;
+                }
+            }
+            
+            content.innerHTML = statusHTML;
+        }
+
+        // Test module loading
+        async function testModules() {
+            try {
+                // Import all modules
+                const uiModule = await import('./src/modules/ui.js');
+                const authModule = await import('./src/modules/auth.js');
+                const databaseModule = await import('./src/modules/database.js');
+                const gameLogicModule = await import('./src/modules/gameLogic.js');
+                const fixturesModule = await import('./src/modules/fixtures.js');
+                const scoresModule = await import('./src/modules/scores/index.js');
+                const adminModule = await import('./src/modules/admin/index.js');
+
+                // Store modules in global state
+                window.APP_STATE.modules = {
+                    ui: uiModule,
+                    auth: authModule,
+                    database: databaseModule,
+                    gameLogic: gameLogicModule,
+                    fixtures: fixturesModule,
+                    scores: scoresModule,
+                    admin: adminModule
+                };
+
+                console.log('✅ All modules loaded successfully:', window.APP_STATE.modules);
+                
+                // Load initial tab content
+                loadTabContent('dashboard');
+                
+            } catch (error) {
+                console.error('❌ Error loading modules:', error);
+                document.body.innerHTML = `
+                    <div class="error-info">
+                        <h2>❌ Failed to Load App</h2>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>This usually means the modules couldn't be loaded due to CORS or path issues.</p>
+                        <p>Make sure you're running this through the local server: http://localhost:8000/test-full-app-local.html</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize the app
+        testModules();
+    </script>
+</body>
+</html>

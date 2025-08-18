@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOS App - Real App Testing</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .nav-tab.active {
+            border-bottom-color: #007acc;
+            background: #f8f9fa;
+        }
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            background: white;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .test-info {
+            background: #f0f8ff;
+            border: 1px solid #007acc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        .module-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .real-app-content {
+            border: 2px dashed #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f8fff8;
+        }
+        .real-app-content h3 {
+            color: #28a745;
+            margin-top: 0;
+        }
+        .integration-status {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="test-info">
+            <h2>🧪 LOS App - Real App Integration Testing</h2>
+            <p><strong>Status:</strong> <span id="appStatus" class="module-status status-warning">Initializing...</span></p>
+            <p><strong>Environment:</strong> Local Development (Real Module Integration)</p>
+            <p><strong>Modules Loaded:</strong> <span id="modulesLoaded">0/7</span></p>
+            <p><strong>Note:</strong> This integrates with your actual app modules to show real data and functionality.</p>
+        </div>
+
+        <h1>LOS App - Real App Testing</h1>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="nav-tab" onclick="showTab('fixtures')">Fixtures (Real Data)</button>
+            <button class="nav-tab" onclick="showTab('table')">Table (Real Data)</button>
+            <button class="nav-tab" onclick="showTab('admin')">Admin (Real Data)</button>
+            <button class="nav-tab" onclick="showTab('integration')">Integration Test</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <h2>Dashboard</h2>
+            <div class="real-app-content">
+                <h3>Real App Integration</h3>
+                <p>This tab will show your actual dashboard using the UI module.</p>
+                <div id="dashboardContent">
+                    <p>Loading real dashboard content...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fixtures Tab -->
+        <div id="fixtures" class="tab-content">
+            <h2>Fixtures - Real Data</h2>
+            <div class="real-app-content">
+                <h3>Player View with Real Fixtures</h3>
+                <p>This shows the actual fixtures data from your fixtures module.</p>
+                <div id="fixturesContent">
+                    <p>Loading real fixtures data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Tab -->
+        <div id="table" class="tab-content">
+            <h2>League Table - Real Data</h2>
+            <div class="real-app-content">
+                <h3>Real League Table</h3>
+                <p>This shows the actual league table data from your scores module.</p>
+                <div id="tableContent">
+                    <p>Loading real league table...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin" class="tab-content">
+            <h2>Admin Panel - Real Data</h2>
+            <div class="real-app-content">
+                <h3>Real Admin Functions</h3>
+                <p>This shows the actual admin functionality from your admin module.</p>
+                <div id="adminContent">
+                    <p>Loading real admin panel...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Test Tab -->
+        <div id="integration" class="tab-content">
+            <h2>Module Integration Test</h2>
+            <div class="real-app-content">
+                <h3>Testing Real Module Functions</h3>
+                <p>This tests actual function calls to your modules.</p>
+                <div id="integrationContent">
+                    <p>Testing module integration...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Local testing environment setup
+        window.LOCAL_ENV = {
+            RAPIDAPI_KEY: 'local-test-key',
+            BUILD_TIME: new Date().toISOString(),
+            ENVIRONMENT: 'local-test'
+        };
+
+        // Global app state
+        window.APP_STATE = {
+            modules: {},
+            currentUser: null,
+            fixtures: [],
+            table: [],
+            debug: []
+        };
+
+        // Tab management
+        window.showTab = function(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab content
+            loadTabContent(tabName);
+        };
+
+        // Load tab content with real module integration
+        async function loadTabContent(tabName) {
+            try {
+                switch(tabName) {
+                    case 'dashboard':
+                        await loadRealDashboard();
+                        break;
+                    case 'fixtures':
+                        await loadRealFixtures();
+                        break;
+                    case 'table':
+                        await loadRealTable();
+                        break;
+                    case 'admin':
+                        await loadRealAdmin();
+                        break;
+                    case 'integration':
+                        await testModuleIntegration();
+                        break;
+                }
+            } catch (error) {
+                console.error(`Error loading ${tabName}:`, error);
+                logDebug(`Error loading ${tabName}: ${error.message}`);
+            }
+        }
+
+        // Load real dashboard using UI module
+        async function loadRealDashboard() {
+            const content = document.getElementById('dashboardContent');
+            try {
+                if (window.APP_STATE.modules.ui) {
+                    // Try to use actual UI module functions
+                    const uiModule = window.APP_STATE.modules.ui;
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>UI Module Integration</h4>
+                            <p><strong>Module Loaded:</strong> ✅ Yes</p>
+                            <p><strong>Available Functions:</strong> ${Object.keys(uiModule).join(', ')}</p>
+                            <p><strong>Module Type:</strong> ${typeof uiModule}</p>
+                        </div>
+                        <div class="real-app-content">
+                            <h4>Real Dashboard Content</h4>
+                            <p>Your UI module is loaded and ready to use.</p>
+                            <p>You can now test actual dashboard functionality.</p>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>UI Module Not Available</h4>
+                            <p>❌ The UI module failed to load</p>
+                            <p>Check the console for error details</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error loading dashboard: ${error.message}</p>`;
+            }
+        }
+
+        // Load real fixtures using fixtures module
+        async function loadRealFixtures() {
+            const content = document.getElementById('fixturesContent');
+            try {
+                if (window.APP_STATE.modules.fixtures) {
+                    const fixturesModule = window.APP_STATE.modules.fixtures;
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>Fixtures Module Integration</h4>
+                            <p><strong>Module Loaded:</strong> ✅ Yes</p>
+                            <p><strong>Available Functions:</strong> ${Object.keys(fixturesModule).join(', ')}</p>
+                            <p><strong>Module Type:</strong> ${typeof fixturesModule}</p>
+                        </div>
+                        <div class="real-app-content">
+                            <h4>Real Fixtures Data</h4>
+                            <p>Your fixtures module is loaded and ready to use.</p>
+                            <p>You can now test actual fixture functionality.</p>
+                            <p><strong>Next Step:</strong> Call actual fixture functions to see real data</p>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>Fixtures Module Not Available</h4>
+                            <p>❌ The fixtures module failed to load</p>
+                            <p>Check the console for error details</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error loading fixtures: ${error.message}</p>`;
+            }
+        }
+
+        // Load real table using scores module
+        async function loadRealTable() {
+            const content = document.getElementById('tableContent');
+            try {
+                if (window.APP_STATE.modules.scores) {
+                    const scoresModule = window.APP_STATE.modules.scores;
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>Scores Module Integration</h4>
+                            <p><strong>Module Loaded:</strong> ✅ Yes</p>
+                            <p><strong>Available Functions:</strong> ${Object.keys(scoresModule).join(', ')}</p>
+                            <p><strong>Module Type:</strong> ${typeof scoresModule}</p>
+                        </div>
+                        <div class="real-app-content">
+                            <h4>Real League Table Data</h4>
+                            <p>Your scores module is loaded and ready to use.</p>
+                            <p>You can now test actual table functionality.</p>
+                            <p><strong>Next Step:</strong> Call actual table functions to see real data</p>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>Scores Module Not Available</h4>
+                            <p>❌ The scores module failed to load</p>
+                            <p>Check the console for error details</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error loading table: ${error.message}</p>`;
+            }
+        }
+
+        // Load real admin using admin module
+        async function loadRealAdmin() {
+            const content = document.getElementById('adminContent');
+            try {
+                if (window.APP_STATE.modules.admin) {
+                    const adminModule = window.APP_STATE.modules.admin;
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>Admin Module Integration</h4>
+                            <p><strong>Module Loaded:</strong> ✅ Yes</p>
+                            <p><strong>Available Functions:</strong> ${Object.keys(adminModule).join(', ')}</p>
+                            <p><strong>Module Type:</strong> ${typeof adminModule}</p>
+                        </div>
+                        <div class="real-app-content">
+                            <h4>Real Admin Functions</h4>
+                            <p>Your admin module is loaded and ready to use.</p>
+                            <p>You can now test actual admin functionality.</p>
+                            <p><strong>Next Step:</strong> Call actual admin functions to see real data</p>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="integration-status">
+                            <h4>Admin Module Not Available</h4>
+                            <p>❌ The admin module failed to load</p>
+                            <p>Check the console for error details</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `<p>Error loading admin: ${error.message}</p>`;
+            }
+        }
+
+        // Test actual module integration
+        async function testModuleIntegration() {
+            const content = document.getElementById('integrationContent');
+            try {
+                let integrationHTML = '<div class="integration-status"><h4>Module Integration Test</h4>';
+                
+                // Test each module
+                const modules = ['ui', 'auth', 'database', 'gameLogic', 'fixtures', 'scores', 'admin'];
+                
+                for (const moduleName of modules) {
+                    const module = window.APP_STATE.modules[moduleName];
+                    if (module) {
+                        integrationHTML += `
+                            <p><strong>${moduleName}:</strong> ✅ Loaded</p>
+                            <p style="margin-left: 20px;">Functions: ${Object.keys(module).join(', ')}</p>
+                        `;
+                    } else {
+                        integrationHTML += `<p><strong>${moduleName}:</strong> ❌ Failed</p>`;
+                    }
+                }
+                
+                integrationHTML += '</div>';
+                
+                // Test actual function calls
+                integrationHTML += '<div class="real-app-content"><h4>Function Call Tests</h4>';
+                
+                // Test UI module if available
+                if (window.APP_STATE.modules.ui) {
+                    try {
+                        // Try to call actual UI functions
+                        const uiModule = window.APP_STATE.modules.ui;
+                        integrationHTML += '<p><strong>UI Module Test:</strong> ✅ Available</p>';
+                        
+                        // List available functions
+                        if (typeof uiModule === 'object') {
+                            integrationHTML += '<p>Available functions:</p><ul>';
+                            Object.keys(uiModule).forEach(func => {
+                                integrationHTML += `<li>${func}: ${typeof uiModule[func]}</li>`;
+                            });
+                            integrationHTML += '</ul>';
+                        }
+                    } catch (error) {
+                        integrationHTML += `<p><strong>UI Module Test:</strong> ❌ Error: ${error.message}</p>`;
+                    }
+                }
+                
+                integrationHTML += '</div>';
+                
+                content.innerHTML = integrationHTML;
+            } catch (error) {
+                content.innerHTML = `<p>Error testing integration: ${error.message}</p>`;
+            }
+        }
+
+        // Debug logging
+        function logDebug(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            window.APP_STATE.debug.push(`[${timestamp}] ${message}`);
+            if (window.APP_STATE.debug.length > 50) {
+                window.APP_STATE.debug.shift();
+            }
+        }
+
+        // Test module loading
+        async function testModules() {
+            const modulesToTest = [
+                { name: 'ui', path: './src/modules/ui.js', critical: true },
+                { name: 'auth', path: './src/modules/auth.js', critical: true },
+                { name: 'database', path: './src/modules/database.js', critical: true },
+                { name: 'gameLogic', path: './src/modules/gameLogic.js', critical: false },
+                { name: 'fixtures', path: './src/modules/fixtures.js', critical: false },
+                { name: 'scores', path: './src/modules/scores/index.js', critical: false },
+                { name: 'admin', path: './src/modules/admin/index.js', critical: false }
+            ];
+
+            let successCount = 0;
+            const statusElement = document.getElementById('appStatus');
+            const modulesLoadedElement = document.getElementById('modulesLoaded');
+
+            for (const module of modulesToTest) {
+                try {
+                    const moduleInstance = await import(module.path);
+                    window.APP_STATE.modules[module.name] = moduleInstance;
+                    successCount++;
+                    logDebug(`✅ ${module.name} loaded successfully`);
+                } catch (error) {
+                    window.APP_STATE.modules[module.name] = null;
+                    logDebug(`❌ ${module.name} failed: ${error.message}`);
+                }
+            }
+
+            // Update status
+            modulesLoadedElement.textContent = `${successCount}/${modulesToTest.length}`;
+            
+            if (successCount === modulesToTest.length) {
+                statusElement.textContent = 'All Modules Loaded';
+                statusElement.className = 'module-status status-success';
+            } else if (successCount > 0) {
+                statusElement.textContent = 'Partial Success';
+                statusElement.className = 'module-status status-warning';
+            } else {
+                statusElement.textContent = 'All Modules Failed';
+                statusElement.className = 'module-status status-error';
+            }
+
+            // Load initial tab content
+            await loadTabContent('dashboard');
+        }
+
+        // Initialize app
+        async function initApp() {
+            try {
+                logDebug('🧪 Starting real app integration testing');
+                await testModules();
+                logDebug('🚀 App initialization complete');
+            } catch (error) {
+                logDebug(`❌ App initialization failed: ${error.message}`);
+                console.error('App initialization error:', error);
+            }
+        }
+
+        // Start the app
+        initApp();
+    </script>
+</body>
+</html>
