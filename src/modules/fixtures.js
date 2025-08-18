@@ -1306,6 +1306,9 @@ class FixturesManager {
                         console.log('🔍 Gameweek navigation shown');
                     }
                     
+                    // Get gameweek status to determine if deadline has passed
+                    const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
+                    
                     // Add gameweek status indicator
                     let statusText = '';
                     let statusColor = '';
@@ -1407,9 +1410,6 @@ class FixturesManager {
                         console.log('🔍 loadFixturesForDeadline: deadlineDate:', deadlineDate);
                         console.log('🔍 loadFixturesForDeadline: earliestFixture:', earliestFixture);
                     }
-                    
-                    // Get gameweek status to determine if deadline has passed
-                    const gameweekStatus = this.getGameweekStatus(fixtures, currentGameWeek);
                     
                     // Check if all fixtures are completed
                     const allFixturesCompleted = fixtures.every(fixture =>
@@ -1739,7 +1739,7 @@ class FixturesManager {
     }
 
     // Render fixtures display
-    async renderFixturesDisplay(fixtures, userData, currentGameWeek) {
+    async renderFixturesDisplay(fixtures, userData, currentGameWeek, userId) {
         
         
         try {
