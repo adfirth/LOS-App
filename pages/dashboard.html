@@ -568,6 +568,9 @@
             console.log('🔧 Dashboard: editionService available:', !!window.editionService);
             console.log('🔧 Dashboard: authManager available:', !!window.authManager);
             
+            // Test alert to see if this function is being called
+            alert('App initialization check started!');
+            
             if (window.editionService && window.authManager) {
                 console.log('🔧 Dashboard: App initialized, setting up edition selector');
                 setupDashboard();
@@ -585,6 +588,9 @@
                 const user = window.authManager.currentUser;
                 console.log('🔧 Dashboard: User authenticated, setting up edition selector for:', user.email);
                 console.log('🔧 Dashboard: User UID:', user.uid);
+                
+                // Test alert to see if user is authenticated
+                alert('User authenticated! User: ' + user.email);
                 
                 // Get user data and create edition selector
                 window.authManager.db.collection('users').doc(user.uid).get().then(userDoc => {
@@ -707,6 +713,10 @@
         // Start waiting for app initialization
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Dashboard: DOM loaded, waiting for app initialization...');
+            
+            // Simple test alert to see if JavaScript is running
+            alert('Dashboard page loaded! JavaScript is working.');
+            
             waitForApp();
             
             // Add mobile tab switching functionality
