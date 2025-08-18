@@ -563,28 +563,30 @@
     <!-- Dashboard initialization script -->
     <script>
         // Wait for the app to be fully initialized
+        let retryCount = 0;
+        const maxRetries = 30; // 30 seconds timeout
+        
         function waitForApp() {
             console.log('🔧 Dashboard: Checking for app initialization...');
             console.log('🔧 Dashboard: editionService available:', !!window.editionService);
             console.log('🔧 Dashboard: authManager available:', !!window.authManager);
             
-            // Test alert to see if this function is being called
-            alert('App initialization check started!');
+            // Update loading message
+            updateLoadingMessage('Checking app services...');
             
-            // Debug authentication status
-            if (window.authManager) {
-                alert(`Auth Manager Status:\nCurrent User: ${window.authManager.currentUser ? window.authManager.currentUser.email : 'NO USER'}\nAuth State: ${window.authManager.auth ? 'Available' : 'Not Available'}`);
-            } else {
-                alert('Auth Manager is NOT available!');
+            // Check timeout
+            if (retryCount >= maxRetries) {
+                updateLoadingMessage('App initialization timeout. Please refresh the page.');
+                console.error('❌ Dashboard: App initialization timeout after', maxRetries, 'seconds');
+                return;
             }
             
-            // Debug app initialization status
-            alert(`App Status:\nAuth Manager: ${!!window.authManager}\nEdition Service: ${!!window.editionService}\nApp Object: ${!!window.app}\nFirebase: ${!!window.db || !!window.firebase}\nWindow Keys: ${Object.keys(window).filter(key => key.includes('auth') || key.includes('Auth') || key.includes('firebase') || key.includes('Firebase')).join(', ')}`);
+            retryCount++;
             
             // Check if we need to wait longer for app initialization
             if (!window.authManager || !window.editionService) {
-                alert('App not fully initialized yet. Will retry in 2 seconds...');
-                setTimeout(waitForApp, 2000);
+                updateLoadingMessage(`App services not ready, waiting... (${retryCount}/${maxRetries})`);
+                setTimeout(waitForApp, 1000);
                 return;
             }
             
@@ -663,24 +665,35 @@
                                     vendor: navigator.vendor
                                 });
                                 
-                                // Show device info for ALL devices to debug
-                                alert(`Device Info:\nWidth: ${window.innerWidth}\nHeight: ${window.innerHeight}\nUser Agent: ${userAgent.substring(0, 100)}...\nPlatform: ${navigator.platform}\nVendor: ${navigator.vendor}\nIs Mobile: ${isMobileDevice}\nIs OnePlus: ${isOnePlus}\nIs OnePlus By Screen: ${isOnePlusByScreen}\nIs OnePlus Device: ${isOnePlusDevice}\nIs High Res Mobile: ${isHighResMobile}`);
+                                // Update loading message for device detection
+                                updateLoadingMessage('Detecting device type...');
                                 
-                                // Temporary alert for OnePlus testing
-                                if (isOnePlusDevice || isHighResMobile) {
-                                    alert(`OnePlus Device Detected!\nWidth: ${window.innerWidth}\nHeight: ${window.innerHeight}\nUser Agent: ${userAgent.substring(0, 50)}...`);
-                                }
+                                // Log device detection (console only, no alerts)
+                                console.log('🔧 Dashboard: Device detection:', {
+                                    userAgent: userAgent.substring(0, 100) + '...',
+                                    isMobileDevice,
+                                    isOnePlus,
+                                    isOnePlusByScreen,
+                                    isOnePlusByPlatform,
+                                    isOnePlusByVendor,
+                                    isOnePlusDevice,
+                                    isHighResMobile,
+                                    windowWidth: window.innerWidth,
+                                    windowHeight: window.innerHeight,
+                                    platform: navigator.platform,
+                                    vendor: navigator.vendor
+                                });
                                 
-                                // Debug edition selector creation
-                                alert(`About to create edition selectors...\nUser data: ${JSON.stringify(userData.registrations)}\nEdition service available: ${!!window.editionService}`);
+                                // Update loading message for edition selector creation
+                                updateLoadingMessage('Creating edition selectors...');
                                 
                                 // Create edition selector for mobile
                                 window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').then(() => {
                                     console.log('✅ Mobile edition selector created successfully');
-                                    alert('Mobile edition selector created successfully!');
+                                    updateLoadingMessage('Mobile edition selector created successfully!');
                                 }).catch(error => {
                                     console.error('❌ Dashboard: Error creating mobile edition selector:', error);
-                                    alert('Error creating mobile edition selector: ' + error.message);
+                                    updateLoadingMessage('Error creating mobile edition selector: ' + error.message);
                                 });
                                 
                                 // Force mobile layout for OnePlus and similar devices
@@ -718,8 +731,15 @@
                                     const currentGameweek = '1'; // Default to gameweek 1
                                     window.loadMobileFixturesForDeadline(currentGameweek, userData, user.uid);
                                 }
+                                
+                                // Hide loading indicator on success
+                                setTimeout(() => {
+                                    hideLoadingIndicator();
+                                    console.log('✅ Dashboard: Setup complete, loading indicator hidden');
+                                }, 1000);
                             }).catch(error => {
                                 console.error('❌ Dashboard: Error initializing EditionService:', error);
+                                updateLoadingMessage('Error: ' + error.message);
                             });
                         } else {
                             console.error('❌ Dashboard: EditionService not available');
@@ -737,8 +757,52 @@
                     console.log('🔧 Dashboard: authManager.currentUser:', window.authManager.currentUser);
                 }
                 
-                // Debug alert for authentication failure
-                alert(`Authentication Failed!\nAuth Manager: ${!!window.authManager}\nCurrent User: ${window.authManager?.currentUser ? window.authManager.currentUser.email : 'NO USER'}\nAuth State: ${window.authManager?.auth ? 'Available' : 'Not Available'}`);
+                // Show authentication status in loading message
+                updateLoadingMessage('Waiting for user authentication...');
+            }
+        }
+        
+        // Loading indicator functions
+        function showLoadingIndicator(message) {
+            // Remove existing loading indicator
+            hideLoadingIndicator();
+            
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; max-width: 300px;">
+                        <div style="margin-bottom: 1rem;">
+                            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                        </div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 0.5rem;">Loading...</div>
+                        <div style="font-size: 0.9rem; color: #666;">${message}</div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+            document.body.appendChild(loadingDiv);
+        }
+        
+        function hideLoadingIndicator() {
+            const existing = document.getElementById('loading-indicator');
+            if (existing) {
+                existing.remove();
+            }
+        }
+        
+        function updateLoadingMessage(message) {
+            const loadingDiv = document.getElementById('loading-indicator');
+            if (loadingDiv) {
+                const messageDiv = loadingDiv.querySelector('div:last-child');
+                if (messageDiv) {
+                    messageDiv.textContent = message;
+                }
             }
         }
         
@@ -746,8 +810,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Dashboard: DOM loaded, waiting for app initialization...');
             
-            // Simple test alert to see if JavaScript is running
-            alert('Dashboard page loaded! JavaScript is working.');
+            // Show loading indicator instead of alert
+            showLoadingIndicator('Initializing app...');
             
             waitForApp();
             
