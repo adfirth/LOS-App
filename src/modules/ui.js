@@ -297,10 +297,16 @@ class UIManager {
                 }
                 
                 // Load mobile fixtures for current gameweek
+                console.log('🔧 UI: Checking loadMobileFixturesForDeadline function availability...');
+                console.log('🔧 UI: loadMobileFixturesForDeadline function exists:', typeof loadMobileFixturesForDeadline === 'function');
+                console.log('🔧 UI: currentGameWeek value:', currentGameWeek);
+                
                 if (typeof loadMobileFixturesForDeadline === 'function' && currentGameWeek) {
+                    console.log('🔧 UI: Calling loadMobileFixturesForDeadline with:', { currentGameWeek, userData: !!userData, userId: user.uid });
                     loadMobileFixturesForDeadline(currentGameWeek, userData, user.uid);
                 } else {
                     console.log('🔧 Mobile fixtures not loaded - currentGameWeek:', currentGameWeek);
+                    console.log('🔧 UI: Function available:', typeof loadMobileFixturesForDeadline === 'function');
                 }
                 
                 // Update pick status headers for both desktop and mobile

@@ -1958,11 +1958,21 @@ class FixturesManager {
 
     // Load mobile fixtures for deadline
     async loadMobileFixturesForDeadline(gameweek, userData = null, userId = null) {
+        console.log('🔧 Mobile Fixtures: loadMobileFixturesForDeadline called with:', { gameweek, userData: !!userData, userId });
+        
         const fixturesDisplayContainer = document.querySelector('#mobile-fixtures-display-container');
-        if (!fixturesDisplayContainer) return;
+        console.log('🔧 Mobile Fixtures: fixturesDisplayContainer found:', !!fixturesDisplayContainer);
+        if (!fixturesDisplayContainer) {
+            console.error('🔧 Mobile Fixtures: fixturesDisplayContainer not found');
+            return;
+        }
 
         const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
-        if (!fixturesDisplay) return;
+        console.log('🔧 Mobile Fixtures: fixturesDisplay found:', !!fixturesDisplay);
+        if (!fixturesDisplay) {
+            console.error('🔧 Mobile Fixtures: fixturesDisplay not found');
+            return;
+        }
         
         // Check if gameweek is valid
         if (!gameweek) {
@@ -1992,13 +2002,17 @@ class FixturesManager {
             
             // Load edition-specific fixtures only
             const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            console.log('🔧 Mobile Fixtures: Fixtures document exists:', doc.exists);
             if (doc.exists) {
                 const fixtures = doc.data().fixtures;
+                console.log('🔧 Mobile Fixtures: Fixtures data:', fixtures ? fixtures.length : 'null');
                 if (fixtures && fixtures.length > 0) {
-                    console.log('Found mobile fixtures:', fixtures.length);
+                    console.log('🔧 Mobile Fixtures: Found mobile fixtures:', fixtures.length);
                     
                     // Always render fixtures - let the render method handle status display
+                    console.log('🔧 Mobile Fixtures: Calling renderMobileFixturesDisplay...');
                     this.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
+                    console.log('🔧 Mobile Fixtures: Setting container display to block');
                     fixturesDisplayContainer.style.display = 'block';
                     
                     // Show the mobile gameweek navigation
