@@ -295,7 +295,7 @@ class App {
         
         // Mobile Navigation-related functions - REMOVED: Now handled by MobileNavigationManager directly
         window.initializeMobileTabs = () => this.mobileNavigationManager.initializeMobileTabs();
-        window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.fixturesManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
+        window.loadMobileFixturesForDeadline = (gameweek, userData, userId) => this.mobileNavigationManager.loadMobileFixturesForDeadline(gameweek, userData, userId);
         window.renderMobileFixturesDisplay = (fixtures, userData, currentGameWeek, userId) => this.mobileNavigationManager.renderMobileFixturesDisplay(fixtures, userData, currentGameWeek, userId);
         window.updateMobilePickStatusHeader = (gameweek, userData, userId) => this.mobileNavigationManager.updateMobilePickStatusHeader(gameweek, userData, userId);
         window.initializeMobileGameweekNavigation = (currentGameWeek, userData, userId) => this.mobileNavigationManager.initializeMobileGameweekNavigation(currentGameWeek, userData, userId);

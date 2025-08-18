@@ -188,6 +188,151 @@ class MobileNavigationManager {
         });
     }
 
+    // Load mobile fixtures for deadline
+    async loadMobileFixturesForDeadline(gameweek, userData = null, userId = null) {
+        console.log('🔧 Mobile Navigation: loadMobileFixturesForDeadline called with:', { gameweek, userData: !!userData, userId });
+        
+        const fixturesDisplayContainer = document.querySelector('#mobile-fixtures-display-container');
+        console.log('🔧 Mobile Navigation: fixturesDisplayContainer found:', !!fixturesDisplayContainer);
+        if (!fixturesDisplayContainer) {
+            console.error('🔧 Mobile Navigation: fixturesDisplayContainer not found');
+            return;
+        }
+
+        const fixturesDisplay = document.querySelector('#mobile-fixtures-display');
+        console.log('🔧 Mobile Navigation: fixturesDisplay found:', !!fixturesDisplay);
+        if (!fixturesDisplay) {
+            console.error('🔧 Mobile Navigation: fixturesDisplay found');
+            return;
+        }
+        
+        // Check if gameweek is valid
+        if (!gameweek) {
+            console.log('🔧 Mobile Navigation: gameweek is undefined');
+            return;
+        }
+
+        try {
+            // Use the same format as the main app.js file
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            
+            // Get user edition using EditionService if available
+            let userEdition;
+            if (window.editionService) {
+                // Use EditionService to get user edition
+                userEdition = window.editionService.getCurrentUserEdition();
+                console.log('🔧 Mobile Navigation: EditionService resolved user edition:', userEdition);
+            } else {
+                // Fallback to old method
+                userEdition = window.currentActiveEdition || 1;
+                console.log('🔧 Mobile Navigation: Fallback method resolved user edition:', userEdition);
+            }
+            
+            const editionGameweekKey = `edition${userEdition}_${gameweekKey}`;
+            
+            console.log('🔧 Mobile Navigation: Loading mobile fixtures for deadline:', editionGameweekKey);
+            
+            // Load edition-specific fixtures only
+            const doc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
+            console.log('🔧 Mobile Navigation: Fixtures document exists:', doc.exists);
+            if (doc.exists) {
+                const fixtures = doc.data().fixtures;
+                console.log('🔧 Mobile Navigation: Fixtures data:', fixtures ? fixtures.length : 'null');
+                if (fixtures && fixtures.length > 0) {
+                    console.log('🔧 Mobile Navigation: Found mobile fixtures:', fixtures.length);
+                    
+                    // Always render fixtures - let the render method handle status display
+                    console.log('🔧 Mobile Navigation: Calling renderMobileFixturesDisplay...');
+                    this.renderMobileFixturesDisplay(fixtures, userData, gameweek, userId);
+                    console.log('🔧 Mobile Navigation: Setting container display to block');
+                    fixturesDisplayContainer.style.display = 'block';
+                    
+                    // Show the mobile gameweek navigation
+                    const mobileGameweekNavigation = document.querySelector('#mobile-gameweek-navigation');
+                    if (mobileGameweekNavigation) {
+                        mobileGameweekNavigation.style.display = 'block';
+                        console.log('🔧 Mobile Navigation: Mobile gameweek navigation shown');
+                    }
+                } else {
+                    console.log('🔧 Mobile Navigation: No mobile fixtures found for gameweek');
+                    fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                    fixturesDisplayContainer.style.display = 'block';
+                    
+                    // Clear mobile pick status display when no fixtures are available
+                    const mobilePickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+                    if (mobilePickStatusDisplay) {
+                        mobilePickStatusDisplay.textContent = 'No fixtures available';
+                        mobilePickStatusDisplay.style.color = '#6c757d'; // Gray color for unavailable
+                    }
+                    
+                    // Clear mobile deadline display when no fixtures are available
+                    const mobileDeadlineDate = document.querySelector('#mobile-deadline-date');
+                    if (mobileDeadlineDate) {
+                        mobileDeadlineDate.textContent = 'No deadline set';
+                        mobileDeadlineDate.style.color = '#6c757d'; // Gray color for unavailable
+                    }
+                    
+                    // Clear mobile deadline status when no fixtures are available
+                    const mobileDeadlineStatus = document.querySelector('#mobile-deadline-status');
+                    if (mobileDeadlineStatus) {
+                        mobileDeadlineStatus.textContent = 'No fixtures available';
+                        mobileDeadlineStatus.style.color = '#6c757d'; // Gray color for unavailable
+                    }
+                }
+            } else {
+                console.log('🔧 Mobile Navigation: No mobile fixtures document found for:', editionGameweekKey);
+                fixturesDisplay.innerHTML = '<p>No fixtures available for this gameweek.</p>';
+                fixturesDisplayContainer.style.display = 'block';
+                
+                // Clear mobile pick status display when no fixtures document is found
+                const mobilePickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+                if (mobilePickStatusDisplay) {
+                    mobilePickStatusDisplay.textContent = 'No fixtures available';
+                    mobilePickStatusDisplay.style.color = '#6c757d'; // Gray color for unavailable
+                }
+                
+                // Clear mobile deadline display when no fixtures document is found
+                const mobileDeadlineDate = document.querySelector('#mobile-deadline-date');
+                if (mobileDeadlineDate) {
+                    mobileDeadlineDate.textContent = 'No deadline set';
+                    mobileDeadlineDate.style.color = '#6c757d'; // Gray color for unavailable
+                }
+                
+                // Clear mobile deadline status when no fixtures document is found
+                const mobileDeadlineStatus = document.querySelector('#mobile-deadline-status');
+                if (mobileDeadlineStatus) {
+                    mobileDeadlineStatus.textContent = 'No fixtures available';
+                    mobileDeadlineStatus.style.color = '#6c757d'; // Gray color for unavailable
+                }
+            }
+        } catch (error) {
+            console.error('🔧 Mobile Navigation: Error loading mobile fixtures for deadline:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+            fixturesDisplayContainer.style.display = 'block';
+            
+            // Clear mobile pick status display on error
+            const mobilePickStatusDisplay = document.querySelector('#mobile-pick-status-display');
+            if (mobilePickStatusDisplay) {
+                mobilePickStatusDisplay.textContent = 'Error loading fixtures';
+                mobilePickStatusDisplay.style.color = '#dc3545'; // Red color for error
+            }
+            
+            // Clear mobile deadline display on error
+            const mobileDeadlineDate = document.querySelector('#mobile-deadline-date');
+            if (mobileDeadlineDate) {
+                mobileDeadlineDate.textContent = 'Error loading deadline';
+                mobileDeadlineDate.style.color = '#dc3545'; // Red color for error
+            }
+            
+            // Clear mobile deadline status on error
+            const mobileDeadlineStatus = document.querySelector('#mobile-deadline-status');
+            if (mobileDeadlineStatus) {
+                mobileDeadlineStatus.textContent = 'Error loading fixtures';
+                mobileDeadlineStatus.style.color = '#dc3545'; // Red color for error
+            }
+        }
+    }
+
     // Mobile fixtures display rendering function
     async renderMobileFixturesDisplay(fixtures, userData = null, currentGameWeek = null, userId = null) {
         console.log('🔧 Mobile Navigation: renderMobileFixturesDisplay called with:', {
