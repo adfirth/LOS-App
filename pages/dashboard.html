@@ -578,6 +578,16 @@
                 alert('Auth Manager is NOT available!');
             }
             
+            // Debug app initialization status
+            alert(`App Status:\nAuth Manager: ${!!window.authManager}\nEdition Service: ${!!window.editionService}\nApp Object: ${!!window.app}\nFirebase: ${!!window.db || !!window.firebase}\nWindow Keys: ${Object.keys(window).filter(key => key.includes('auth') || key.includes('Auth') || key.includes('firebase') || key.includes('Firebase')).join(', ')}`);
+            
+            // Check if we need to wait longer for app initialization
+            if (!window.authManager || !window.editionService) {
+                alert('App not fully initialized yet. Will retry in 2 seconds...');
+                setTimeout(waitForApp, 2000);
+                return;
+            }
+            
             if (window.editionService && window.authManager) {
                 console.log('🔧 Dashboard: App initialized, setting up edition selector');
                 setupDashboard();
