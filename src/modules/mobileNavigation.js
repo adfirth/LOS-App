@@ -233,50 +233,62 @@ class MobileNavigationManager {
                 }
             }
             
-            // Create team pick buttons with improved status classes
-            let homeTeamClasses = 'team-pick-button';
-            let awayTeamClasses = 'team-pick-button';
-            
-            // Use simple status checking to avoid async calls during rendering
-            // Inline logic to avoid function call issues
+            // Use EnhancedPickManager for team status if available, otherwise fallback to simple logic
             let homeTeamStatus, awayTeamStatus;
             
-            // Simple inline logic for home team
-            if (currentPick === fixture.homeTeam) {
-                homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
-            } else if (existingPicks.includes(fixture.homeTeam)) {
-                homeTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
+            if (window.enhancedPickManager) {
+                // Use fallback status for now - we'll update asynchronously
+                homeTeamStatus = {
+                    status: 'available',
+                    clickable: true,
+                    tooltip: 'Click to pick this team',
+                    classes: 'team-pick-button available',
+                    action: 'pick'
+                };
+                awayTeamStatus = {
+                    status: 'available',
+                    clickable: true,
+                    tooltip: 'Click to pick this team',
+                    classes: 'team-pick-button available',
+                    action: 'pick'
+                };
             } else {
-                homeTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
-            }
-            
-            // Simple inline logic for away team
-            if (currentPick === fixture.awayTeam) {
-                awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
-            } else if (existingPicks.includes(fixture.awayTeam)) {
-                awayTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
-            } else {
-                awayTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
+                // Fallback to simple logic if EnhancedPickManager not available
+                if (currentPick === fixture.homeTeam) {
+                    homeTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+                } else if (existingPicks.includes(fixture.homeTeam)) {
+                    homeTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
+                } else {
+                    homeTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
+                }
+                
+                if (currentPick === fixture.awayTeam) {
+                    awayTeamStatus = { status: 'current-pick', clickable: false, reason: 'Current pick for this gameweek' };
+                } else if (existingPicks.includes(fixture.awayTeam)) {
+                    awayTeamStatus = { status: 'future-pick', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Picked in another gameweek' };
+                } else {
+                    awayTeamStatus = { status: 'available', clickable: !deadlinePassed, reason: deadlinePassed ? 'Deadline passed' : 'Available for picking' };
+                }
             }
             
             // Apply status classes to team buttons
-            homeTeamClasses += ` ${homeTeamStatus.status}`;
-            awayTeamClasses += ` ${awayTeamStatus.status}`;
+            const homeTeamClasses = homeTeamStatus.classes || `team-pick-button ${homeTeamStatus.status}`;
+            const awayTeamClasses = awayTeamStatus.classes || `team-pick-button ${awayTeamStatus.status}`;
             
-            // Add deadline-passed class if deadline has passed
-            if (deadlinePassed) {
+            // Add deadline-passed class if deadline has passed (fallback only)
+            if (!window.enhancedPickManager && deadlinePassed) {
                 homeTeamClasses += ' deadline-passed';
                 awayTeamClasses += ' deadline-passed';
             }
             
-            // Determine if teams are clickable based on their status and create tooltips
-            let homeTeamClickable = homeTeamStatus.clickable;
-            let awayTeamClickable = awayTeamStatus.clickable;
-            let homeTeamTooltip = homeTeamStatus.reason;
-            let awayTeamTooltip = awayTeamStatus.reason;
+            // Determine if teams are clickable and create tooltips
+            const homeTeamClickable = homeTeamStatus.clickable;
+            const awayTeamClickable = awayTeamStatus.clickable;
+            const homeTeamTooltip = homeTeamStatus.tooltip || homeTeamStatus.reason;
+            const awayTeamTooltip = awayTeamStatus.tooltip || awayTeamStatus.reason;
             
-            const homeTeamClickAttr = homeTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
-            const awayTeamClickAttr = awayTeamClickable ? `onclick="selectTeamAsTempPick('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
+            const homeTeamClickAttr = homeTeamClickable ? `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.homeTeam}', ${currentGameWeek}, '${userId}')"` : '';
+            const awayTeamClickAttr = awayTeamClickable ? `onclick="window.enhancedPickManager.handleTeamSelection('${fixture.awayTeam}', ${currentGameWeek}, '${userId}')"` : '';
             const homeTeamTitleAttr = homeTeamTooltip ? `title="${homeTeamTooltip}"` : '';
             const awayTeamTitleAttr = awayTeamTooltip ? `title="${awayTeamTooltip}"` : '';
 
@@ -305,6 +317,97 @@ class MobileNavigationManager {
         }
 
         fixturesDisplay.innerHTML = fixturesHTML;
+        
+        // Now update team statuses asynchronously if EnhancedPickManager is available
+        if (window.enhancedPickManager) {
+            this.updateMobileTeamStatusesAsync(fixtures, currentGameWeek, userData, userId);
+        }
+    }
+
+    /**
+     * Update team statuses asynchronously using EnhancedPickManager for mobile
+     * @param {Array} fixtures - Array of fixtures
+     * @param {string} currentGameWeek - Current gameweek
+     * @param {Object} userData - User data
+     * @param {string} userId - User ID
+     */
+    async updateMobileTeamStatusesAsync(fixtures, currentGameWeek, userData, userId) {
+        if (!window.enhancedPickManager) return;
+        
+        try {
+            for (const fixture of fixtures) {
+                // Get async team statuses
+                const homeTeamStatus = await window.enhancedPickManager.getTeamStatus(fixture.homeTeam, currentGameWeek, userData, fixtures);
+                const awayTeamStatus = await window.enhancedPickManager.getTeamStatus(fixture.awayTeam, currentGameWeek, userData, fixtures);
+                
+                // Find the team buttons for this fixture
+                const homeTeamButton = document.querySelector(`button[onclick*="${fixture.homeTeam}"]`);
+                const awayTeamButton = document.querySelector(`button[onclick*="${fixture.awayTeam}"]`);
+                
+                if (homeTeamButton) {
+                    this.updateMobileTeamButton(homeTeamButton, homeTeamStatus, fixture.homeTeam, currentGameWeek, userId);
+                }
+                
+                if (awayTeamButton) {
+                    this.updateMobileTeamButton(awayTeamButton, awayTeamStatus, fixture.awayTeam, currentGameWeek, userId);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating mobile team statuses asynchronously:', error);
+        }
+    }
+    
+    /**
+     * Update a mobile team button with the correct status
+     * @param {HTMLElement} button - The team button element
+     * @param {Object} teamStatus - Team status object from EnhancedPickManager
+     * @param {string} teamName - Team name
+     * @param {string} currentGameWeek - Current gameweek
+     * @param {string} userId - User ID
+     */
+    updateMobileTeamButton(button, teamStatus, teamName, currentGameWeek, userId) {
+        // Update classes
+        button.className = teamStatus.classes;
+        
+        // Update clickable state
+        if (teamStatus.clickable) {
+            button.onclick = () => window.enhancedPickManager.handleTeamSelection(teamName, currentGameWeek, userId);
+            button.disabled = false;
+        } else {
+            button.onclick = null;
+            button.disabled = true;
+        }
+        
+        // Update tooltip
+        button.title = teamStatus.tooltip;
+        
+        // Update visual indicators
+        const pickIndicator = button.querySelector('.pick-indicator');
+        const savedPickIndicator = button.querySelector('.saved-pick-indicator');
+        const lockedPickIndicator = button.querySelector('.locked-pick-indicator');
+        
+        // Remove existing indicators
+        if (pickIndicator) pickIndicator.remove();
+        if (savedPickIndicator) savedPickIndicator.remove();
+        if (lockedPickIndicator) lockedPickIndicator.remove();
+        
+        // Add appropriate indicator
+        if (teamStatus.status === 'current-pick') {
+            const indicator = document.createElement('span');
+            indicator.className = 'pick-indicator';
+            indicator.textContent = '✓';
+            button.appendChild(indicator);
+        } else if (teamStatus.status === 'saved-pick') {
+            const indicator = document.createElement('span');
+            indicator.className = 'saved-pick-indicator';
+            indicator.textContent = '💾';
+            button.appendChild(indicator);
+        } else if (teamStatus.status === 'locked-pick') {
+            const indicator = document.createElement('span');
+            indicator.className = 'locked-pick-indicator';
+            indicator.textContent = '🔒';
+            button.appendChild(indicator);
+        }
     }
 
     // Function to update the mobile pick status header
