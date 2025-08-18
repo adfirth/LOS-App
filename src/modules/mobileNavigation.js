@@ -424,11 +424,53 @@ class MobileNavigationManager {
             });
             fixturesHTML += '</div>';
             
-            // Add single team picker dropdown for all teams
-            fixturesHTML += `
-                <div class="mobile-team-picker-section">
-                    <div class="mobile-team-picker-header">
-                        <h4>Select Your Pick</h4>
+            fixturesHTML += '</div>';
+            fixturesDisplay.innerHTML = fixturesHTML;
+            
+            // Setup the combined team picker dropdown in the pick status header
+            this.setupCombinedMobileTeamPickerDropdown(fixtures, userData, currentGameWeek, userId);
+            
+            console.log('🔧 Mobile Navigation: Mobile fixtures display rendered successfully');
+            
+        } catch (error) {
+            console.error('🔧 Mobile Navigation: Error rendering mobile fixtures display:', error);
+            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+        }
+    }
+
+    /**
+     * Setup the combined mobile team picker dropdown in the pick status header
+     */
+    async setupCombinedMobileTeamPickerDropdown(fixtures, userData, currentGameWeek, userId) {
+        console.log('🔧 Mobile Navigation: Setting up combined team picker dropdown in pick status header');
+        
+        // Find the mobile pick status header
+        const pickStatusHeader = document.querySelector('.mobile-deadline-section .pick-status-header');
+        if (!pickStatusHeader) {
+            console.error('🔧 Mobile Navigation: Mobile pick status header not found');
+            return;
+        }
+
+        try {
+            // Get all unique teams from fixtures
+            const allTeams = new Set();
+            fixtures.forEach(fixture => {
+                allTeams.add(fixture.homeTeam);
+                allTeams.add(fixture.awayTeam);
+            });
+
+            // Sort teams alphabetically
+            const sortedTeams = Array.from(allTeams).sort();
+
+            // Get current pick for this gameweek
+            const gameweekKey = currentGameWeek ? (currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`) : null;
+            const currentPick = userData && gameweekKey ? userData.picks && userData.picks[gameweekKey] : null;
+
+            // Clear existing content and add the combined dropdown
+            pickStatusHeader.innerHTML = `
+                <div class="mobile-combined-picker-container">
+                    <div class="mobile-pick-status-text">
+                        <span id="mobile-pick-status-display" class="pick-status-text">${currentPick ? `Current Pick: ${currentPick}` : 'No pick made yet'}</span>
                     </div>
                     <div class="mobile-team-picker-dropdown-container">
                         <select id="mobile-team-picker-dropdown" class="mobile-team-picker-dropdown" data-gameweek="${currentGameWeek}" data-user-id="${userId}">
@@ -437,18 +479,107 @@ class MobileNavigationManager {
                     </div>
                 </div>
             `;
-            
-            fixturesHTML += '</div>';
-            fixturesDisplay.innerHTML = fixturesHTML;
-            
-            // Setup the single team picker dropdown
-            this.setupMobileTeamPickerDropdown(fixtures, userData, currentGameWeek, userId);
-            
-            console.log('🔧 Mobile Navigation: Mobile fixtures display rendered successfully');
-            
+
+            const dropdown = document.querySelector('#mobile-team-picker-dropdown');
+            if (!dropdown) {
+                console.error('🔧 Mobile Navigation: Mobile team picker dropdown not found after creation');
+                return;
+            }
+
+            // Add teams to dropdown with proper status
+            for (const team of sortedTeams) {
+                let teamStatus = 'available';
+                let isClickable = true;
+                let statusText = 'Available for picking';
+                let statusClass = 'available';
+
+                if (window.enhancedPickManager) {
+                    // Use EnhancedPickManager to get team status
+                    try {
+                        const status = await window.enhancedPickManager.getTeamStatus(team, currentGameWeek, userData, fixtures);
+                        teamStatus = status.status;
+                        isClickable = status.clickable;
+                        statusText = status.tooltip || status.reason || 'Available for picking';
+                        
+                        // Map status to CSS class
+                        if (status.status === 'current-pick') {
+                            statusClass = 'current-pick';
+                        } else if (status.status === 'saved-pick') {
+                            statusClass = status.clickable ? 'saved-pick transferable' : 'saved-pick locked';
+                        } else if (status.status === 'locked-pick') {
+                            statusClass = 'locked-pick';
+                        } else {
+                            statusClass = status.clickable ? 'available pickable' : 'available unavailable';
+                        }
+                    } catch (error) {
+                        console.error('🔧 Mobile Navigation: Error getting team status for', team, error);
+                        // Fallback to available
+                        teamStatus = 'available';
+                        isClickable = true;
+                        statusText = 'Available for picking';
+                        statusClass = 'available pickable';
+                    }
+                } else {
+                    // Fallback logic if EnhancedPickManager not available
+                    if (currentPick === team) {
+                        teamStatus = 'current-pick';
+                        isClickable = false;
+                        statusText = 'Current pick for this gameweek';
+                        statusClass = 'current-pick';
+                    } else if (userData && userData.picks && Object.values(userData.picks).includes(team)) {
+                        teamStatus = 'saved-pick';
+                        isClickable = true;
+                        statusText = 'Picked in another gameweek';
+                        statusClass = 'saved-pick transferable';
+                    } else {
+                        teamStatus = 'available';
+                        isClickable = true;
+                        statusText = 'Available for picking';
+                        statusClass = 'available pickable';
+                    }
+                }
+
+                // Create option element
+                const option = document.createElement('option');
+                option.value = team;
+                option.textContent = team;
+                option.className = `dropdown-option ${statusClass}`;
+                option.disabled = !isClickable;
+                option.title = statusText;
+
+                // Mark as selected if this is the current pick
+                if (currentPick === team) {
+                    option.selected = true;
+                }
+
+                dropdown.appendChild(option);
+            }
+
+            // Add event listener for dropdown changes
+            dropdown.addEventListener('change', async (event) => {
+                const selectedTeam = event.target.value;
+                console.log('🔧 Mobile Navigation: Team selected in dropdown:', selectedTeam);
+
+                if (selectedTeam === '') {
+                    // Clear pick
+                    if (confirm('Are you sure you want to clear your pick for this gameweek?')) {
+                        await this.clearPickForGameweek(currentGameWeek, userId);
+                    } else {
+                        // Reset dropdown to previous value
+                        event.target.value = currentPick || '';
+                    }
+                } else {
+                    // Make pick
+                    if (window.enhancedPickManager) {
+                        await window.enhancedPickManager.handleTeamSelection(selectedTeam, currentGameWeek, userId);
+                    }
+                }
+            });
+
+            console.log('🔧 Mobile Navigation: Combined team picker dropdown setup complete');
+
         } catch (error) {
-            console.error('🔧 Mobile Navigation: Error rendering mobile fixtures display:', error);
-            fixturesDisplay.innerHTML = '<p>Error loading fixtures. Please try again.</p>';
+            console.error('🔧 Mobile Navigation: Error setting up combined mobile team picker dropdown:', error);
         }
     }
 

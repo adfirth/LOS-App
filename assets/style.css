@@ -7823,6 +7823,12 @@ a:hover {
     .mobile-edition-selector {
         padding: 12px;
         margin-bottom: 16px;
+        display: block !important;
+    }
+    
+    #mobile-edition-selector-container {
+        display: block !important;
+        visibility: visible !important;
     }
     
     .mobile-edition-selector select {
@@ -7936,20 +7942,22 @@ a:hover {
     }
 }
 
-/* Mobile Team Picker Dropdown - Single Dropdown Approach */
-.mobile-team-picker-section {
-    margin-top: 20px;
-    padding: 15px;
+/* Mobile Combined Team Picker Dropdown - In Pick Status Header */
+.mobile-combined-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid #dee2e6;
 }
 
-.mobile-team-picker-header h4 {
-    margin: 0 0 10px 0;
-    color: #495057;
-    font-size: 16px;
+.mobile-pick-status-text {
+    text-align: center;
     font-weight: 600;
+    color: #495057;
+    font-size: 14px;
 }
 
 .mobile-team-picker-dropdown-container {
@@ -7958,15 +7966,14 @@ a:hover {
 
 .mobile-team-picker-dropdown {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border: 2px solid #007bff;
     border-radius: 6px;
     background: white;
-    font-size: 16px;
+    font-size: 14px;
     color: #495057;
     cursor: pointer;
     transition: border-color 0.2s ease;
-    margin-bottom: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -7977,8 +7984,8 @@ a:hover {
 }
 
 .mobile-team-picker-dropdown option {
-    padding: 8px;
-    font-size: 14px;
+    padding: 6px;
+    font-size: 13px;
 }
 
 /* Dropdown option status classes */
@@ -8011,6 +8018,22 @@ a:hover {
 .mobile-team-picker-dropdown option.locked-pick {
     color: #dc3545;
     font-style: italic;
+}
+
+/* Mobile Team Picker Dropdown - Single Dropdown Approach (Legacy) */
+.mobile-team-picker-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.mobile-team-picker-header h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 16px;
+    font-weight: 600;
 }
 
 /* Mobile fixtures list styling */
