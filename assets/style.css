@@ -5253,6 +5253,38 @@ a:hover {
     .mobile-edition-selector {
         display: none !important;
     }
+    
+    /* Ensure mobile edition selector is visible on mobile */
+    @media (max-width: 767px) {
+        .mobile-edition-selector {
+            display: block !important;
+        }
+        
+        #mobile-edition-selector-container {
+            display: block !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            z-index: 1000 !important;
+            position: relative !important;
+        }
+        
+        #mobile-edition-selector-container select {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            z-index: 1001 !important;
+            position: relative !important;
+            -webkit-appearance: auto !important;
+            -moz-appearance: auto !important;
+            appearance: auto !important;
+        }
+        
+        #mobile-edition-selector-container button {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            z-index: 1001 !important;
+            position: relative !important;
+        }
+    }
 }
 
 /* Desktop Tabbed Interface Styles */
@@ -7829,6 +7861,26 @@ a:hover {
     #mobile-edition-selector-container {
         display: block !important;
         visibility: visible !important;
+        pointer-events: auto !important;
+        z-index: 1000 !important;
+        position: relative !important;
+    }
+    
+    #mobile-edition-selector-container select {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        z-index: 1001 !important;
+        position: relative !important;
+        -webkit-appearance: auto !important;
+        -moz-appearance: auto !important;
+        appearance: auto !important;
+    }
+    
+    #mobile-edition-selector-container button {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        z-index: 1001 !important;
+        position: relative !important;
     }
     
     .mobile-edition-selector select {

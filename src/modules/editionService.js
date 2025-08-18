@@ -205,6 +205,39 @@ class EditionService {
         // Show the container since it now has content
         container.style.display = 'block';
         
+        // Debug: Check if mobile edition selector was created
+        if (isMobile) {
+            const mobileSelect = container.querySelector('#mobile-dashboard-edition-selector');
+            const mobileButton = container.querySelector('#mobile-save-edition-preference');
+            console.log('🔧 EditionService: Mobile edition selector created:', {
+                container: !!container,
+                select: !!mobileSelect,
+                button: !!mobileButton,
+                selectId: mobileSelect ? mobileSelect.id : 'not found',
+                buttonId: mobileButton ? mobileButton.id : 'not found',
+                containerHTML: container.innerHTML.substring(0, 200) + '...'
+            });
+            
+            // Add test click handlers for debugging
+            if (mobileSelect) {
+                mobileSelect.addEventListener('click', (e) => {
+                    console.log('🔧 EditionService: MOBILE SELECT CLICKED!', e);
+                });
+                mobileSelect.addEventListener('touchstart', (e) => {
+                    console.log('🔧 EditionService: MOBILE SELECT TOUCHED!', e);
+                });
+            }
+            
+            if (mobileButton) {
+                mobileButton.addEventListener('click', (e) => {
+                    console.log('🔧 EditionService: MOBILE BUTTON CLICKED!', e);
+                });
+                mobileButton.addEventListener('touchstart', (e) => {
+                    console.log('🔧 EditionService: MOBILE BUTTON TOUCHED!', e);
+                });
+            }
+        }
+        
 
         
         console.log('🔧 EditionService: Container HTML set and displayed');
