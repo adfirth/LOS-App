@@ -335,6 +335,13 @@ class MobileNavigationManager {
                 return `<option value="${option.value}" ${selected} ${disabled} class="dropdown-option ${statusClass}">${option.text}</option>`;
             }).join('');
             
+            console.log('🔧 Mobile Navigation: Created dropdown for fixture:', {
+                fixture: `${fixture.homeTeam} vs ${fixture.awayTeam}`,
+                dropdownHTML: dropdownHTML.substring(0, 100) + '...',
+                currentPick,
+                optionsCount: dropdownOptions.length
+            });
+            
             fixturesHTML += `
                 <div class="fixture-item">
                     <div class="fixture-teams">
@@ -385,7 +392,14 @@ class MobileNavigationManager {
      */
     setupDropdownEventListeners() {
         const dropdowns = document.querySelectorAll('.team-pick-dropdown');
-        dropdowns.forEach(dropdown => {
+        console.log('🔧 Mobile Navigation: Found dropdowns:', dropdowns.length);
+        
+        dropdowns.forEach((dropdown, index) => {
+            console.log(`🔧 Mobile Navigation: Setting up dropdown ${index + 1}:`, {
+                fixtureId: dropdown.dataset.fixtureId,
+                gameweek: dropdown.dataset.gameweek,
+                userId: dropdown.dataset.userId
+            });
             dropdown.addEventListener('change', async (event) => {
                 const selectedValue = event.target.value;
                 const gameweek = event.target.dataset.gameweek;

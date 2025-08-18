@@ -7725,8 +7725,19 @@ a:hover {
         display: none;
     }
     
-    /* Show dropdown on small screens, buttons on larger screens */
-    @media (max-width: 480px) {
+    /* Force dropdown visibility on mobile */
+    @media (max-width: 767px) {
+        .fixture-dropdown-mobile {
+            display: block !important;
+        }
+        
+        .fixture-buttons-desktop {
+            display: none !important;
+        }
+    }
+    
+    /* Show dropdown on mobile screens, buttons on larger screens */
+    @media (max-width: 767px) {
         .fixture-buttons-desktop {
             display: none;
         }
@@ -7745,6 +7756,8 @@ a:hover {
             color: #007bff;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .team-pick-dropdown:hover {
