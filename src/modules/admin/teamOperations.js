@@ -81,14 +81,19 @@ export class TeamOperations {
     createAsItStandsElements(container, deviceType) {
         console.log(`🔧 Creating As It Stands elements for ${deviceType}...`);
         
-        // Create gameweek selector if it doesn't exist
-        let gameweekSelector = container.querySelector('.gameweek-selector');
+        // Find the correct gameweek selector based on device type
+        const gameweekSelectorClass = deviceType === 'desktop' ? '.gameweek-selector' : '.mobile-gameweek-selector';
+        let gameweekSelector = container.querySelector(gameweekSelectorClass);
+        
         if (!gameweekSelector) {
+            console.log(`Creating gameweek selector for ${deviceType}...`);
             gameweekSelector = document.createElement('div');
-            gameweekSelector.className = 'gameweek-selector';
+            gameweekSelector.className = deviceType === 'desktop' ? 'gameweek-selector' : 'mobile-gameweek-selector';
+            
+            const selectId = deviceType === 'desktop' ? 'desktop-as-it-stands-gameweek' : 'mobile-as-it-stands-gameweek';
             gameweekSelector.innerHTML = `
-                <label for="standings-gameweek">Select Gameweek:</label>
-                <select id="standings-gameweek">
+                <label for="${selectId}">Select Game Week:</label>
+                <select id="${selectId}">
                     <option value="1">Game Week 1</option>
                     <option value="2">Game Week 2</option>
                     <option value="3">Game Week 3</option>
@@ -112,24 +117,22 @@ export class TeamOperations {
                     this.loadStandings();
                 });
             }
+        } else {
+            console.log(`Gameweek selector already exists for ${deviceType}`);
         }
         
-        // Create standings container if it doesn't exist
-        let standingsContainer = container.querySelector('.standings-container');
+        // Find the correct display container based on device type
+        const displayId = deviceType === 'desktop' ? 'desktop-as-it-stands-display' : 'mobile-as-it-stands-display';
+        let standingsContainer = container.querySelector(`#${displayId}`);
+        
         if (!standingsContainer) {
+            console.log(`Creating standings display for ${deviceType}...`);
             standingsContainer = document.createElement('div');
-            standingsContainer.className = 'standings-container';
+            standingsContainer.id = displayId;
             standingsContainer.innerHTML = '<p>Loading standings...</p>';
             container.appendChild(standingsContainer);
-        }
-        
-        // Create standings summary if it doesn't exist
-        let standingsSummary = container.querySelector('.standings-summary');
-        if (!standingsSummary) {
-            standingsSummary = document.createElement('div');
-            standingsSummary.className = 'standings-summary';
-            standingsSummary.innerHTML = '<p>Loading summary...</p>';
-            container.appendChild(standingsSummary);
+        } else {
+            console.log(`Standings display already exists for ${deviceType}`);
         }
         
         console.log(`✅ As It Stands elements created for ${deviceType}`);
@@ -141,8 +144,21 @@ export class TeamOperations {
             console.log('🔧 Loading standings...');
             
             // Get current edition and gameweek from DOM selectors
-            const currentEdition = document.querySelector('#standings-edition-select')?.value || this.currentActiveEdition;
-            const currentGameweek = document.querySelector('#standings-gameweek-select')?.value || this.currentActiveGameweek;
+            // Try admin panel selectors first, then fall back to dashboard selectors
+            let currentEdition = document.querySelector('#standings-edition-select')?.value;
+            let currentGameweek = document.querySelector('#standings-gameweek-select')?.value;
+            
+            // If not found in admin panel, try dashboard selectors
+            if (!currentEdition) {
+                currentEdition = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
+                                document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
+                                this.currentActiveEdition;
+            }
+            if (!currentGameweek) {
+                currentGameweek = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
+                                 document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
+                                 this.currentActiveGameweek;
+            }
             
             console.log(`Current edition: ${currentEdition}, Current gameweek: ${currentGameweek}`);
             
@@ -219,7 +235,12 @@ export class TeamOperations {
             
             // Get player picks for this gameweek
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const currentEdition = document.querySelector('#standings-edition-select')?.value || this.currentActiveEdition;
+            let currentEdition = document.querySelector('#standings-edition-select')?.value;
+            if (!currentEdition) {
+                currentEdition = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
+                                document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
+                                this.currentActiveEdition;
+            }
             const editionGameweekKey = `edition${currentEdition}_${gameweekKey}`;
             
             try {
@@ -302,7 +323,7 @@ export class TeamOperations {
         const eliminatedPlayers = totalPlayers - activePlayers;
         const averageLives = totalPlayers > 0 ? (standings.reduce((sum, p) => sum + (p.lives || 0), 0) / totalPlayers).toFixed(1) : '0.0';
         
-        // Update the existing elements
+        // Update the existing elements (admin panel)
         const totalPlayersElement = document.querySelector('#total-players-count');
         const survivorsElement = document.querySelector('#survivors-count');
         const eliminatedElement = document.querySelector('#eliminated-count');
@@ -318,54 +339,137 @@ export class TeamOperations {
 
     // Render standings table
     renderStandingsTable(standings) {
+        // Update admin panel table
         const standingsBody = document.querySelector('#standings-body');
-        if (!standingsBody) return;
-        
-        if (!standings || standings.length === 0) {
-            standingsBody.innerHTML = `
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 2rem;">
-                        <i class="fas fa-trophy" style="font-size: 2rem; color: #ffc107; margin-bottom: 1rem;"></i>
-                        <p>No standings data available</p>
-                    </td>
-                </tr>
-            `;
-            return;
+        if (standingsBody) {
+            if (!standings || standings.length === 0) {
+                standingsBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-trophy" style="font-size: 2rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                            <p>No standings data available</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                let tableHtml = '';
+                
+                standings.forEach((player, index) => {
+                    const position = index + 1;
+                    const pickedTeam = player.picks.team || 'No pick';
+                    let result = 'Pending';
+                    
+                    if (player.totalPoints > 0) {
+                        if (player.totalPoints === 3) {
+                            result = 'Win';
+                        } else if (player.totalPoints === 1) {
+                            result = 'Draw';
+                        }
+                    } else if (player.picks.team) {
+                        result = 'Loss';
+                    }
+                    
+                    tableHtml += `
+                        <tr>
+                            <td>${position}</td>
+                            <td>${player.displayName}</td>
+                            <td>${player.email || 'No email'}</td>
+                            <td>${player.lives || 0}</td>
+                            <td>${pickedTeam}</td>
+                            <td>${result}</td>
+                            <td>${player.eliminated ? 'Eliminated' : 'Active'}</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                });
+                
+                standingsBody.innerHTML = tableHtml;
+            }
+            console.log(`✅ Rendered admin standings table with ${standings.length} players`);
         }
         
-        let tableHtml = '';
+        // Update player dashboard displays
+        const desktopDisplay = document.querySelector('#desktop-as-it-stands-display');
+        const mobileDisplay = document.querySelector('#mobile-as-it-stands-display');
         
-        standings.forEach((player, index) => {
-            const position = index + 1;
-            const pickedTeam = player.picks.team || 'No pick';
-            let result = 'Pending';
-            
-            if (player.totalPoints > 0) {
-                if (player.totalPoints === 3) {
-                    result = 'Win';
-                } else if (player.totalPoints === 1) {
-                    result = 'Draw';
-                }
-            } else if (player.picks.team) {
-                result = 'Loss';
+        const createStandingsHtml = (standings) => {
+            if (!standings || standings.length === 0) {
+                return `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-trophy" style="font-size: 2rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                        <p>No standings data available</p>
+                    </div>
+                `;
             }
             
-            tableHtml += `
-                <tr>
-                    <td>${position}</td>
-                    <td>${player.displayName}</td>
-                    <td>${player.email || 'No email'}</td>
-                    <td>${player.lives || 0}</td>
-                    <td>${pickedTeam}</td>
-                    <td>${result}</td>
-                    <td>${player.eliminated ? 'Eliminated' : 'Active'}</td>
-                    <td>-</td>
-                </tr>
+            let html = `
+                <div class="standings-summary" style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h4>Summary</h4>
+                    <p><strong>Total Players:</strong> ${standings.length}</p>
+                    <p><strong>Survivors:</strong> ${standings.filter(p => !p.eliminated).length}</p>
+                    <p><strong>Eliminated:</strong> ${standings.filter(p => p.eliminated).length}</p>
+                    <p><strong>Average Lives:</strong> ${(standings.reduce((sum, p) => sum + (p.lives || 0), 0) / standings.length).toFixed(1)}</p>
+                </div>
+                <div class="standings-table">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #e9ecef;">
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Pos</th>
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Player</th>
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Lives</th>
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Pick</th>
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Result</th>
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
-        });
+            
+            standings.forEach((player, index) => {
+                const position = index + 1;
+                const pickedTeam = player.picks.team || 'No pick';
+                let result = 'Pending';
+                
+                if (player.totalPoints > 0) {
+                    if (player.totalPoints === 3) {
+                        result = 'Win';
+                    } else if (player.totalPoints === 1) {
+                        result = 'Draw';
+                    }
+                } else if (player.picks.team) {
+                    result = 'Loss';
+                }
+                
+                html += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${position}</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${player.displayName}</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${player.lives || 0}</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6;">${pickedTeam}</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${result}</td>
+                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${player.eliminated ? 'Eliminated' : 'Active'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            return html;
+        };
         
-        standingsBody.innerHTML = tableHtml;
-        console.log(`✅ Rendered standings table with ${standings.length} players`);
+        if (desktopDisplay) {
+            desktopDisplay.innerHTML = createStandingsHtml(standings);
+            console.log(`✅ Updated desktop standings display`);
+        }
+        
+        if (mobileDisplay) {
+            mobileDisplay.innerHTML = createStandingsHtml(standings);
+            console.log(`✅ Updated mobile standings display`);
+        }
     }
 
     // Export standings
