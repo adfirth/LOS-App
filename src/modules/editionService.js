@@ -1021,12 +1021,30 @@ class EditionService {
             }
             
             console.log('🔧 EditionService: Refreshing picks with user data:', currentUser);
+            console.log('🔧 EditionService: Current user picks:', currentUser.picks);
+            console.log('🔧 EditionService: Current edition:', this.currentUserEdition);
+            
+            // Ensure we have the latest user data from Firebase for the current edition
+            try {
+                const freshUserDoc = await window.db.collection('users').doc(currentUser.uid).get();
+                if (freshUserDoc.exists) {
+                    const freshUserData = freshUserDoc.data();
+                    console.log('🔧 EditionService: Fresh user data from Firebase:', freshUserData);
+                    console.log('🔧 EditionService: Fresh user picks:', freshUserData.picks);
+                    
+                    // Use the fresh user data for rendering
+                    currentUser = { uid: currentUser.uid, ...freshUserData };
+                }
+            } catch (error) {
+                console.error('Error fetching fresh user data:', error);
+            }
             
             // Refresh picks display for both desktop and mobile
             if (window.app && window.app.gameLogicManager) {
                 // Refresh desktop picks
                 const desktopPicksContainer = document.querySelector('#desktop-picks-history');
                 if (desktopPicksContainer) {
+                    console.log('🔧 EditionService: Rendering desktop picks with data:', currentUser.picks);
                     await window.app.gameLogicManager.renderPickHistory(
                         currentUser.picks || {},
                         desktopPicksContainer,
@@ -1038,6 +1056,7 @@ class EditionService {
                 // Refresh mobile picks
                 const mobilePicksContainer = document.querySelector('#mobile-picks-history');
                 if (mobilePicksContainer) {
+                    console.log('🔧 EditionService: Rendering mobile picks with data:', currentUser.picks);
                     await window.app.gameLogicManager.renderPickHistory(
                         currentUser.picks || {},
                         mobilePicksContainer,

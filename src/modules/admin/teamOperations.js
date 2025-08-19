@@ -270,6 +270,11 @@ export class TeamOperations {
                 let currentEdition = 'test'; // Default fallback
                 if (window.editionService && window.editionService.getCurrentUserEdition) {
                     currentEdition = window.editionService.getCurrentUserEdition();
+                } else {
+                    // Fallback: try to get from DOM selectors
+                    currentEdition = document.querySelector('#standings-edition-select')?.value || 
+                                   document.querySelector('#desktop-as-it-stands-gameweek')?.closest('.gameweek-selector')?.querySelector('select')?.value ||
+                                   'test';
                 }
                 
                 const editionKey = `edition${currentEdition}`;
