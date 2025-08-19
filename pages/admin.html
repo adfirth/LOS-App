@@ -1422,9 +1422,18 @@
                 
                 // Try multiple approaches to load standings
                 const tryLoadStandings = () => {
-                    // Method 1: Direct teamOperations
+                    // Method 1: Direct teamOperations with edition sync
                     if (window.adminManagementManager && window.adminManagementManager.teamOperations && typeof window.adminManagementManager.teamOperations.loadStandings === 'function') {
                         console.log('Calling loadStandings via window.adminManagementManager.teamOperations...');
+                        
+                        // Sync the standings selectors with the current active edition
+                        const activeEdition = window.adminManagementManager.currentActiveEdition;
+                        const standingsEditionSelect = document.querySelector('#standings-edition-select');
+                        if (standingsEditionSelect && standingsEditionSelect.value !== activeEdition) {
+                            console.log(`Syncing standings edition selector from ${standingsEditionSelect.value} to ${activeEdition}`);
+                            standingsEditionSelect.value = activeEdition;
+                        }
+                        
                         window.adminManagementManager.teamOperations.loadStandings();
                         return true;
                     }
