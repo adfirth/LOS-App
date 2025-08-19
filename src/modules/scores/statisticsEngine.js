@@ -426,6 +426,241 @@ export class StatisticsEngine {
         mobileScoresDisplay.innerHTML = scoresHTML;
     }
 
+    // Render admin scores for admin scores tab (prevents duplication)
+    renderAdminScores(fixtures, gameweek) {
+        console.log('renderAdminScores called with:', { fixtures, gameweek });
+        
+        const adminScoresContainer = document.querySelector('#scores-container');
+        if (!adminScoresContainer) {
+            console.error('Admin scores container not found');
+            return;
+        }
+        
+        if (!fixtures || fixtures.length === 0) {
+            adminScoresContainer.innerHTML = '<p class="no-fixtures-message">No fixtures found for this gameweek</p>';
+            return;
+        }
+        
+        // Sort fixtures by date
+        const sortedFixtures = fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        let adminScoresHTML = `
+            <div class="admin-fixtures-header">
+                <h5>Game Week ${gameweek === 'tiebreak' ? 'Tiebreak' : gameweek} Fixtures</h5>
+                <p class="fixtures-count">${sortedFixtures.length} fixture(s) to manage</p>
+                <div class="admin-fixtures-controls">
+                    <button class="complete-all-btn" onclick="window.app.scoresManager.statisticsEngine.completeAllFixtures('${gameweek}')">
+                        <i class="fas fa-check-double"></i> Complete All Fixtures
+                    </button>
+                    <p class="var-review-note">
+                        <i class="fas fa-video"></i> Provisional results are under VAR review until gameweek is completed
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        for (const fixture of sortedFixtures) {
+            const fixtureDate = new Date(fixture.date);
+            const homeBadge = this.getTeamBadge(fixture.homeTeam);
+            const awayBadge = this.getTeamBadge(fixture.awayTeam);
+            
+            const homeBadgeHtml = homeBadge ? `<img src="${homeBadge}" alt="${fixture.homeTeam}" class="team-badge">` : '';
+            const awayBadgeHtml = awayBadge ? `<img src="${awayBadge}" alt="${fixture.awayTeam}" class="team-badge">` : '';
+            
+            // Determine match status and styling
+            let statusClass = '';
+            let statusText = '';
+            
+            if (fixture.completed || fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN') {
+                statusClass = 'completed';
+                statusText = 'Completed';
+            } else if (fixture.status === 'HT') {
+                statusClass = 'half-time';
+                statusText = 'Half Time';
+            } else if (fixture.status === '1H' || fixture.status === '2H' || fixture.status === 'LIVE') {
+                statusClass = 'live';
+                statusText = 'Live';
+            } else {
+                statusClass = 'not-started';
+                statusText = 'Not Started';
+            }
+            
+            adminScoresHTML += `
+                <div class="admin-fixture-row ${statusClass}">
+                    <div class="fixture-info">
+                        <div class="fixture-teams">
+                            <div class="team home-team">
+                                ${homeBadgeHtml}
+                                <span class="team-name">${fixture.homeTeam}</span>
+                            </div>
+                            <div class="fixture-vs">vs</div>
+                            <div class="team away-team">
+                                <span class="team-name">${fixture.awayTeam}</span>
+                                ${awayBadgeHtml}
+                            </div>
+                        </div>
+                        <div class="fixture-details">
+                            <div class="fixture-date">${fixtureDate.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                            <div class="fixture-time">${fixtureDate.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' })}</div>
+                            <div class="fixture-status ${statusClass}">${statusText}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-inputs">
+                        <div class="score-section">
+                            <label>Live Score:</label>
+                            <div class="score-input-group">
+                                <input type="number" class="home-score" data-fixture-id="${fixture.id}" data-team="home" min="0" value="${fixture.homeScore || ''}" placeholder="0">
+                                <span class="score-separator">-</span>
+                                <input type="number" class="away-score" data-fixture-id="${fixture.id}" data-team="away" min="0" value="${fixture.awayScore || ''}" placeholder="0">
+                            </div>
+                        </div>
+                        
+                        <div class="score-section">
+                            <label>Half Time:</label>
+                            <div class="score-input-group">
+                                <input type="number" class="home-score-ht" data-fixture-id="${fixture.id}" data-team="home" data-type="ht" min="0" value="${fixture.homeScoreHT || ''}" placeholder="0">
+                                <span class="score-separator">-</span>
+                                <input type="number" class="away-score-ht" data-fixture-id="${fixture.id}" data-team="away" data-type="ht" min="0" value="${fixture.awayScoreHT || ''}" placeholder="0">
+                            </div>
+                        </div>
+                        
+                        <div class="match-controls">
+                            <select class="match-status" data-fixture-id="${fixture.id}">
+                                <option value="NS" ${fixture.status === 'NS' ? 'selected' : ''}>Not Started</option>
+                                <option value="1H" ${fixture.status === '1H' ? 'selected' : ''}>First Half</option>
+                                <option value="HT" ${fixture.status === 'HT' ? 'selected' : ''}>Half Time</option>
+                                <option value="2H" ${fixture.status === '2H' ? 'selected' : ''}>Second Half</option>
+                                <option value="FT" ${fixture.status === 'FT' ? 'selected' : ''}>Full Time</option>
+                                <option value="AET" ${fixture.status === 'AET' ? 'selected' : ''}>Extra Time</option>
+                                <option value="PEN" ${fixture.status === 'PEN' ? 'selected' : ''}>Penalties</option>
+                                <option value="POSTP" ${fixture.status === 'POSTP' ? 'selected' : ''}>Postponed</option>
+                                <option value="CANC" ${fixture.status === 'CANC' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                            
+                            <div class="completion-controls">
+                                <input type="checkbox" class="match-complete" data-fixture-id="${fixture.id}" ${fixture.completed ? 'checked' : ''}>
+                                <label>Complete</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        adminScoresHTML += '</div>';
+        adminScoresContainer.innerHTML = adminScoresHTML;
+        
+        // Set up event listeners for the admin interface
+        this.setupAdminScoreEventListeners();
+    }
+
+    // Set up event listeners for admin score inputs
+    setupAdminScoreEventListeners() {
+        const adminContainer = document.querySelector('#scores-container');
+        if (!adminContainer) return;
+        
+        // Score input event listeners
+        const scoreInputs = adminContainer.querySelectorAll('input[type="number"]');
+        scoreInputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                this.handleScoreInputChange(e);
+            });
+        });
+        
+        // Match status change listeners
+        const statusSelects = adminContainer.querySelectorAll('.match-status');
+        statusSelects.forEach(select => {
+            select.addEventListener('change', (e) => {
+                this.handleMatchStatusChange(e);
+            });
+        });
+        
+        // Completion checkbox listeners
+        const completionCheckboxes = adminContainer.querySelectorAll('.match-complete');
+        completionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                this.handleMatchCompletionChange(e);
+            });
+        });
+    }
+
+    // Handle score input changes
+    handleScoreInputChange(event) {
+        const input = event.target;
+        const fixtureId = input.dataset.fixtureId;
+        const team = input.dataset.team;
+        const type = input.dataset.type || 'ft';
+        const value = parseInt(input.value) || 0;
+        
+        console.log(`Score input changed: Fixture ${fixtureId}, ${team} team, ${type} score: ${value}`);
+        // TODO: Update fixture data and trigger save
+    }
+
+    // Handle match status changes
+    handleMatchStatusChange(event) {
+        const select = event.target;
+        const fixtureId = select.dataset.fixtureId;
+        const newStatus = select.value;
+        
+        console.log(`Match status changed: Fixture ${fixtureId}, new status: ${newStatus}`);
+        // TODO: Update fixture status and trigger save
+    }
+
+    // Handle match completion changes
+    handleMatchCompletionChange(event) {
+        const checkbox = event.target;
+        const fixtureId = checkbox.dataset.fixtureId;
+        const completed = checkbox.checked;
+        
+        console.log(`Match completion changed: Fixture ${fixtureId}, completed: ${completed}`);
+        // TODO: Update fixture completion status and trigger save
+    }
+
+    // Complete all fixtures for a gameweek
+    async completeAllFixtures(gameweek) {
+        console.log(`Completing all fixtures for gameweek ${gameweek}`);
+        
+        try {
+            // Get all fixtures for this gameweek
+            const fixtures = await this.loadPlayerScores();
+            if (!fixtures || fixtures.length === 0) {
+                console.log('No fixtures found to complete');
+                return;
+            }
+
+            // Mark all fixtures as completed
+            const updatedFixtures = fixtures.map(fixture => ({
+                ...fixture,
+                completed: true,
+                status: fixture.status === 'NS' ? 'FT' : fixture.status // Set status to FT if not started
+            }));
+
+            // Update the fixtures in the database
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
+            
+            await this.db.collection('fixtures').doc(editionGameweekKey).update({
+                fixtures: updatedFixtures
+            });
+
+            console.log(`Successfully completed all ${updatedFixtures.length} fixtures for gameweek ${gameweek}`);
+            
+            // Process results to update player lives
+            this.processResults(gameweek, updatedFixtures);
+            
+            // Refresh the admin display
+            this.renderAdminScores(updatedFixtures, gameweek);
+            
+            // Show success message
+            alert(`✅ All fixtures for Game Week ${gameweek} have been completed!\n\nPlayer lives have been updated and the gameweek is now locked in.`);
+            
+        } catch (error) {
+            console.error('Error completing all fixtures:', error);
+            alert(`❌ Error completing fixtures: ${error.message}`);
+        }
+    }
+
     // Helper function to display match status
     getStatusDisplay(status) {
         const statusMap = {

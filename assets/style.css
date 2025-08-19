@@ -8979,3 +8979,437 @@ body.force-mobile-layout .desktop-edition-selector {
         font-size: 11px;
     }
 }
+
+/* Admin Fixtures Interface Styles */
+.admin-fixtures-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
+    border: 1px solid var(--teal-primary);
+    border-radius: 8px;
+}
+
+.admin-fixtures-header h5 {
+    color: var(--teal-secondary);
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.admin-fixtures-controls {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.complete-all-btn {
+    background: linear-gradient(135deg, var(--success-green), #20c997);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.complete-all-btn:hover {
+    background: linear-gradient(135deg, #20c997, var(--success-green));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.complete-all-btn:active {
+    transform: translateY(0);
+}
+
+.complete-all-btn i {
+    margin-right: 8px;
+}
+
+.var-review-note {
+    color: var(--teal-secondary);
+    font-size: 0.9em;
+    font-style: italic;
+    text-align: center;
+    margin: 0;
+    padding: 8px 16px;
+    background: rgba(94, 165, 152, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(94, 165, 152, 0.2);
+}
+
+.var-review-note i {
+    margin-right: 6px;
+    color: var(--alty-yellow);
+}
+
+.fixtures-count {
+    color: var(--teal-secondary);
+    margin: 0;
+    font-size: 1em;
+    opacity: 0.8;
+}
+
+.admin-fixture-row {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+.admin-fixture-row:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.admin-fixture-row.completed {
+    border-left: 4px solid var(--success-green);
+    background: linear-gradient(135deg, #f8fff9, #e8f5e8);
+}
+
+.admin-fixture-row.half-time {
+    border-left: 4px solid var(--alty-yellow);
+    background: linear-gradient(135deg, #fffdf8, #fff3cd);
+}
+
+.admin-fixture-row.live {
+    border-left: 4px solid var(--alty-red);
+    background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    50% {
+        box-shadow: 0 2px 4px rgba(220, 6, 19, 0.3);
+    }
+    100% {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+}
+
+.admin-fixture-row.not-started {
+    border-left: 4px solid #6c757d;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    opacity: 0.8;
+}
+
+.fixture-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.fixture-teams {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #ffffff, var(--teal-light));
+    border: 1px solid var(--teal-primary);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.team:hover {
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(94, 165, 152, 0.2);
+}
+
+.team.home-team {
+    background: linear-gradient(135deg, #ffffff, rgba(40, 167, 69, 0.1));
+    border-color: var(--success-green);
+}
+
+.team.away-team {
+    background: linear-gradient(135deg, #ffffff, rgba(253, 185, 19, 0.1));
+    border-color: var(--alty-yellow);
+}
+
+.team-name {
+    font-weight: 600;
+    color: var(--dark-text);
+    font-size: 14px;
+}
+
+.fixture-vs {
+    color: var(--alty-red);
+    font-weight: bold;
+    font-size: 16px;
+    padding: 0 10px;
+}
+
+.fixture-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 120px;
+}
+
+.fixture-date, .fixture-time {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.fixture-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fixture-status.completed {
+    background: var(--success-green);
+    color: white;
+}
+
+.fixture-status.half-time {
+    background: var(--alty-yellow);
+    color: var(--dark-text);
+}
+
+.fixture-status.live {
+    background: var(--alty-red);
+    color: white;
+}
+
+.fixture-status.not-started {
+    background: #6c757d;
+    color: white;
+}
+
+.score-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 20px;
+    align-items: end;
+}
+
+.score-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.score-section label {
+    font-weight: 600;
+    color: var(--dark-text);
+    font-size: 13px;
+    text-align: center;
+}
+
+.score-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.score-input-group input {
+    width: 60px;
+    padding: 8px;
+    border: 2px solid var(--teal-primary);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.score-input-group input:focus {
+    outline: none;
+    border-color: var(--teal-secondary);
+    box-shadow: 0 0 0 3px rgba(94, 165, 152, 0.1);
+}
+
+.score-separator {
+    color: var(--alty-red);
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.match-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.match-status {
+    padding: 8px 12px;
+    border: 2px solid var(--teal-primary);
+    border-radius: 6px;
+    background: white;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 120px;
+    cursor: pointer;
+}
+
+.match-status:focus {
+    outline: none;
+    border-color: var(--teal-secondary);
+    box-shadow: 0 0 0 3px rgba(94, 165, 152, 0.1);
+}
+
+.completion-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.completion-controls input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--success-green);
+    cursor: pointer;
+}
+
+.completion-controls label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark-text);
+    cursor: pointer;
+}
+
+.no-fixtures-message {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-style: italic;
+    font-size: 16px;
+}
+
+/* Responsive design for admin fixtures */
+@media (max-width: 768px) {
+    .admin-fixture-row {
+        padding: 15px;
+        margin-bottom: 12px;
+    }
+    
+    .fixture-info {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .fixture-teams {
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .team {
+        padding: 8px 12px;
+    }
+    
+    .team-name {
+        font-size: 13px;
+    }
+    
+    .fixture-details {
+        min-width: auto;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .score-inputs {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .score-section {
+        text-align: center;
+    }
+    
+    .score-input-group input {
+        width: 50px;
+        padding: 6px;
+        font-size: 13px;
+    }
+    
+    .match-controls {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .match-status {
+        min-width: 100px;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-fixtures-header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .admin-fixtures-header h5 {
+        font-size: 1.2em;
+    }
+    
+    .fixtures-count {
+        font-size: 0.9em;
+    }
+    
+    .admin-fixture-row {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .fixture-teams {
+        gap: 8px;
+    }
+    
+    .team {
+        padding: 6px 10px;
+    }
+    
+    .team-name {
+        font-size: 12px;
+    }
+    
+    .fixture-vs {
+        font-size: 14px;
+        padding: 0 6px;
+    }
+    
+    .score-input-group input {
+        width: 45px;
+        padding: 5px;
+        font-size: 12px;
+    }
+    
+    .match-status {
+        min-width: 90px;
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+}

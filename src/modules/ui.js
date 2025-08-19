@@ -157,13 +157,11 @@ class UIManager {
                         // Get current gameweek for display
                         const currentGameweek = window.app.currentActiveGameweek;
                         if (window.app && window.app.scoresManager) {
-                            await window.app.scoresManager.renderPlayerScores(fixtures, currentGameweek);
-                        }
-                        if (window.app && window.app.scoresManager) {
-                            window.app.scoresManager.renderMobilePlayerScores(fixtures, currentGameweek);
+                            // Use the new admin-specific rendering function to prevent duplication
+                            await window.app.scoresManager.statisticsEngine.renderAdminScores(fixtures, currentGameweek);
                         }
                     }).catch(error => {
-                        console.error('Error loading player scores:', error);
+                        console.error('Error loading admin scores:', error);
                         if (window.app && window.app.scoresManager) {
                             window.app.scoresManager.showNoScoresMessage();
                         }
