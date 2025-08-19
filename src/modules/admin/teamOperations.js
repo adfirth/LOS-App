@@ -452,10 +452,9 @@ export class TeamOperations {
                                 result = 'Pending';
                             }
                         }
-                    } else if (player.picks.team === 'To be revealed') {
-                        result = 'To be revealed';
                     } else {
-                        result = 'No Pick';
+                        // For future gameweeks, show "Pending" instead of "No pick" or "To be revealed"
+                        result = 'Pending';
                     }
                     
                     // Determine card status
@@ -466,8 +465,11 @@ export class TeamOperations {
                         cardStatus = '🟨';
                     }
                     
+                    // Add strike-through styling for eliminated players
+                    const strikeThroughStyle = player.eliminated ? 'text-decoration: line-through; opacity: 0.6;' : '';
+                    
                     tableHtml += `
-                        <tr>
+                        <tr style="${strikeThroughStyle}">
                             <td>${player.displayName}</td>
                             <td>${player.email || 'No email'}</td>
                             <td>${player.lives || 0}</td>
@@ -554,10 +556,9 @@ export class TeamOperations {
                             result = 'Pending';
                         }
                     }
-                } else if (player.picks.team === 'To be revealed') {
-                    result = 'To be revealed';
                 } else {
-                    result = 'No Pick';
+                    // For future gameweeks, show "Pending" instead of "No pick" or "To be revealed"
+                    result = 'Pending';
                 }
                 
                     // Determine card status
@@ -568,8 +569,11 @@ export class TeamOperations {
                         cardStatus = '🟨';
                     }
                     
+                    // Add strike-through styling for eliminated players
+                    const strikeThroughStyle = player.eliminated ? 'text-decoration: line-through; opacity: 0.6;' : '';
+                    
                     html += `
-                        <tr>
+                        <tr style="${strikeThroughStyle}">
                             <td style="padding: 8px; border: 1px solid #dee2e6;">${player.displayName}</td>
                             <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${player.lives || 0}</td>
                             <td style="padding: 8px; border: 1px solid #dee2e6;">${pickedTeam}</td>
