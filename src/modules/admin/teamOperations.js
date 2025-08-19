@@ -379,22 +379,22 @@ export class TeamOperations {
     // Update standings summary
     updateStandingsSummary(standings) {
         const totalPlayers = standings.length;
-        const activePlayers = standings.filter(p => !p.eliminated).length;
-        const eliminatedPlayers = totalPlayers - activePlayers;
-        const averageLives = totalPlayers > 0 ? (standings.reduce((sum, p) => sum + (p.lives || 0), 0) / totalPlayers).toFixed(1) : '0.0';
+        const unscathedPlayers = standings.filter(p => p.lives === 2 && !p.eliminated).length;
+        const yellowCardPlayers = standings.filter(p => p.lives === 1 && !p.eliminated).length;
+        const redCardPlayers = standings.filter(p => p.eliminated).length;
         
         // Update the existing elements (admin panel)
         const totalPlayersElement = document.querySelector('#total-players-count');
-        const survivorsElement = document.querySelector('#survivors-count');
-        const eliminatedElement = document.querySelector('#eliminated-count');
-        const averageLivesElement = document.querySelector('#average-lives');
+        const unscathedElement = document.querySelector('#survivors-count'); // Reuse existing element
+        const yellowCardsElement = document.querySelector('#eliminated-count'); // Reuse existing element
+        const redCardsElement = document.querySelector('#average-lives'); // Reuse existing element
         
         if (totalPlayersElement) totalPlayersElement.textContent = totalPlayers;
-        if (survivorsElement) survivorsElement.textContent = activePlayers;
-        if (eliminatedElement) eliminatedElement.textContent = eliminatedPlayers;
-        if (averageLivesElement) averageLivesElement.textContent = averageLives;
+        if (unscathedElement) unscathedElement.textContent = unscathedPlayers;
+        if (yellowCardsElement) yellowCardsElement.textContent = yellowCardPlayers;
+        if (redCardsElement) redCardsElement.textContent = redCardPlayers;
         
-        console.log(`✅ Updated standings summary: ${totalPlayers} total, ${activePlayers} survivors, ${eliminatedPlayers} eliminated, ${averageLives} avg lives`);
+        console.log(`✅ Updated standings summary: ${totalPlayers} total, ${unscathedPlayers} unscathed, ${yellowCardPlayers} yellow cards, ${redCardPlayers} red cards`);
     }
 
     // Render standings table
@@ -405,7 +405,7 @@ export class TeamOperations {
             if (!standings || standings.length === 0) {
                 standingsBody.innerHTML = `
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 2rem;">
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
                             <i class="fas fa-trophy" style="font-size: 2rem; color: #ffc107; margin-bottom: 1rem;"></i>
                             <p>No standings data available</p>
                         </td>
@@ -415,7 +415,6 @@ export class TeamOperations {
                 let tableHtml = '';
                 
                 standings.forEach((player, index) => {
-                    const position = index + 1;
                     const pickedTeam = player.picks.team || 'No pick';
                     let result = 'Pending';
                     
@@ -437,16 +436,22 @@ export class TeamOperations {
                         result = 'No Pick';
                     }
                     
+                    // Determine card status
+                    let cardStatus = '';
+                    if (player.eliminated) {
+                        cardStatus = '🟥';
+                    } else if (player.lives === 1) {
+                        cardStatus = '🟨';
+                    }
+                    
                     tableHtml += `
                         <tr>
-                            <td>${position}</td>
                             <td>${player.displayName}</td>
                             <td>${player.email || 'No email'}</td>
                             <td>${player.lives || 0}</td>
                             <td>${pickedTeam}</td>
                             <td>${result}</td>
-                            <td>${player.eliminated ? 'Eliminated' : 'Active'}</td>
-                            <td>-</td>
+                            <td>${cardStatus}</td>
                         </tr>
                     `;
                 });
@@ -470,24 +475,27 @@ export class TeamOperations {
                 `;
             }
             
+            const unscathedPlayers = standings.filter(p => p.lives === 2 && !p.eliminated).length;
+            const yellowCardPlayers = standings.filter(p => p.lives === 1 && !p.eliminated).length;
+            const redCardPlayers = standings.filter(p => p.eliminated).length;
+            
             let html = `
                 <div class="standings-summary" style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                     <h4>Summary</h4>
                     <p><strong>Total Players:</strong> ${standings.length}</p>
-                    <p><strong>Survivors:</strong> ${standings.filter(p => !p.eliminated).length}</p>
-                    <p><strong>Eliminated:</strong> ${standings.filter(p => p.eliminated).length}</p>
-                    <p><strong>Average Lives:</strong> ${(standings.reduce((sum, p) => sum + (p.lives || 0), 0) / standings.length).toFixed(1)}</p>
+                    <p><strong>Unscathed:</strong> ${unscathedPlayers}</p>
+                    <p><strong>Yellow Cards:</strong> ${yellowCardPlayers}</p>
+                    <p><strong>Red Cards:</strong> ${redCardPlayers}</p>
                 </div>
                 <div class="standings-table">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #e9ecef;">
-                                <th style="padding: 8px; border: 1px solid #dee2e6;">Pos</th>
                                 <th style="padding: 8px; border: 1px solid #dee2e6;">Player</th>
                                 <th style="padding: 8px; border: 1px solid #dee2e6;">Lives</th>
                                 <th style="padding: 8px; border: 1px solid #dee2e6;">Pick</th>
                                 <th style="padding: 8px; border: 1px solid #dee2e6;">Result</th>
-                                <th style="padding: 8px; border: 1px solid #dee2e6;">Status</th>
+                                <th style="padding: 8px; border: 1px solid #dee2e6;">Current Card Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -516,16 +524,23 @@ export class TeamOperations {
                     result = 'No Pick';
                 }
                 
-                html += `
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${position}</td>
-                        <td style="padding: 8px; border: 1px solid #dee2e6;">${player.displayName}</td>
-                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${player.lives || 0}</td>
-                        <td style="padding: 8px; border: 1px solid #dee2e6;">${pickedTeam}</td>
-                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${result}</td>
-                        <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${player.eliminated ? 'Eliminated' : 'Active'}</td>
-                    </tr>
-                `;
+                    // Determine card status
+                    let cardStatus = '';
+                    if (player.eliminated) {
+                        cardStatus = '🟥';
+                    } else if (player.lives === 1) {
+                        cardStatus = '🟨';
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${player.displayName}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${player.lives || 0}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${pickedTeam}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${result}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">${cardStatus}</td>
+                        </tr>
+                    `;
             });
             
             html += `
