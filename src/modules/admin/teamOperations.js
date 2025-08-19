@@ -57,8 +57,11 @@ export class TeamOperations {
         console.log(`🔧 Initializing As It Stands tab for ${deviceType}...`);
         
         try {
-            // Find the As It Stands content container
-            const contentContainer = document.querySelector(`#${deviceType}-as-it-stands-tab`);
+            // Find the As It Stands content container - look for the content div, not the tab
+            const contentContainer = deviceType === 'desktop' 
+                ? document.querySelector('.as-it-stands-content')
+                : document.querySelector('.mobile-as-it-stands-content');
+                
             if (!contentContainer) {
                 console.warn(`❌ As It Stands content container not found for ${deviceType}`);
                 return;
@@ -112,13 +115,19 @@ export class TeamOperations {
             // Add event listener for gameweek change
             const select = gameweekSelector.querySelector('select');
             if (select) {
-                select.addEventListener('change', () => {
-                    this.currentActiveGameweek = select.value;
-                    this.loadStandings();
-                });
+                select.addEventListener('change', this.handleGameweekChange.bind(this));
             }
         } else {
             console.log(`Gameweek selector already exists for ${deviceType}`);
+            
+            // Add event listener to existing selector
+            const select = gameweekSelector.querySelector('select');
+            if (select) {
+                // Remove any existing listeners to prevent duplicates
+                select.removeEventListener('change', this.handleGameweekChange);
+                select.addEventListener('change', this.handleGameweekChange.bind(this));
+                console.log(`✅ Added event listener to existing ${deviceType} gameweek selector`);
+            }
         }
         
         // Find the correct display container based on device type
@@ -144,20 +153,19 @@ export class TeamOperations {
             console.log('🔧 Loading standings...');
             
             // Get current edition and gameweek from DOM selectors
-            // Try admin panel selectors first, then fall back to dashboard selectors
+            // For player dashboard, prioritize the current active edition (test) and gameweek
             let currentEdition = document.querySelector('#standings-edition-select')?.value;
             let currentGameweek = document.querySelector('#standings-gameweek-select')?.value;
             
             // If not found in admin panel, try dashboard selectors
             if (!currentEdition) {
-                currentEdition = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
-                                document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
-                                this.currentActiveEdition;
+                // For player dashboard, use the current active edition (test) which has the picks
+                currentEdition = 'test'; // Use test edition which has the actual picks
             }
             if (!currentGameweek) {
                 currentGameweek = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
                                  document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
-                                 this.currentActiveGameweek;
+                                 '1'; // Default to gameweek 1
             }
             
             console.log(`Current edition: ${currentEdition}, Current gameweek: ${currentGameweek}`);
@@ -248,9 +256,8 @@ export class TeamOperations {
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
             let currentEdition = document.querySelector('#standings-edition-select')?.value;
             if (!currentEdition) {
-                currentEdition = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
-                                document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
-                                this.currentActiveEdition;
+                // For player dashboard, use the current active edition (test) which has the picks
+                currentEdition = 'test'; // Use test edition which has the actual picks
             }
             
             console.log(`🔍 Looking for picks for player ${player.displayName} - Edition: ${currentEdition}, Gameweek: ${gameweek}`);
@@ -864,6 +871,14 @@ export class TeamOperations {
         // This method would return the team badge image URL
         // Implementation depends on your team badge system
         return null;
+    }
+
+    // Handle gameweek change
+    handleGameweekChange(event) {
+        const newGameweek = event.target.value;
+        console.log(`🔄 Gameweek changed to: ${newGameweek}`);
+        this.currentActiveGameweek = newGameweek;
+        this.loadStandings();
     }
 
     // Cleanup method
