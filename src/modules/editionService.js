@@ -47,6 +47,9 @@ class EditionService {
         }
 
         console.log('🔧 EditionService: Initialization complete. Current edition:', this.currentUserEdition);
+        
+        // Update all active edition displays after initialization
+        this.updateAllActiveEditionDisplays();
     }
 
     /**
@@ -455,6 +458,9 @@ class EditionService {
             // Update the status display
             this.updateEditionStatusDisplay();
             
+            // Update all active edition displays across the dashboard
+            this.updateAllActiveEditionDisplays();
+
             console.log('🔧 EditionService: Edition updated successfully');
             return true;
         } catch (error) {
@@ -757,6 +763,66 @@ class EditionService {
         if (mobileStatusElement) {
             mobileStatusElement.innerHTML = `Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>`;
         }
+    }
+
+    /**
+     * Update all active edition displays across the dashboard
+     */
+    updateAllActiveEditionDisplays() {
+        const editionDisplayName = this.getEditionDisplayName(this.currentUserEdition);
+        console.log('🔧 EditionService: Updating all active edition displays to:', editionDisplayName);
+        console.log('🔧 EditionService: Current user edition:', this.currentUserEdition);
+        
+        // Update desktop active edition displays
+        const desktopActiveEdition = document.querySelector('#desktop-active-edition');
+        const desktopScoresActiveEdition = document.querySelector('#desktop-scores-active-edition');
+        const mobileActiveEdition = document.querySelector('#mobile-active-edition');
+        const mobileScoresActiveEdition = document.querySelector('#mobile-scores-active-edition');
+        
+        console.log('🔧 EditionService: Found elements:', {
+            desktopActiveEdition: !!desktopActiveEdition,
+            desktopScoresActiveEdition: !!desktopScoresActiveEdition,
+            mobileActiveEdition: !!mobileActiveEdition,
+            mobileScoresActiveEdition: !!mobileScoresActiveEdition
+        });
+        
+        if (desktopActiveEdition) {
+            desktopActiveEdition.textContent = editionDisplayName;
+            console.log('✅ Updated desktop-active-edition to:', editionDisplayName);
+        } else {
+            console.log('❌ desktop-active-edition element not found');
+        }
+        
+        if (desktopScoresActiveEdition) {
+            desktopScoresActiveEdition.textContent = editionDisplayName;
+            console.log('✅ Updated desktop-scores-active-edition to:', editionDisplayName);
+        } else {
+            console.log('❌ desktop-scores-active-edition element not found');
+        }
+        
+        if (mobileActiveEdition) {
+            mobileActiveEdition.textContent = editionDisplayName;
+            console.log('✅ Updated mobile-active-edition to:', editionDisplayName);
+        } else {
+            console.log('❌ mobile-active-edition element not found');
+        }
+        
+        if (mobileScoresActiveEdition) {
+            mobileScoresActiveEdition.textContent = editionDisplayName;
+            console.log('✅ Updated mobile-scores-active-edition to:', editionDisplayName);
+        } else {
+            console.log('❌ mobile-scores-active-edition element not found');
+        }
+        
+        // Also update any other edition displays that might exist
+        const allEditionDisplays = document.querySelectorAll('[id*="active-edition"], [id*="edition-display"]');
+        console.log('🔧 EditionService: Found additional edition displays:', allEditionDisplays.length);
+        allEditionDisplays.forEach(element => {
+            if (element.id.includes('active-edition') || element.id.includes('edition-display')) {
+                element.textContent = editionDisplayName;
+                console.log(`✅ Updated ${element.id} to:`, editionDisplayName);
+            }
+        });
     }
 
 

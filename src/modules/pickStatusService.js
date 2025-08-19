@@ -29,11 +29,22 @@ class PickStatusService {
         try {
             // Basic validation
             if (!teamName || !userData || !currentGameWeek || !userId) {
+                console.log('🔍 PickStatusService: Missing required data:', { teamName, userData: !!userData, currentGameWeek, userId });
                 return { status: 'normal', clickable: false, reason: 'No user data' };
             }
 
             const gameweekKey = currentGameWeek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameWeek}`;
             const currentPick = userData.picks && userData.picks[gameweekKey];
+
+            // Debug logging
+            console.log('🔍 PickStatusService: Checking pick status for:', {
+                teamName,
+                currentGameWeek,
+                gameweekKey,
+                currentPick,
+                allPicks: userData.picks,
+                userId
+            });
 
             // Check if this is the current pick for this gameweek
             if (currentPick === teamName) {
@@ -301,16 +312,53 @@ class PickStatusService {
      * Get user edition from user data
      */
     getUserEdition(userData) {
-        if (!userData) return 1;
+        if (!userData) {
+            console.log('🔍 PickStatusService: No user data provided, defaulting to edition 1');
+            return 1;
+        }
         
+        // Check if user has a preferred edition set
+        if (userData.preferredEdition) {
+            console.log('🔍 PickStatusService: Using preferred edition:', userData.preferredEdition);
+            return userData.preferredEdition;
+        }
+        
+        // Check registrations to find which edition they're registered for
+        if (userData.registrations) {
+            console.log('🔍 PickStatusService: Checking registrations:', userData.registrations);
+            
+            // Check for Edition 1 first
+            if (userData.registrations.edition1) {
+                console.log('🔍 PickStatusService: Found Edition 1 registration');
+                return '1';
+            }
+            // Check for Test Weeks
+            if (userData.registrations.editiontest) {
+                console.log('🔍 PickStatusService: Found Test Weeks registration');
+                return 'test';
+            }
+            // Check for other editions
+            for (const [editionKey, isRegistered] of Object.entries(userData.registrations)) {
+                if (isRegistered && editionKey !== 'edition1' && editionKey !== 'editiontest') {
+                    const editionNumber = editionKey.replace('edition', '');
+                    console.log('🔍 PickStatusService: Found other edition registration:', editionNumber);
+                    return editionNumber;
+                }
+            }
+        }
+        
+        // Legacy fallbacks
         if (userData.edition) {
+            console.log('🔍 PickStatusService: Using legacy edition field:', userData.edition);
             return userData.edition;
         }
         
         if (userData.registeredEditions && userData.registeredEditions.length > 0) {
+            console.log('🔍 PickStatusService: Using legacy registeredEditions:', userData.registeredEditions[0]);
             return userData.registeredEditions[0];
         }
         
+        console.log('🔍 PickStatusService: No edition found, defaulting to edition 1');
         return 1; // Default to edition 1
     }
 

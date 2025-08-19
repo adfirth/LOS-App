@@ -246,6 +246,8 @@ class UIManager {
                 // Initialize EditionService with user data
                 if (window.editionService) {
                     await window.editionService.initializeWithUser(userData, user.uid);
+                    // Update all active edition displays after initialization
+                    window.editionService.updateAllActiveEditionDisplays();
                 }
                 
                 // Show edition selection if user is registered for multiple editions
@@ -457,16 +459,8 @@ class UIManager {
             console.log('✅ Mobile scores gameweek selector initialized');
         }
         
-        // Update active edition displays
-        const desktopScoresActiveEdition = document.querySelector('#desktop-scores-active-edition');
-        const mobileScoresActiveEdition = document.querySelector('#mobile-scores-active-edition');
-        
-        if (desktopScoresActiveEdition) {
-            desktopScoresActiveEdition.textContent = 'Test Weeks';
-        }
-        if (mobileScoresActiveEdition) {
-            mobileScoresActiveEdition.textContent = 'Test Weeks';
-        }
+        // Update active edition displays - now handled by EditionService
+        // The EditionService will update these displays when the user's edition is set
     }
 
     // Calculate current lives based on cumulative game results
