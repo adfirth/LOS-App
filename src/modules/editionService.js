@@ -908,18 +908,44 @@ class EditionService {
             // Update the scores manager's edition to match
             this.updateScoresManagerEdition();
             
-            // Refresh fixtures for the current gameweek (both desktop and mobile)
+            // Get fresh user data to ensure we have the latest picks for the new edition
+            let currentUser = null;
+            if (window.authManager && window.authManager.currentUser) {
+                currentUser = window.authManager.currentUser;
+            } else if (window.authManager && window.authManager.currentUser?.uid) {
+                // Try to get user data from Firebase
+                try {
+                    const userDoc = await window.db.collection('users').doc(window.authManager.currentUser.uid).get();
+                    if (userDoc.exists) {
+                        currentUser = { uid: window.authManager.currentUser.uid, ...userDoc.data() };
+                    }
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                }
+            }
+            
+            console.log('🔧 EditionService: Current user data for refresh:', currentUser);
+            
+            // Refresh fixtures for the current gameweek (both desktop and mobile) with user data
             if (window.loadFixturesForDeadline && typeof window.loadFixturesForDeadline === 'function') {
                 console.log('🔧 EditionService: Refreshing fixtures for gameweek:', currentGameweek);
-                await window.loadFixturesForDeadline(currentGameweek);
+                if (currentUser) {
+                    await window.loadFixturesForDeadline(currentGameweek, currentUser, currentUser.uid);
+                } else {
+                    await window.loadFixturesForDeadline(currentGameweek);
+                }
             } else {
                 console.log('🔧 EditionService: loadFixturesForDeadline function not available');
             }
             
-            // Refresh mobile fixtures for the current gameweek
+            // Refresh mobile fixtures for the current gameweek with user data
             if (window.loadMobileFixturesForDeadline && typeof window.loadMobileFixturesForDeadline === 'function') {
                 console.log('🔧 EditionService: Refreshing mobile fixtures for gameweek:', currentGameweek);
-                await window.loadMobileFixturesForDeadline(currentGameweek);
+                if (currentUser) {
+                    await window.loadMobileFixturesForDeadline(currentGameweek, currentUser, currentUser.uid);
+                } else {
+                    await window.loadMobileFixturesForDeadline(currentGameweek);
+                }
             } else {
                 console.log('🔧 EditionService: loadMobileFixturesForDeadline function not available');
             }
@@ -935,8 +961,11 @@ class EditionService {
             // Refresh as-it-stands data for the current gameweek
             await this.refreshAsItStandsData(currentGameweek);
             
-            // Refresh picks data
-            await this.refreshPicksData(currentGameweek);
+            // Refresh picks data with current user data
+            await this.refreshPicksData(currentGameweek, currentUser);
+            
+            // Force a refresh of the pick status headers to update styling
+            await this.refreshPickStatusHeaders(currentGameweek, currentUser);
             
             console.log('🔧 EditionService: All dashboard content refresh complete');
         } catch (error) {
@@ -976,31 +1005,44 @@ class EditionService {
     /**
      * Refresh picks data for a specific gameweek
      */
-    async refreshPicksData(gameweek) {
+    async refreshPicksData(gameweek, userData = null) {
         console.log('🔧 EditionService: Refreshing picks data for gameweek:', gameweek);
         
         try {
+            // Use provided user data or fall back to auth manager
+            let currentUser = userData;
+            if (!currentUser && window.authManager && window.authManager.currentUser) {
+                currentUser = window.authManager.currentUser;
+            }
+            
+            if (!currentUser) {
+                console.log('🔧 EditionService: No user data available for picks refresh');
+                return;
+            }
+            
+            console.log('🔧 EditionService: Refreshing picks with user data:', currentUser);
+            
             // Refresh picks display for both desktop and mobile
             if (window.app && window.app.gameLogicManager) {
                 // Refresh desktop picks
                 const desktopPicksContainer = document.querySelector('#desktop-picks-history');
-                if (desktopPicksContainer && window.authManager?.currentUser?.uid) {
+                if (desktopPicksContainer) {
                     await window.app.gameLogicManager.renderPickHistory(
-                        window.app.authManager.currentUser.picks || {},
+                        currentUser.picks || {},
                         desktopPicksContainer,
-                        window.authManager.currentUser.uid,
-                        window.app.authManager.currentUser
+                        currentUser.uid,
+                        currentUser
                     );
                 }
                 
                 // Refresh mobile picks
                 const mobilePicksContainer = document.querySelector('#mobile-picks-history');
-                if (mobilePicksContainer && window.authManager?.currentUser?.uid) {
+                if (mobilePicksContainer) {
                     await window.app.gameLogicManager.renderPickHistory(
-                        window.app.authManager.currentUser.picks || {},
+                        currentUser.picks || {},
                         mobilePicksContainer,
-                        window.authManager.currentUser.uid,
-                        window.app.authManager.currentUser
+                        currentUser.uid,
+                        currentUser
                     );
                 }
             }
@@ -1008,6 +1050,50 @@ class EditionService {
             console.log('🔧 EditionService: Picks data refresh complete');
         } catch (error) {
             console.error('❌ EditionService: Error refreshing picks data:', error);
+        }
+    }
+    
+    /**
+     * Refresh pick status headers to update styling and status displays
+     */
+    async refreshPickStatusHeaders(gameweek, userData = null) {
+        console.log('🔧 EditionService: Refreshing pick status headers for gameweek:', gameweek);
+        
+        try {
+            // Use provided user data or fall back to auth manager
+            let currentUser = userData;
+            if (!currentUser && window.authManager && window.authManager.currentUser) {
+                currentUser = window.authManager.currentUser;
+            }
+            
+            if (!currentUser) {
+                console.log('🔧 EditionService: No user data available for pick status refresh');
+                return;
+            }
+            
+            // Update desktop pick status header
+            if (window.updatePickStatusHeader && typeof window.updatePickStatusHeader === 'function') {
+                try {
+                    await window.updatePickStatusHeader(gameweek, currentUser, currentUser.uid);
+                    console.log('🔧 EditionService: Desktop pick status header updated');
+                } catch (error) {
+                    console.error('Error updating desktop pick status header:', error);
+                }
+            }
+            
+            // Update mobile pick status header
+            if (window.updateMobilePickStatusHeader && typeof window.updateMobilePickStatusHeader === 'function') {
+                try {
+                    await window.updateMobilePickStatusHeader(gameweek, currentUser, currentUser.uid);
+                    console.log('🔧 EditionService: Mobile pick status header updated');
+                } catch (error) {
+                    console.error('Error updating mobile pick status header:', error);
+                }
+            }
+            
+            console.log('🔧 EditionService: Pick status headers refresh complete');
+        } catch (error) {
+            console.error('❌ EditionService: Error refreshing pick status headers:', error);
         }
     }
 
