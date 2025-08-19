@@ -189,66 +189,68 @@ export class AdminManager {
         console.log(`🔍 Getting picks for ${activePlayers.length} active players in edition ${edition}, gameweek ${gameweek}`);
         
         try {
-            // Instead of reading from picks collection, read from users collection to get current picks
+            // Query picks collection directly (same as As It Stands system)
             const usersWithPicks = [];
             
             for (const player of activePlayers) {
                 try {
-                    const userDoc = await this.db.collection('users').doc(player.id).get();
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        const picks = userData.picks || {};
+                    // Query picks collection for this specific player, edition, and gameweek
+                    const picksQuery = await this.db.collection('picks')
+                        .where('userId', '==', player.id)
+                        .where('edition', '==', edition)
+                        .where('gameweek', '==', gameweek)
+                        .get();
+                    
+                    if (!picksQuery.empty) {
+                        // Player has a pick for this gameweek
+                        const pickDoc = picksQuery.docs[0];
+                        const pickData = pickDoc.data();
                         
-                        // Create a pick object for the requested gameweek
-                        const gameweekKey = `gw${gameweek}`;
-                        const pick = picks[gameweekKey];
-                        
-                        if (pick) {
-                            // Handle new pick object format
-                            let teamPicked, isAutopick;
-                            if (typeof pick === 'string') {
-                                teamPicked = pick;
-                                isAutopick = false;
-                            } else if (pick && typeof pick === 'object') {
-                                teamPicked = pick.team || pick;
-                                isAutopick = pick.isAutopick || false;
-                            } else {
-                                teamPicked = 'Unknown team';
-                                isAutopick = false;
-                            }
-                            
-                            usersWithPicks.push({
-                                id: player.id,
-                                userId: player.id,
-                                userFirstName: userData.firstName || '',
-                                userSurname: userData.surname || '',
-                                teamPicked: teamPicked,
-                                isAutopick: isAutopick,
-                                gameweek: gameweek,
-                                gameweekKey: gameweekKey,
-                                edition: edition,
-                                isActive: true,
-                                timestamp: new Date()
-                            });
-                        } else {
-                            // No pick for this gameweek
-                            usersWithPicks.push({
-                                id: player.id,
-                                userId: player.id,
-                                userFirstName: userData.firstName || '',
-                                userSurname: userData.surname || '',
-                                teamPicked: null,
-                                isAutopick: false,
-                                gameweek: gameweek,
-                                gameweekKey: gameweekKey,
-                                edition: edition,
-                                isActive: true,
-                                timestamp: new Date()
-                            });
-                        }
+                        usersWithPicks.push({
+                            id: player.id,
+                            userId: player.id,
+                            userFirstName: pickData.userFirstName || '',
+                            userSurname: pickData.userSurname || '',
+                            teamPicked: pickData.teamPicked || pickData.team || 'Unknown team',
+                            isAutopick: pickData.isAutopick || false,
+                            gameweek: gameweek,
+                            gameweekKey: `gw${gameweek}`,
+                            edition: edition,
+                            isActive: true,
+                            timestamp: pickData.timestamp || new Date()
+                        });
+                    } else {
+                        // No pick for this gameweek
+                        usersWithPicks.push({
+                            id: player.id,
+                            userId: player.id,
+                            userFirstName: player.displayName?.split(' ')[0] || '',
+                            userSurname: player.displayName?.split(' ').slice(1).join(' ') || '',
+                            teamPicked: null,
+                            isAutopick: false,
+                            gameweek: gameweek,
+                            gameweekKey: `gw${gameweek}`,
+                            edition: edition,
+                            isActive: true,
+                            timestamp: new Date()
+                        });
                     }
-                } catch (userError) {
-                    console.error(`❌ Error getting user data for ${player.id}:`, userError);
+                } catch (pickError) {
+                    console.error(`❌ Error getting pick data for ${player.id}:`, pickError);
+                    // Add player with no pick if there's an error
+                    usersWithPicks.push({
+                        id: player.id,
+                        userId: player.id,
+                        userFirstName: player.displayName?.split(' ')[0] || '',
+                        userSurname: player.displayName?.split(' ').slice(1).join(' ') || '',
+                        teamPicked: null,
+                        isAutopick: false,
+                        gameweek: gameweek,
+                        gameweekKey: `gw${gameweek}`,
+                        edition: edition,
+                        isActive: true,
+                        timestamp: new Date()
+                    });
                 }
             }
             
