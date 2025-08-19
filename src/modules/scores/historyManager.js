@@ -492,6 +492,17 @@ export class HistoryManager {
             
             console.log(`✅ Successfully updated ${updatedCount} out of ${fixtures.length} fixtures with scores from API`);
             
+            // Process results to update player lives
+            console.log('🔄 Processing results to update player lives...');
+            if (window.app && window.app.scoresManager && window.app.scoresManager.statisticsEngine) {
+                try {
+                    await window.app.scoresManager.statisticsEngine.processResults(gameweek, updatedFixtures);
+                    console.log('✅ Results processed successfully - player lives updated');
+                } catch (processError) {
+                    console.warn('⚠️ Could not process results automatically:', processError);
+                }
+            }
+            
             // Show success message
             alert(`Successfully imported scores for ${updatedCount} out of ${fixtures.length} fixtures from Football Web Pages API!`);
             
@@ -517,6 +528,21 @@ export class HistoryManager {
                 }
             } else {
                 console.log('Scores imported successfully. Please refresh the scores display manually.');
+            }
+            
+            // Automatically refresh the As It Stands tab if it's open
+            console.log('🔄 Checking if As It Stands tab needs refresh...');
+            const asItStandsTab = document.querySelector('#as-it-stands-tab');
+            if (asItStandsTab && asItStandsTab.classList.contains('active') && window.app && window.app.adminManagementManager) {
+                try {
+                    console.log('🔄 Refreshing As It Stands tab automatically...');
+                    await window.app.adminManagementManager.loadStandings();
+                    console.log('✅ As It Stands tab refreshed automatically');
+                } catch (standingsError) {
+                    console.warn('⚠️ Could not automatically refresh As It Stands tab:', standingsError);
+                }
+            } else {
+                console.log('As It Stands tab not active or admin management not available');
             }
             
             // Update status message if available
