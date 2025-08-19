@@ -9417,3 +9417,61 @@ body.force-mobile-layout .desktop-edition-selector {
         font-size: 11px;
     }
 }
+
+/* Fixtures Auto-Load Notification */
+.fixtures-auto-load-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
+    color: var(--teal-secondary);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--teal-primary);
+    box-shadow: 0 4px 12px rgba(94, 165, 152, 0.2);
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fixtures-auto-load-notification i {
+    color: var(--teal-primary);
+    font-size: 16px;
+}
+
+.fixtures-auto-load-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Responsive adjustments for notification */
+@media (max-width: 768px) {
+    .fixtures-auto-load-notification {
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        transform: translateY(-100%);
+        text-align: center;
+        justify-content: center;
+    }
+    
+    .fixtures-auto-load-notification.show {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .fixtures-auto-load-notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}

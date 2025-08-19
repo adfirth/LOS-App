@@ -907,6 +907,9 @@ export class Scheduling {
             // Refresh displays
             this.refreshDisplaysAfterSettingsChange();
             
+            // Auto-load fixtures for the new active edition and gameweek
+            this.autoLoadFixturesAfterSettingsChange();
+            
         } catch (error) {
             console.error('❌ Error saving competition settings:', error);
             alert('Error saving settings: ' + error.message);
@@ -945,6 +948,103 @@ export class Scheduling {
         // This method would update any other displays that depend on the settings
         // Implementation depends on your specific UI requirements
         console.log('Updating other displays...');
+    }
+
+    // Auto-load fixtures after settings change
+    async autoLoadFixturesAfterSettingsChange() {
+        console.log('🔧 Auto-loading fixtures after settings change...');
+        
+        try {
+            // Check if we're on the fixtures tab
+            const fixturesTab = document.querySelector('#fixtures-tab');
+            if (!fixturesTab || fixturesTab.style.display === 'none') {
+                console.log('Not on fixtures tab, skipping auto-load');
+                return;
+            }
+            
+            // Check if fixtures manager is available
+            if (window.app && window.app.fixturesManager) {
+                console.log('✅ Fixtures manager found, auto-loading fixtures...');
+                
+                // Update the edition selector to match the new active edition
+                const quickEditionSelector = document.querySelector('#quick-edition-selector');
+                if (quickEditionSelector) {
+                    quickEditionSelector.value = this.currentActiveEdition;
+                    console.log(`Updated edition selector to: ${this.currentActiveEdition}`);
+                }
+                
+                // Update the gameweek selector to match the new active gameweek
+                const gameweekSelect = document.querySelector('#gameweek-select');
+                if (gameweekSelect) {
+                    gameweekSelect.value = this.currentActiveGameweek;
+                    console.log(`Updated gameweek selector to: ${this.currentActiveGameweek}`);
+                }
+                
+                // Auto-load fixtures for the new edition and gameweek
+                await window.app.fixturesManager.loadFixturesForGameweek();
+                
+                console.log('✅ Fixtures auto-loaded successfully');
+                
+                // Show a subtle notification that fixtures were updated
+                this.showFixturesAutoLoadNotification();
+                
+            } else {
+                console.log('⚠️ Fixtures manager not available, cannot auto-load fixtures');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error auto-loading fixtures:', error);
+        }
+    }
+
+    // Show notification that fixtures were auto-loaded
+    showFixturesAutoLoadNotification() {
+        // Create a subtle notification
+        const notification = document.createElement('div');
+        notification.className = 'fixtures-auto-load-notification';
+        notification.innerHTML = `
+            <i class="fas fa-sync-alt"></i>
+            Fixtures updated for Edition ${this.currentActiveEdition}, Game Week ${this.currentActiveGameweek}
+        `;
+        
+        // Style the notification
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
+            color: var(--teal-secondary);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--teal-primary);
+            box-shadow: 0 4px 12px rgba(94, 165, 152, 0.2);
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
     }
 
     // Set default selection
