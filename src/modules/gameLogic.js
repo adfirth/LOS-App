@@ -866,8 +866,32 @@ class GameLogicManager {
             }
             
             if (autoPick) {
-                // Mark this as an autopick with 'A' indicator
+                // Save to picks collection (same format as manual picks)
                 const autoPickData = {
+                    userId: userId,
+                    teamPicked: autoPick,
+                    isAutopick: true,
+                    edition: this.currentActiveEdition,
+                    gameweek: gameweek.toString(),
+                    gameweekKey: gameweekKey,
+                    assignedAt: new Date(),
+                    timestamp: new Date()
+                };
+                
+                // Get user details for the pick document
+                const userDoc = await this.db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    autoPickData.userFirstName = userData.firstName || userData.displayName?.split(' ')[0] || '';
+                    autoPickData.userSurname = userData.surname || userData.displayName?.split(' ').slice(1).join(' ') || '';
+                    autoPickData.userEmail = userData.email || '';
+                }
+                
+                // Save to picks collection
+                await this.db.collection('picks').add(autoPickData);
+                
+                // Also save to users collection for backward compatibility
+                const userAutoPickData = {
                     team: autoPick,
                     isAutopick: true,
                     assignedAt: new Date(),
@@ -875,10 +899,10 @@ class GameLogicManager {
                 };
                 
                 await this.db.collection('users').doc(userId).update({
-                    [`picks.${gameweekKey}`]: autoPickData
+                    [`picks.${gameweekKey}`]: userAutoPickData
                 });
                 
-                console.log(`✅ Auto-pick assigned: ${autoPick} for Game Week ${gameweek} (marked as autopick)`);
+                console.log(`✅ Auto-pick assigned: ${autoPick} for Game Week ${gameweek} (saved to picks collection)`);
                 
                 // Refresh the dashboard to show the auto-pick
                 if (window.renderDashboard) {
