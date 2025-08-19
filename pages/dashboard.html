@@ -247,8 +247,32 @@
                 <div id="desktop-scores-tab" class="desktop-tab-pane">
                     <div class="desktop-scores-section">
                         <h2>Live Scores & Results</h2>
-                        <div id="desktop-scores-display">
-                            <p>Scores will appear here when available.</p>
+                        <div class="scores-content">
+                            <!-- Active Edition Display -->
+                            <div class="active-edition-display" style="margin-bottom: 1rem; padding: 0.75rem; background: #e8f5e8; border-radius: 6px; border: 1px solid #28a745;">
+                                <strong style="color: #155724;">Active Edition:</strong> 
+                                <span id="desktop-scores-active-edition" style="color: #28a745; font-weight: bold;">Test Weeks</span>
+                            </div>
+                            
+                            <div class="gameweek-selector">
+                                <label for="desktop-scores-gameweek">Select Game Week:</label>
+                                <select id="desktop-scores-gameweek">
+                                    <option value="1">Game Week 1</option>
+                                    <option value="2">Game Week 2</option>
+                                    <option value="3">Game Week 3</option>
+                                    <option value="4">Game Week 4</option>
+                                    <option value="5">Game Week 5</option>
+                                    <option value="6">Game Week 6</option>
+                                    <option value="7">Game Week 7</option>
+                                    <option value="8">Game Week 8</option>
+                                    <option value="9">Game Week 9</option>
+                                    <option value="10">Game Week 10</option>
+                                    <option value="tiebreak">Tiebreak Round</option>
+                                </select>
+                            </div>
+                            <div id="desktop-scores-display">
+                                <p>Select a game week to view the scores and results.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -407,8 +431,32 @@
             <div id="scores-tab" class="tab-pane">
                 <div class="mobile-scores-section">
                     <h3>Live Scores & Results</h3>
-                    <div id="mobile-scores-display">
-                        <p>Scores will appear here when available.</p>
+                    <div class="scores-content">
+                        <!-- Active Edition Display -->
+                        <div class="active-edition-display" style="margin-bottom: 1rem; padding: 0.75rem; background: #e8f5e8; border-radius: 6px; border: 1px solid #28a745;">
+                            <strong style="color: #155724;">Active Edition:</strong> 
+                            <span id="mobile-scores-active-edition" style="color: #28a745; font-weight: bold;">Test Weeks</span>
+                        </div>
+                        
+                        <div class="mobile-gameweek-selector">
+                            <label for="mobile-scores-gameweek">Select Game Week:</label>
+                            <select id="mobile-scores-gameweek">
+                                <option value="1">Game Week 1</option>
+                                <option value="2">Game Week 2</option>
+                                <option value="3">Game Week 3</option>
+                                <option value="4">Game Week 4</option>
+                                <option value="5">Game Week 5</option>
+                                <option value="6">Game Week 6</option>
+                                <option value="7">Game Week 7</option>
+                                <option value="8">Game Week 8</option>
+                                <option value="9">Game Week 9</option>
+                                <option value="10">Game Week 10</option>
+                                <option value="tiebreak">Tiebreak Round</option>
+                            </select>
+                        </div>
+                        <div id="mobile-scores-display">
+                            <p>Select a game week to view the scores and results.</p>
+                        </div>
                     </div>
                 </div>
             </div>

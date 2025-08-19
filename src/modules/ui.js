@@ -287,6 +287,9 @@ class UIManager {
                     window.app.gameLogicManager.initializeMobileGameweekNavigation(currentGameWeek, userData, user.uid);
                 }
                 
+                // Initialize scores gameweek selectors
+                this.initializeScoresGameweekSelectors();
+                
                 // Check for auto-picks needed
                 if (typeof checkAndAssignAutoPicks === 'function') {
                     checkAndAssignAutoPicks(userData, currentGameWeek, user.uid);
@@ -424,6 +427,46 @@ class UIManager {
                 }
             }
         });
+    }
+
+    // Initialize scores gameweek selectors
+    initializeScoresGameweekSelectors() {
+        console.log('🔧 Initializing scores gameweek selectors...');
+        
+        // Desktop scores gameweek selector
+        const desktopScoresGameweek = document.querySelector('#desktop-scores-gameweek');
+        if (desktopScoresGameweek) {
+            desktopScoresGameweek.addEventListener('change', (event) => {
+                console.log('Desktop scores gameweek changed to:', event.target.value);
+                if (window.app && window.app.scoresManager) {
+                    window.app.scoresManager.loadScoresForGameweek();
+                }
+            });
+            console.log('✅ Desktop scores gameweek selector initialized');
+        }
+        
+        // Mobile scores gameweek selector
+        const mobileScoresGameweek = document.querySelector('#mobile-scores-gameweek');
+        if (mobileScoresGameweek) {
+            mobileScoresGameweek.addEventListener('change', (event) => {
+                console.log('Mobile scores gameweek changed to:', event.target.value);
+                if (window.app && window.app.scoresManager) {
+                    window.app.scoresManager.loadScoresForGameweek();
+                }
+            });
+            console.log('✅ Mobile scores gameweek selector initialized');
+        }
+        
+        // Update active edition displays
+        const desktopScoresActiveEdition = document.querySelector('#desktop-scores-active-edition');
+        const mobileScoresActiveEdition = document.querySelector('#mobile-scores-active-edition');
+        
+        if (desktopScoresActiveEdition) {
+            desktopScoresActiveEdition.textContent = 'Test Weeks';
+        }
+        if (mobileScoresActiveEdition) {
+            mobileScoresActiveEdition.textContent = 'Test Weeks';
+        }
     }
 
     // Calculate current lives based on cumulative game results
