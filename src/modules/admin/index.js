@@ -617,8 +617,10 @@ export class AdminManager {
             // Format pick date if available
             const pickDate = pick.pickDate ? new Date(pick.pickDate.toDate()).toLocaleDateString() : 'N/A';
             
-            // Get team name with fallback
+            // Get team name with fallback and add autopick indicator
             const teamName = pick.teamPicked || 'No Team Selected';
+            const autopickIndicator = pick.isAutopick ? ' (A)' : '';
+            const displayTeamName = teamName === 'No Team Selected' ? teamName : teamName + autopickIndicator;
             
             allRows.push(`
                 <tr class="pick-row ${pick.isActive === false ? 'inactive-pick' : ''}">
@@ -629,7 +631,7 @@ export class AdminManager {
                         </div>
                     </td>
                     <td>
-                        <span class="team-badge ${teamName === 'No Team Selected' ? 'no-team' : ''}">${teamName}</span>
+                        <span class="team-badge ${teamName === 'No Team Selected' ? 'no-team' : ''}">${displayTeamName}</span>
                     </td>
                     <td>
                         <span class="gameweek-badge">${pick.gameweek}</span>

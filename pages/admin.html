@@ -1651,6 +1651,22 @@
                     switchTab(tabName);
                 });
             });
+            
+            // Add logout button functionality
+            const logoutBtn = document.querySelector('#admin-logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    console.log('Admin logout clicked');
+                    if (typeof firebase !== 'undefined' && firebase.auth) {
+                        firebase.auth().signOut().then(() => {
+                            console.log('Admin logged out successfully');
+                            window.location.href = '/index.html';
+                        }).catch((error) => {
+                            console.error('Logout error:', error);
+                        });
+                    }
+                });
+            }
                     
                     // Make sure the first tab is active by default
                     switchTab('settings');

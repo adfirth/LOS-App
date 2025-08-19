@@ -429,11 +429,11 @@ class UIManager {
     updateLivesDisplay(userData, livesRemaining, mobileLivesRemaining, desktopLivesRemaining) {
         let cardDisplay = '';
         if (userData.lives === 2) {
-            cardDisplay = '<p style="text-align: center; margin-top: 10px; color: #28a745; font-weight: bold;">All is well, you haven\'t got a card yet</p>';
+            cardDisplay = '<div class="lives-status lives-good"><i class="fas fa-check-circle"></i> All is well, you haven\'t got a card yet</div>';
         } else if (userData.lives === 1) {
-            cardDisplay = '<img src="images/Yellow Card.png" alt="Yellow Card" style="width: 240px; height: 240px; display: block; margin: 0 auto; margin-top: 10px;">';
+            cardDisplay = '<div class="lives-status lives-warning"><img src="images/Yellow Card.png" alt="Yellow Card" class="card-image"><span>Warning: You\'re on your last life!</span></div>';
         } else if (userData.lives === 0) {
-            cardDisplay = '<img src="images/redcard.png" alt="Red Card" style="width: 240px; height: 240px; display: block; margin: 0 auto; margin-top: 10px;">';
+            cardDisplay = '<div class="lives-status lives-danger"><img src="images/redcard.png" alt="Red Card" class="card-image"><span>Game Over: You\'re out of lives!</span></div>';
         }
         
         // Update lives remaining for desktop, mobile, and legacy

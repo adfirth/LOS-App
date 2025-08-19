@@ -552,10 +552,22 @@ class GameLogicManager {
                     if (userDoc.exists) {
                         const userData = userDoc.data();
                         
-                        // Refresh the pick history sidebar
+                        // Refresh the pick history sidebar (desktop)
                         const picksHistoryContainer = document.querySelector('#picks-history');
                         if (picksHistoryContainer) {
                             this.renderPickHistory(userData.picks || {}, picksHistoryContainer, userId, userData);
+                        }
+                        
+                        // Refresh the mobile pick history
+                        const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
+                        if (mobilePicksHistoryContainer) {
+                            this.renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, userId, userData);
+                        }
+                        
+                        // Refresh the desktop pick history
+                        const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
+                        if (desktopPicksHistoryContainer) {
+                            this.renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, userId, userData);
                         }
                         
                         // Refresh the fixtures display to update the save button
