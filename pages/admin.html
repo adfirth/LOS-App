@@ -1422,10 +1422,10 @@
                 
                 // Try multiple approaches to load standings
                 const tryLoadStandings = () => {
-                    // Method 1: Direct adminManagementManager
-                    if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadStandings) {
-                        console.log('Calling loadStandings via window.adminManagementManager...');
-                        window.adminManagementManager.loadStandings();
+                    // Method 1: Direct teamOperations
+                    if (window.adminManagementManager && window.adminManagementManager.teamOperations && typeof window.adminManagementManager.teamOperations.loadStandings === 'function') {
+                        console.log('Calling loadStandings via window.adminManagementManager.teamOperations...');
+                        window.adminManagementManager.teamOperations.loadStandings();
                         return true;
                     }
                     
@@ -1454,11 +1454,15 @@
                             
                             refreshStandingsBtn.addEventListener('click', () => {
                                 console.log('Refresh standings button clicked - calling loadStandings...');
-                                if (typeof window.adminManagementManager.loadStandings === 'function') {
-                                    window.adminManagementManager.loadStandings();
+                                if (window.adminManagementManager.teamOperations && typeof window.adminManagementManager.teamOperations.loadStandings === 'function') {
+                                    console.log('✅ Calling teamOperations.loadStandings...');
+                                    window.adminManagementManager.teamOperations.loadStandings();
                                 } else {
-                                    console.error('❌ loadStandings is not a function on adminManagementManager');
-                                    console.log('Available methods:', Object.getOwnPropertyNames(window.adminManagementManager));
+                                    console.error('❌ teamOperations.loadStandings is not available');
+                                    console.log('teamOperations exists:', !!window.adminManagementManager.teamOperations);
+                                    if (window.adminManagementManager.teamOperations) {
+                                        console.log('teamOperations methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.adminManagementManager.teamOperations)));
+                                    }
                                 }
                             });
                         }
