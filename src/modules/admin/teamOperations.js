@@ -29,6 +29,11 @@ export class TeamOperations {
             asItStandsBtn.addEventListener('click', () => this.loadStandings());
         }
         
+        const refreshStandingsBtn = document.querySelector('#refresh-standings-btn');
+        if (refreshStandingsBtn) {
+            refreshStandingsBtn.addEventListener('click', () => this.loadStandings());
+        }
+        
         const exportStandingsBtn = document.querySelector('#export-standings-btn');
         if (exportStandingsBtn) {
             exportStandingsBtn.addEventListener('click', () => this.exportStandings());

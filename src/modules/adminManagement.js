@@ -653,7 +653,7 @@ class AdminManagementManager {
         
         if (refreshStandingsBtn) {
             refreshStandingsBtn.addEventListener('click', () => {
-                this.loadStandings();
+                this.teamOperations.loadStandings();
             });
         }
         
