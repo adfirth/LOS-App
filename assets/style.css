@@ -21,6 +21,13 @@
     --tab-hover-bg: var(--teal-light);
     --tab-hover-border: var(--teal-primary);
     --tab-hover-text: var(--teal-secondary);
+    
+    /* Global Edition Selector Colors */
+    --accent-color: #007bff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
 }
 
 body {
@@ -35,6 +42,111 @@ body {
     background-attachment: fixed;
     position: relative;
     z-index: 1;
+}
+
+/* Global Edition Selector Styles */
+.global-edition-selector {
+    text-align: center;
+    margin: 1rem auto;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+    border: 2px solid var(--accent-color);
+    border-radius: 12px;
+    max-width: 600px;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+.global-edition-selector:hover {
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.global-edition-selector strong {
+    color: var(--accent-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.global-edition-selector select {
+    margin-left: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    background-color: white;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    min-width: 200px;
+    transition: all 0.2s ease;
+}
+
+.global-edition-selector select:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.global-edition-selector button {
+    margin-left: 8px;
+    padding: 8px 16px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.global-edition-selector button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.global-edition-selector button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.global-edition-selector button i {
+    margin-right: 4px;
+}
+
+.global-edition-selector #global-edition-status {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--light-text);
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-color);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .global-edition-selector {
+        margin: 0.5rem;
+        padding: 0.75rem;
+        max-width: none;
+    }
+    
+    .global-edition-selector select {
+        min-width: 150px;
+        font-size: 0.9rem;
+    }
+    
+    .global-edition-selector button {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .global-edition-selector strong {
+        font-size: 1rem;
+    }
 }
 
 /* 2. Layout Styles */

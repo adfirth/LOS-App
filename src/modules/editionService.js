@@ -304,130 +304,57 @@ class EditionService {
                         this.appendChild(option);
                     });
                     this._isRestoring = false;
-                    
-                    console.log('🔧 EditionService: Options restored after blocking external modification');
                 }
             });
-            
-            // Also protect the options collection
-            Object.defineProperty(selectElement, 'options', {
-                get: function() {
-                    return this._options || this.querySelectorAll('option');
-                },
-                set: function(value) {
-                    console.log('🔧 EditionService: BLOCKED external options modification');
-                    return;
-                }
-            });
-            
-            // Protect against appendChild/removeChild manipulation
-            const originalAppendChild = selectElement.appendChild.bind(selectElement);
-            const originalRemoveChild = selectElement.removeChild.bind(selectElement);
-            
-            selectElement.appendChild = function(child) {
-                if (this._isRestoring) {
-                    return originalAppendChild.call(this, child);
-                }
-                
-                // Block external appendChild calls
-                console.log('🔧 EditionService: BLOCKED external appendChild:', child);
-                console.log('🔧 EditionService: Stack trace:', new Error().stack);
-                return child;
-            };
-            
-            selectElement.removeChild = function(child) {
-                if (this._isRestoring) {
-                    return originalRemoveChild.call(this, child);
-                }
-                
-                // Block external removeChild calls
-                console.log('🔧 EditionService: BLOCKED external removeChild:', child);
-                console.log('🔧 EditionService: Stack trace:', new Error().stack);
-                return child;
-            };
-            
-            // Protect against replaceChild
-            selectElement.replaceChild = function(newChild, oldChild) {
-                if (this._isRestoring) {
-                    return this._originalReplaceChild.call(this, newChild, oldChild);
-                }
-                
-                // Block external replaceChild calls
-                console.log('🔧 EditionService: BLOCKED external replaceChild:', { newChild, oldChild });
-                console.log('🔧 EditionService: Stack trace:', new Error().stack);
-                return oldChild;
-            };
-            
-            // Store original methods for restoration
-            selectElement._originalReplaceChild = selectElement.replaceChild;
-            
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'childList' && selectElement.options.length !== availableEditions.length) {
-                        console.log('🔧 EditionService: MutationObserver detected corruption!', {
-                            type: mutation.type,
-                            optionsCount: selectElement.options.length,
-                            expectedCount: availableEditions.length
-                        });
-                        
-                        // Restore the options immediately
-                        selectElement._isRestoring = true;
-                        selectElement.innerHTML = '';
-                        availableEditions.forEach(edition => {
-                            const option = document.createElement('option');
-                            option.value = edition.key;
-                            option.textContent = edition.label;
-                            if (edition.key === currentEdition) {
-                                option.selected = true;
-                            }
-                            selectElement.appendChild(option);
-                        });
-                        selectElement._isRestoring = false;
-                        
-                        console.log('🔧 EditionService: Options restored via MutationObserver');
-                    }
-                });
-            });
-            
-            observer.observe(selectElement, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['value', 'selected']
-            });
-            
-            console.log('🔧 EditionService: MutationObserver and property protection attached to select element');
         }
         
-        // Set up event listeners
-        this.setupEditionSelectorEventListeners(userId);
-        
-        // Add visual indicator that the selector is ready
-        setTimeout(() => {
-            const checkElement = document.querySelector('#dashboard-edition-selector');
-            if (checkElement) {
-                console.log('🔧 EditionService: Adding visual indicator to select element');
-                checkElement.style.border = '2px solid #28a745';
-                checkElement.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.3)';
-                
-                const indicator = document.createElement('div');
-                indicator.textContent = '✅ Edition selector ready';
-                indicator.style.cssText = 'position: absolute; top: -25px; left: 0; background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; z-index: 1000;';
-                checkElement.parentNode.style.position = 'relative';
-                checkElement.parentNode.appendChild(indicator);
-                
-                // Remove indicator after 5 seconds
-                setTimeout(() => {
-                    if (indicator.parentNode) {
-                        indicator.parentNode.removeChild(indicator);
-                    }
-                    checkElement.style.border = '';
-                    checkElement.style.boxShadow = '';
-                }, 5000);
-            }
-        }, 100);
+        // Set up event listeners for the edition selector
+        this.setupEditionSelectorEventListeners(availableEditions, isMobile);
         
         console.log('🔧 EditionService: Edition selector creation complete');
+    }
+
+    /**
+     * Create the global edition selector for the player dashboard
+     */
+    async createGlobalEditionSelector(userData, userId) {
+        console.log('🔧 EditionService: Creating global edition selector');
+        
+        const globalContainer = document.querySelector('#global-edition-selector');
+        if (!globalContainer) {
+            console.error('❌ Global edition selector container not found');
+            return;
+        }
+
+        // Get available editions for this user
+        const availableEditions = await this.getUserAvailableEditions(userData, this.currentUserEdition);
+        console.log('🔧 EditionService: Available editions for global selector:', availableEditions);
+
+        if (availableEditions.length <= 1) {
+            console.log('🔧 EditionService: User only has one edition, hiding global selector');
+            globalContainer.style.display = 'none';
+            return;
+        }
+
+        // Show the global selector
+        globalContainer.style.display = 'block';
+
+        // Populate the dropdown
+        const dropdown = globalContainer.querySelector('#global-edition-selector-dropdown');
+        if (dropdown) {
+            dropdown.innerHTML = availableEditions.map(edition => {
+                const selected = edition.key === this.currentUserEdition ? 'selected' : '';
+                return `<option value="${edition.key}" ${selected}>${edition.label}</option>`;
+            }).join('');
+        }
+
+        // Update the status display
+        this.updateGlobalEditionStatus();
+
+        // Set up event listeners
+        this.setupGlobalEditionSelectorEventListeners(availableEditions);
+
+        console.log('🔧 EditionService: Global edition selector created successfully');
     }
 
     /**
@@ -581,8 +508,8 @@ class EditionService {
     }
 
     // Set up event listeners for the edition selector
-    setupEditionSelectorEventListeners(userId) {
-        console.log('🔧 EditionService: Setting up event listeners for user:', userId);
+    setupEditionSelectorEventListeners(availableEditions, isMobile) {
+        console.log('🔧 EditionService: Setting up event listeners for user:', availableEditions);
         
         // Get both desktop and mobile elements
         const desktopSelect = document.querySelector('#dashboard-edition-selector');
@@ -766,6 +693,16 @@ class EditionService {
     }
 
     /**
+     * Update the global edition status display
+     */
+    updateGlobalEditionStatus() {
+        const globalStatusElement = document.querySelector('#global-edition-status');
+        if (globalStatusElement) {
+            globalStatusElement.innerHTML = `Current edition: <strong>${this.getEditionDisplayName(this.currentUserEdition)}</strong>`;
+        }
+    }
+
+    /**
      * Update all active edition displays across the dashboard
      */
     updateAllActiveEditionDisplays() {
@@ -823,6 +760,247 @@ class EditionService {
                 console.log(`✅ Updated ${element.id} to:`, editionDisplayName);
             }
         });
+    }
+
+    /**
+     * Set up event listeners for the global edition selector
+     */
+    setupGlobalEditionSelectorEventListeners(availableEditions) {
+        console.log('🔧 EditionService: Setting up global edition selector event listeners');
+        
+        const dropdown = document.querySelector('#global-edition-selector-dropdown');
+        const saveButton = document.querySelector('#global-save-edition-btn');
+        
+        if (!dropdown || !saveButton) {
+            console.error('❌ Global edition selector elements not found');
+            return;
+        }
+
+        // Handle edition selection change
+        dropdown.addEventListener('change', (e) => {
+            console.log('🔧 EditionService: Global edition selector changed to:', e.target.value);
+            saveButton.textContent = 'Save Edition';
+            saveButton.style.background = '#007bff';
+            saveButton.style.color = '#fff';
+        });
+
+        // Handle save button click
+        saveButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const selectedEdition = dropdown.value;
+            console.log('🔧 EditionService: Global save button clicked for edition:', selectedEdition);
+            
+            try {
+                // Save the edition preference to the user's profile
+                const userRef = window.db.collection('users').doc(window.authManager?.currentUser?.uid);
+                await userRef.update({
+                    preferredEdition: selectedEdition
+                });
+                
+                console.log('✅ EditionService: Edition preference saved to database');
+                
+                // Update the current edition
+                this.currentUserEdition = selectedEdition;
+                
+                // Update the scores manager's edition to match
+                this.updateScoresManagerEdition();
+                
+                // Update all displays
+                this.updateAllActiveEditionDisplays();
+                this.updateGlobalEditionStatus();
+                
+                // Show success message
+                saveButton.textContent = 'Saved!';
+                saveButton.style.background = '#28a745';
+                saveButton.style.color = '#fff';
+                
+                // Refresh all dashboard content
+                await this.refreshAllDashboardContent(selectedEdition);
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    saveButton.textContent = 'Save Edition';
+                    saveButton.style.background = '#007bff';
+                    saveButton.style.color = '#fff';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('❌ EditionService: Error saving edition preference:', error);
+                saveButton.textContent = 'Error!';
+                saveButton.style.background = '#dc3545';
+                saveButton.style.color = '#fff';
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    saveButton.textContent = 'Save Edition';
+                    saveButton.style.background = '#007bff';
+                    saveButton.style.color = '#fff';
+                }, 2000);
+            }
+        });
+        
+        console.log('🔧 EditionService: Global edition selector event listeners setup complete');
+    }
+
+    /**
+     * Update the scores manager's currentActiveEdition to match the current user edition
+     */
+    updateScoresManagerEdition() {
+        if (window.app && window.app.scoresManager) {
+            // Update the scores manager's currentActiveEdition
+            window.app.scoresManager.currentActiveEdition = this.currentUserEdition;
+            console.log('🔧 EditionService: Updated scores manager currentActiveEdition to:', this.currentUserEdition);
+            
+            // Also update the liveScoring component if it exists
+            if (window.app.scoresManager.liveScoring) {
+                window.app.scoresManager.liveScoring.currentActiveEdition = this.currentUserEdition;
+                console.log('🔧 EditionService: Updated liveScoring currentActiveEdition to:', this.currentUserEdition);
+            }
+            
+            // Update the historyManager if it exists
+            if (window.app.scoresManager.historyManager) {
+                window.app.scoresManager.historyManager.currentActiveEdition = this.currentUserEdition;
+                console.log('🔧 EditionService: Updated historyManager currentActiveEdition to:', this.currentUserEdition);
+            }
+            
+            // Update the statisticsEngine if it exists
+            if (window.app.scoresManager.statisticsEngine) {
+                window.app.scoresManager.statisticsEngine.currentActiveEdition = this.currentUserEdition;
+                console.log('🔧 EditionService: Updated statisticsEngine currentActiveEdition to:', this.currentUserEdition);
+            }
+        } else {
+            console.log('🔧 EditionService: Scores manager not available for edition update');
+        }
+    }
+
+    /**
+     * Refresh all dashboard content when edition changes
+     */
+    async refreshAllDashboardContent(newEdition) {
+        console.log('🔧 EditionService: Refreshing all dashboard content for edition:', newEdition);
+        
+        try {
+            // Get the current gameweek from the fixtures display
+            const currentGameweekElement = document.querySelector('#current-gameweek-display');
+            let currentGameweek = 1; // Default to gameweek 1
+            
+            if (currentGameweekElement) {
+                const gameweekText = currentGameweekElement.textContent;
+                const match = gameweekText.match(/Game Week (\d+)/);
+                if (match) {
+                    currentGameweek = parseInt(match[1]);
+                }
+            }
+            
+            console.log('🔧 EditionService: Current gameweek detected:', currentGameweek);
+            
+            // Update the current user edition
+            this.currentUserEdition = newEdition;
+            
+            // Update the scores manager's edition to match
+            this.updateScoresManagerEdition();
+            
+            // Refresh fixtures for the current gameweek (both desktop and mobile)
+            if (window.loadFixturesForDeadline && typeof window.loadFixturesForDeadline === 'function') {
+                console.log('🔧 EditionService: Refreshing fixtures for gameweek:', currentGameweek);
+                await window.loadFixturesForDeadline(currentGameweek);
+            } else {
+                console.log('🔧 EditionService: loadFixturesForDeadline function not available');
+            }
+            
+            // Refresh mobile fixtures for the current gameweek
+            if (window.loadMobileFixturesForDeadline && typeof window.loadMobileFixturesForDeadline === 'function') {
+                console.log('🔧 EditionService: Refreshing mobile fixtures for gameweek:', currentGameweek);
+                await window.loadMobileFixturesForDeadline(currentGameweek);
+            } else {
+                console.log('🔧 EditionService: loadMobileFixturesForDeadline function not available');
+            }
+            
+            // Refresh scores for the current gameweek
+            if (window.loadScoresForGameweek && typeof window.loadScoresForGameweek === 'function') {
+                console.log('🔧 EditionService: Refreshing scores for gameweek:', currentGameweek);
+                await window.loadScoresForGameweek();
+            } else {
+                console.log('🔧 EditionService: loadScoresForGameweek function not available');
+            }
+            
+            // Refresh as-it-stands data for the current gameweek
+            await this.refreshAsItStandsData(currentGameweek);
+            
+            // Refresh picks data
+            await this.refreshPicksData(currentGameweek);
+            
+            console.log('🔧 EditionService: All dashboard content refresh complete');
+        } catch (error) {
+            console.error('❌ EditionService: Error refreshing dashboard content:', error);
+        }
+    }
+
+    /**
+     * Refresh as-it-stands data for a specific gameweek
+     */
+    async refreshAsItStandsData(gameweek) {
+        console.log('🔧 EditionService: Refreshing as-it-stands data for gameweek:', gameweek);
+        
+        try {
+            // Trigger as-it-stands data refresh for both desktop and mobile
+            const desktopGameweekSelect = document.querySelector('#desktop-as-it-stands-gameweek');
+            const mobileGameweekSelect = document.querySelector('#mobile-as-it-stands-gameweek');
+            
+            if (desktopGameweekSelect) {
+                desktopGameweekSelect.value = gameweek;
+                // Trigger change event to refresh data
+                desktopGameweekSelect.dispatchEvent(new Event('change'));
+            }
+            
+            if (mobileGameweekSelect) {
+                mobileGameweekSelect.value = gameweek;
+                // Trigger change event to refresh data
+                mobileGameweekSelect.dispatchEvent(new Event('change'));
+            }
+            
+            console.log('🔧 EditionService: As-it-stands data refresh triggered');
+        } catch (error) {
+            console.error('❌ EditionService: Error refreshing as-it-stands data:', error);
+        }
+    }
+
+    /**
+     * Refresh picks data for a specific gameweek
+     */
+    async refreshPicksData(gameweek) {
+        console.log('🔧 EditionService: Refreshing picks data for gameweek:', gameweek);
+        
+        try {
+            // Refresh picks display for both desktop and mobile
+            if (window.app && window.app.gameLogicManager) {
+                // Refresh desktop picks
+                const desktopPicksContainer = document.querySelector('#desktop-picks-history');
+                if (desktopPicksContainer && window.authManager?.currentUser?.uid) {
+                    await window.app.gameLogicManager.renderPickHistory(
+                        window.app.authManager.currentUser.picks || {},
+                        desktopPicksContainer,
+                        window.authManager.currentUser.uid,
+                        window.app.authManager.currentUser
+                    );
+                }
+                
+                // Refresh mobile picks
+                const mobilePicksContainer = document.querySelector('#mobile-picks-history');
+                if (mobilePicksContainer && window.authManager?.currentUser?.uid) {
+                    await window.app.gameLogicManager.renderPickHistory(
+                        window.app.authManager.currentUser.picks || {},
+                        mobilePicksContainer,
+                        window.authManager.currentUser.uid,
+                        window.app.authManager.currentUser
+                    );
+                }
+            }
+            
+            console.log('🔧 EditionService: Picks data refresh complete');
+        } catch (error) {
+            console.error('❌ EditionService: Error refreshing picks data:', error);
+        }
     }
 
 

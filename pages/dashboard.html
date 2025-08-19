@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Last One Standing</title>
     <link rel="stylesheet" href="../assets/style.css?v=1.3">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* Edition selector responsive display */
         @media (max-width: 767px) {
@@ -49,6 +50,20 @@
         </div>
         <img src="../assets/images/Logo Round1.png" alt="Altrincham FC Crest" class="header-crest">
     </header>
+
+    <!-- Global Edition Selector -->
+    <div id="global-edition-selector" class="global-edition-selector" style="display: none; text-align: center; margin: 1rem auto; padding: 1rem; background: #f0f8ff; border: 2px solid #007bff; border-radius: 8px; max-width: 600px;">
+        <strong style="color: #007bff; font-size: 1.1rem;">Active Edition: </strong>
+        <select id="global-edition-selector-dropdown" style="margin-left: 8px; padding: 8px 12px; border: 1px solid #007bff; border-radius: 4px; background-color: white; font-weight: bold; cursor: pointer; font-size: 1rem; min-width: 200px;">
+            <!-- EditionService will populate this -->
+        </select>
+        <button id="global-save-edition-btn" style="margin-left: 8px; padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: bold;">
+            <i class="fas fa-save"></i> Save Edition
+        </button>
+        <div id="global-edition-status" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+            <!-- EditionService will show current status here -->
+        </div>
+    </div>
 
     <div class="container">
         <!-- Mobile Tab Navigation -->
@@ -109,14 +124,7 @@
                         <h2 id="welcome-message">Welcome Player</h2>
                         <p>Make your picks for each game week below. You can make picks in advance and edit any pick up until that week's deadline.</p>
                         
-                        <!-- Edition Selection (only shown if user is registered for multiple editions) -->
-                        <!-- This is now handled by EditionService in the edition-selector-container below -->
-                        
-                        <!-- Edition Selector Container for EditionService -->
-                        <div id="edition-selector-container" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; border: 1px solid #28a745;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #155724;">Active Edition:</h4>
-                            <!-- EditionService will populate this -->
-                        </div>
+                        <!-- Edition Selection is now handled globally above -->
                         
                         <!-- Game Week Navigation -->
                         <div id="gameweek-navigation" class="gameweek-nav" style="display: none;">
@@ -301,14 +309,7 @@
                     <h2 id="mobile-welcome-message">Welcome Player</h2>
                     <p>Make your picks for each game week below. You can make picks in advance and edit any pick up until that week's deadline.</p>
                     
-                    <!-- Mobile Edition Selection (only shown if user is registered for multiple editions) -->
-                    <!-- This is now handled by EditionService in the edition-selector-container below -->
-                    
-                    <!-- Mobile Edition Selector Container for EditionService -->
-                    <div id="mobile-edition-selector-container" style="margin-bottom: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px; border: 1px solid #28a745;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #155724;">Active Edition:</h4>
-                        <!-- EditionService will populate this -->
-                    </div>
+                    <!-- Edition Selection is now handled globally above -->
                 </div>
                 
                 <!-- Mobile Game Week Navigation -->
@@ -709,11 +710,15 @@
                             
                             // Initialize the EditionService with user data first
                             window.editionService.initializeWithUser(userData, user.uid).then(() => {
-                                console.log('🔧 Dashboard: EditionService initialized, creating selectors...');
+                                console.log('🔧 Dashboard: EditionService initialized, creating global edition selector...');
                                 
-                                // Create edition selector for desktop
-                                window.editionService.createEditionSelector(userData, user.uid, '#edition-selector-container').catch(error => {
-                                    console.error('❌ Dashboard: Error creating desktop edition selector:', error);
+                                // Create global edition selector instead of individual ones
+                                window.editionService.createGlobalEditionSelector(userData, user.uid).then(() => {
+                                    console.log('✅ Global edition selector created successfully');
+                                    updateLoadingMessage('Global edition selector created successfully!');
+                                }).catch(error => {
+                                    console.error('❌ Dashboard: Error creating global edition selector:', error);
+                                    updateLoadingMessage('Error creating global edition selector: ' + error.message);
                                 });
                                 
                                 // Enhanced mobile detection for OnePlus and similar devices
@@ -750,7 +755,7 @@
                                 
                                 // Log device detection (console only, no alerts)
                                 console.log('🔧 Dashboard: Device detection:', {
-                                    userAgent: userAgent.substring(0, 100) + '...',
+                                    userAgent: userAgent.substring(0, 0) + '...',
                                     isMobileDevice,
                                     isOnePlus,
                                     isOnePlusByScreen,
@@ -765,16 +770,7 @@
                                 });
                                 
                                 // Update loading message for edition selector creation
-                                updateLoadingMessage('Creating edition selectors...');
-                                
-                                // Create edition selector for mobile
-                                window.editionService.createEditionSelector(userData, user.uid, '#mobile-edition-selector-container').then(() => {
-                                    console.log('✅ Mobile edition selector created successfully');
-                                    updateLoadingMessage('Mobile edition selector created successfully!');
-                                }).catch(error => {
-                                    console.error('❌ Dashboard: Error creating mobile edition selector:', error);
-                                    updateLoadingMessage('Error creating mobile edition selector: ' + error.message);
-                                });
+                                updateLoadingMessage('Creating global edition selector...');
                                 
                                 // Force mobile layout for OnePlus and similar devices
                                 if (isOnePlusDevice || isHighResMobile) {
@@ -783,7 +779,6 @@
                                     
                                     // Ensure mobile elements are visible
                                     const mobileElements = [
-                                        '#mobile-edition-selector-container',
                                         '#mobile-gameweek-navigation',
                                         '#mobile-fixtures-display-container'
                                     ];
@@ -796,7 +791,7 @@
                                             element.style.opacity = '1';
                                         }
                                     });
-                                }
+
                                 
                                 // Load fixtures for the current gameweek after edition selector is set up
                                 if (window.loadFixturesForDeadline) {
