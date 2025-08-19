@@ -289,6 +289,9 @@ export class TeamOperations {
                 );
                 
                 if (fixture) {
+                    // Store fixture status for result determination
+                    playerStanding.fixtureStatus = fixture.status;
+                    
                     if (fixture.status === 'FT') {
                         // Match finished, calculate result
                         const homeScore = parseInt(fixture.homeScore) || 0;
@@ -320,7 +323,7 @@ export class TeamOperations {
                             playerStanding.eliminated = true;
                         }
                     } else {
-                        // Match not finished
+                        // Match not finished - no points awarded yet
                         playerStanding.totalPoints = 0;
                     }
                 }
@@ -387,14 +390,22 @@ export class TeamOperations {
                     const pickedTeam = player.picks.team || 'No pick';
                     let result = 'Pending';
                     
-                    if (player.totalPoints > 0) {
-                        if (player.totalPoints === 3) {
-                            result = 'Win';
-                        } else if (player.totalPoints === 1) {
-                            result = 'Draw';
+                    if (player.picks.team && player.picks.team !== 'No pick') {
+                        if (player.fixtureStatus === 'FT') {
+                            // Match finished - show actual result
+                            if (player.totalPoints === 3) {
+                                result = 'Win';
+                            } else if (player.totalPoints === 1) {
+                                result = 'Draw';
+                            } else {
+                                result = 'Loss';
+                            }
+                        } else {
+                            // Match not finished - show pending
+                            result = 'Pending';
                         }
-                    } else if (player.picks.team) {
-                        result = 'Loss';
+                    } else {
+                        result = 'No Pick';
                     }
                     
                     tableHtml += `
@@ -458,14 +469,22 @@ export class TeamOperations {
                 const pickedTeam = player.picks.team || 'No pick';
                 let result = 'Pending';
                 
-                if (player.totalPoints > 0) {
-                    if (player.totalPoints === 3) {
-                        result = 'Win';
-                    } else if (player.totalPoints === 1) {
-                        result = 'Draw';
+                if (player.picks.team && player.picks.team !== 'No pick') {
+                    if (player.fixtureStatus === 'FT') {
+                        // Match finished - show actual result
+                        if (player.totalPoints === 3) {
+                            result = 'Win';
+                        } else if (player.totalPoints === 1) {
+                            result = 'Draw';
+                        } else {
+                            result = 'Loss';
+                        }
+                    } else {
+                        // Match not finished - show pending
+                        result = 'Pending';
                     }
-                } else if (player.picks.team) {
-                    result = 'Loss';
+                } else {
+                    result = 'No Pick';
                 }
                 
                 html += `
