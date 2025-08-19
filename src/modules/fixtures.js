@@ -2692,9 +2692,15 @@ class FixturesManager {
     // Import scores from Football Web Pages
     async importScoresFromFootballWebPages(gameweek) {
         try {
-            // Implementation for importing scores from Football Web Pages API
             console.log('Importing scores from Football Web Pages for gameweek:', gameweek);
-            alert('Score import functionality would be implemented here');
+            
+            // Call the actual import function from historyManager
+            if (window.app && window.app.scoresManager && window.app.scoresManager.historyManager) {
+                await window.app.scoresManager.historyManager.importScoresFromFootballWebPages(gameweek);
+            } else {
+                console.error('History manager not available for score import');
+                alert('Score import functionality not available. Please try refreshing the page.');
+            }
         } catch (error) {
             console.error('Error importing scores:', error);
             alert('Error importing scores: ' + error.message);

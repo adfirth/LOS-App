@@ -495,9 +495,29 @@ export class HistoryManager {
             // Show success message
             alert(`Successfully imported scores for ${updatedCount} out of ${fixtures.length} fixtures from Football Web Pages API!`);
             
-            // Refresh the scores display
-            // Note: This will need to be handled by the calling code
-            console.log('Scores imported successfully. Please refresh the scores display manually.');
+            // Automatically refresh the admin scores display
+            console.log('🔄 Automatically refreshing admin scores display...');
+            
+            // Check if we're in the admin scores tab and refresh the display
+            const isAdminScoresTab = document.querySelector('#scores-container') && 
+                                   document.querySelector('#scores-container').closest('.gameweek-fixtures-section');
+            
+            if (isAdminScoresTab && window.app && window.app.scoresManager) {
+                try {
+                    // Reload scores and refresh the admin display
+                    const currentGameweek = document.querySelector('#score-gameweek-select')?.value || '1';
+                    const fixtures = await window.app.scoresManager.loadScoresForGameweek();
+                    
+                    if (window.app.scoresManager.statisticsEngine) {
+                        await window.app.scoresManager.statisticsEngine.renderAdminScores(fixtures, currentGameweek);
+                        console.log('✅ Admin scores display refreshed automatically');
+                    }
+                } catch (refreshError) {
+                    console.warn('⚠️ Could not automatically refresh admin scores display:', refreshError);
+                }
+            } else {
+                console.log('Scores imported successfully. Please refresh the scores display manually.');
+            }
             
             // Update status message if available
             const statusElement = document.querySelector('#import-status');
