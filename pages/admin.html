@@ -1440,7 +1440,20 @@
                     const refreshStandingsBtn = document.querySelector('#refresh-standings-btn');
                     if (refreshStandingsBtn) {
                         console.log('Triggering refresh standings button click...');
+                        console.log('Button found:', refreshStandingsBtn);
+                        console.log('Button text:', refreshStandingsBtn.textContent);
+                        console.log('Button visible:', refreshStandingsBtn.offsetParent !== null);
+                        console.log('Button event listeners:', refreshStandingsBtn.onclick);
                         refreshStandingsBtn.click();
+                        return true;
+                    } else {
+                        console.log('❌ Refresh standings button not found in DOM');
+                    }
+                    
+                    // Method 4: Try direct function call
+                    if (typeof window.loadStandingsDirect === 'function') {
+                        console.log('Calling loadStandingsDirect...');
+                        window.loadStandingsDirect();
                         return true;
                     }
                     

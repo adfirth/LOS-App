@@ -694,6 +694,12 @@ class AdminManagementManager {
             this.loadStandings();
         }, 500);
         
+        // Ensure loadStandings is exposed globally for debugging
+        window.loadStandingsDirect = () => {
+            console.log('🔧 Direct loadStandings call triggered');
+            this.loadStandings();
+        };
+        
         console.log('✅ As It Stands functionality setup complete');
     }
 
