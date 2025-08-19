@@ -428,13 +428,17 @@ export class StatisticsEngine {
 
     // Render admin scores for admin scores tab (prevents duplication)
     renderAdminScores(fixtures, gameweek) {
-        console.log('renderAdminScores called with:', { fixtures, gameweek });
+        console.log('🔧 renderAdminScores called with:', { fixtures, gameweek });
         
         const adminScoresContainer = document.querySelector('#scores-container');
         if (!adminScoresContainer) {
             console.error('Admin scores container not found');
             return;
         }
+        
+        // Clear any existing content to prevent duplication
+        console.log('🔧 Clearing existing scores container content');
+        adminScoresContainer.innerHTML = '';
         
         if (!fixtures || fixtures.length === 0) {
             adminScoresContainer.innerHTML = '<p class="no-fixtures-message">No fixtures found for this gameweek</p>';

@@ -1676,15 +1676,13 @@ class AdminManagementManager {
             });
         }
         
-        // Set up gameweek select change handlers
+        // Set up gameweek select change handlers - only for fixtures tab
+        // Scores tab is handled by the scores manager to prevent duplication
         if (gameweekSelect) {
             gameweekSelect.addEventListener('change', () => this.fixturesManager.loadFixturesForGameweek());
         }
-        if (scoreGameweekSelect) {
-            scoreGameweekSelect.addEventListener('change', () => this.scoresManager.loadScoresForGameweek());
-        }
         
-        // Load initial data
+        // Load initial data for fixtures tab only
         this.fixturesManager.loadFixturesForGameweek();
     }
 
