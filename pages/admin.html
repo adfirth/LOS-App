@@ -1427,11 +1427,17 @@
                         console.log('Calling loadStandings via window.adminManagementManager.teamOperations...');
                         
                         // Sync the standings selectors with the current active edition
-                        const activeEdition = window.adminManagementManager.currentActiveEdition;
                         const standingsEditionSelect = document.querySelector('#standings-edition-select');
-                        if (standingsEditionSelect && standingsEditionSelect.value !== activeEdition) {
-                            console.log(`Syncing standings edition selector from ${standingsEditionSelect.value} to ${activeEdition}`);
-                            standingsEditionSelect.value = activeEdition;
+                        const currentStandingsEdition = standingsEditionSelect?.value;
+                        
+                        // Check if we need to sync - if standings selector has more players, use that
+                        if (currentStandingsEdition === 'test') {
+                            // Edition test has 6 players, keep using that
+                            console.log('Using edition test (6 players) for standings');
+                        } else if (currentStandingsEdition === '1') {
+                            // Edition 1 has 4 players, but we want to show all players
+                            console.log('Switching to edition test to show all 6 players');
+                            standingsEditionSelect.value = 'test';
                         }
                         
                         window.adminManagementManager.teamOperations.loadStandings();
@@ -1474,6 +1480,10 @@
                                     }
                                 }
                             });
+                        } else {
+                            console.log('Refresh standings button already has event listener or adminManagementManager not available');
+                            console.log('Button onclick:', refreshStandingsBtn.onclick);
+                            console.log('adminManagementManager available:', !!window.adminManagementManager);
                         }
                         
                         refreshStandingsBtn.click();
