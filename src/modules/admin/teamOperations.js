@@ -988,6 +988,22 @@ export class TeamOperations {
         const newGameweek = event.target.value;
         console.log(`🔄 Gameweek changed to: ${newGameweek}`);
         this.currentActiveGameweek = newGameweek;
+        
+        // Update all gameweek selectors to keep them in sync
+        const allGameweekSelectors = [
+            '#desktop-as-it-stands-gameweek',
+            '#mobile-as-it-stands-gameweek',
+            '#standings-gameweek-select'
+        ];
+        
+        allGameweekSelectors.forEach(selectorId => {
+            const selector = document.querySelector(selectorId);
+            if (selector && selector.value !== newGameweek) {
+                selector.value = newGameweek;
+                console.log(`✅ Updated ${selectorId} to ${newGameweek}`);
+            }
+        });
+        
         this.loadStandings();
     }
 

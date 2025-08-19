@@ -64,7 +64,7 @@ class GameLogicManager {
                     teamName = pick;
                     isAutopick = false;
                 } else if (pick && typeof pick === 'object') {
-                    teamName = pick.team || 'Unknown team';
+                    teamName = pick.team || pick.teamPicked || 'Unknown team';
                     isAutopick = pick.isAutopick || false;
                 } else {
                     teamName = 'Unknown team';
