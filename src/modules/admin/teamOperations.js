@@ -161,6 +161,10 @@ export class TeamOperations {
             }
             
             console.log(`Current edition: ${currentEdition}, Current gameweek: ${currentGameweek}`);
+            console.log(`🔍 Edition selector value:`, document.querySelector('#standings-edition-select')?.value);
+            console.log(`🔍 Gameweek selector value:`, document.querySelector('#standings-gameweek-select')?.value);
+            console.log(`🔍 Desktop gameweek value:`, document.querySelector('#desktop-as-it-stands-gameweek')?.value);
+            console.log(`🔍 Mobile gameweek value:`, document.querySelector('#mobile-as-it-stands-gameweek')?.value);
             
             // Get all non-archived players (including active, Active, and undefined status)
             const playersSnapshot = await this.db.collection('users').get();
@@ -168,16 +172,23 @@ export class TeamOperations {
             const players = [];
             playersSnapshot.forEach(doc => {
                 const userData = doc.data();
-                // Only include non-archived users
-                if (userData.status !== 'archived') {
+                // Only include active users (case-insensitive) or users with undefined status
+                if (userData.status !== 'archived' && 
+                    (userData.status === 'active' || 
+                     userData.status === 'Active' || 
+                     userData.status === undefined || 
+                     userData.status === null)) {
                     players.push({
                         id: doc.id,
                         ...userData
                     });
+                    console.log(`Including player: ${userData.displayName} (${userData.email}) - status: ${userData.status}`);
+                } else {
+                    console.log(`Excluding player: ${userData.displayName} (${userData.email}) - status: ${userData.status}`);
                 }
             });
             
-            console.log(`Found ${players.length} non-archived players`);
+            console.log(`Found ${players.length} active players`);
             
             // Get fixtures for current gameweek
             const gameweekKey = currentGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameweek}`;
@@ -241,16 +252,33 @@ export class TeamOperations {
                                 document.querySelector('#mobile-as-it-stands-gameweek')?.value || 
                                 this.currentActiveEdition;
             }
-            const editionGameweekKey = `edition${currentEdition}_${gameweekKey}`;
+            
+            console.log(`🔍 Looking for picks for player ${player.displayName} - Edition: ${currentEdition}, Gameweek: ${gameweek}`);
             
             try {
-                const picksDoc = await this.db.collection('picks').doc(player.id).get();
-                if (picksDoc.exists) {
-                    const picksData = picksDoc.data();
-                    playerStanding.picks = picksData[editionGameweekKey] || {};
+                // Query picks collection for this specific player, edition, and gameweek
+                const picksQuery = await this.db.collection('picks')
+                    .where('userId', '==', player.id)
+                    .where('edition', '==', currentEdition)
+                    .where('gameweek', '==', gameweek)
+                    .get();
+                
+                if (!picksQuery.empty) {
+                    const pickDoc = picksQuery.docs[0];
+                    const pickData = pickDoc.data();
+                    console.log(`✅ Pick found for ${player.displayName}:`, pickData);
+                    
+                    // Set the picks data in the expected format
+                    playerStanding.picks = {
+                        team: pickData.teamPicked || pickData.team || 'No pick'
+                    };
+                } else {
+                    console.log(`❌ No pick found for player ${player.displayName} in edition ${currentEdition}, gameweek ${gameweek}`);
+                    playerStanding.picks = { team: 'No pick' };
                 }
             } catch (error) {
-                console.log(`No picks found for player ${player.id} in gameweek ${gameweek}`);
+                console.log(`❌ Error fetching picks for player ${player.displayName}:`, error);
+                playerStanding.picks = { team: 'No pick' };
             }
             
             // Calculate points based on picks and fixtures
