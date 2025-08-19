@@ -1448,9 +1448,18 @@
                         // Check if the button has an event listener, if not, set one up
                         if (!refreshStandingsBtn.onclick && window.adminManagementManager) {
                             console.log('Setting up event listener for refresh standings button...');
+                            console.log('🔍 adminManagementManager available methods:', Object.getOwnPropertyNames(window.adminManagementManager));
+                            console.log('🔍 adminManagementManager prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.adminManagementManager)));
+                            console.log('🔍 loadStandings exists:', typeof window.adminManagementManager.loadStandings);
+                            
                             refreshStandingsBtn.addEventListener('click', () => {
                                 console.log('Refresh standings button clicked - calling loadStandings...');
-                                window.adminManagementManager.loadStandings();
+                                if (typeof window.adminManagementManager.loadStandings === 'function') {
+                                    window.adminManagementManager.loadStandings();
+                                } else {
+                                    console.error('❌ loadStandings is not a function on adminManagementManager');
+                                    console.log('Available methods:', Object.getOwnPropertyNames(window.adminManagementManager));
+                                }
                             });
                         }
                         
