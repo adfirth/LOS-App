@@ -1429,7 +1429,7 @@
                         return true;
                     }
                     
-                    // Method 2: Through window.app
+                    // Method 2: Through window.app (fallback)
                     if (window.app && window.app.adminManagementManager && window.app.adminManagementManager.loadStandings) {
                         console.log('Calling loadStandings via window.app.adminManagementManager...');
                         window.app.adminManagementManager.loadStandings();
@@ -1446,11 +1446,11 @@
                         console.log('Button event listeners:', refreshStandingsBtn.onclick);
                         
                         // Check if the button has an event listener, if not, set one up
-                        if (!refreshStandingsBtn.onclick && window.app && window.app.adminManagementManager) {
+                        if (!refreshStandingsBtn.onclick && window.adminManagementManager) {
                             console.log('Setting up event listener for refresh standings button...');
                             refreshStandingsBtn.addEventListener('click', () => {
                                 console.log('Refresh standings button clicked - calling loadStandings...');
-                                window.app.adminManagementManager.loadStandings();
+                                window.adminManagementManager.loadStandings();
                             });
                         }
                         
