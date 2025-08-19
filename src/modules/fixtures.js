@@ -1180,13 +1180,34 @@ class FixturesManager {
                     date = dateElement.textContent;
                 }
 
+                // Fix date parsing to handle invalid dates gracefully
+                let parsedDate = null;
+                if (date && date !== 'TBD') {
+                    try {
+                        // Handle different date formats
+                        if (date.includes('-')) {
+                            // Format: YYYY-MM-DD
+                            parsedDate = new Date(date + 'T00:00:00').toISOString();
+                        } else if (date.includes('/')) {
+                            // Format: DD/MM/YYYY or MM/DD/YYYY
+                            parsedDate = new Date(date).toISOString();
+                        } else {
+                            // Try direct parsing
+                            parsedDate = new Date(date).toISOString();
+                        }
+                    } catch (dateError) {
+                        console.warn(`Invalid date format for fixture ${homeTeam} vs ${awayTeam}: ${date}`, dateError);
+                        parsedDate = null;
+                    }
+                }
+
                 fixtures.push({
                     homeTeam: homeTeam.trim(),
                     awayTeam: awayTeam.trim(),
                     homeScore,
                     awayScore,
                     status,
-                    date: date && date !== 'TBD' ? new Date(date).toISOString() : null
+                    date: parsedDate
                 });
             });
 
@@ -2541,15 +2562,32 @@ class FixturesManager {
             dateString = `${fixture.date}T15:00:00`;
         }
         
-        // Add debugging for date parsing
-        console.log('🔍 Date Parsing Debug:', {
-            originalDate: fixture.date,
-            kickOffTime: fixture.kickOffTime,
-            finalDateString: dateString,
-            parsedDate: new Date(dateString).toISOString()
-        });
+        // Add debugging for date parsing with error handling
+        let parsedDate;
+        try {
+            parsedDate = new Date(dateString);
+            if (isNaN(parsedDate.getTime())) {
+                throw new Error('Invalid date');
+            }
+            
+            console.log('🔍 Date Parsing Debug:', {
+                originalDate: fixture.date,
+                kickOffTime: fixture.kickOffTime,
+                finalDateString: dateString,
+                parsedDate: parsedDate.toISOString()
+            });
+        } catch (dateError) {
+            console.warn('🔍 Date parsing failed, using fallback:', {
+                originalDate: fixture.date,
+                kickOffTime: fixture.kickOffTime,
+                finalDateString: dateString,
+                error: dateError.message
+            });
+            // Fallback to current date if parsing fails
+            parsedDate = new Date();
+        }
         
-        return new Date(dateString);
+        return parsedDate;
     }
     
     /**
