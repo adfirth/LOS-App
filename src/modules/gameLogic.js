@@ -205,12 +205,21 @@ class GameLogicManager {
 
     // Navigate gameweek
     navigateGameweek(currentGameWeek, direction, userData, userId) {
+        console.log('🔧 navigateGameweek called:', { currentGameWeek, direction, userId });
+        
         const currentNum = currentGameWeek === 'tiebreak' ? 11 : parseInt(currentGameWeek);
         const newNum = currentNum + direction;
         
-        if (newNum < 1 || newNum > 11) return;
+        console.log('🔧 Navigation calculation:', { currentNum, direction, newNum });
+        
+        if (newNum < 1 || newNum > 11) {
+            console.log('🔧 Navigation blocked: newNum out of range:', newNum);
+            return;
+        }
         
         const newGameweek = newNum === 11 ? 'tiebreak' : newNum.toString();
+        console.log('🔧 Navigating to new gameweek:', newGameweek);
+        
         this.navigateToGameweek(newGameweek, userData, userId);
     }
 
@@ -269,6 +278,9 @@ class GameLogicManager {
                 window.loadMobileFixturesForDeadline(gameweek, freshUserData, userId);
             }
             
+            // Update mobile navigation buttons after navigation
+            this.setupMobileNavigationButtons(gameweek, freshUserData, userId);
+            
             console.log(`Navigated to gameweek ${gameweek} with fresh user data`);
         } catch (error) {
             console.error('Error navigating to gameweek:', error);
@@ -307,11 +319,27 @@ class GameLogicManager {
             });
         });
         
-        // Also set up the mobile navigation controls (prev/next buttons)
+        // Set up the mobile navigation controls (prev/next buttons)
+        this.setupMobileNavigationButtons(gameweek, userData, userId);
+        
+        console.log('Mobile gameweek navigation initialized');
+    }
+
+    // Setup mobile navigation buttons with proper event handling
+    setupMobileNavigationButtons(gameweek, userData, userId) {
+        console.log('🔧 setupMobileNavigationButtons called with:', { gameweek, userId });
+        
         const mobilePrevButton = document.querySelector('#mobile-prev-gameweek');
         const mobileNextButton = document.querySelector('#mobile-next-gameweek');
         const mobileCurrentGameweekDisplay = document.querySelector('#mobile-current-gameweek-display');
         
+        console.log('🔧 Mobile navigation elements found:', { 
+            prevButton: !!mobilePrevButton, 
+            nextButton: !!mobileNextButton, 
+            display: !!mobileCurrentGameweekDisplay 
+        });
+        
+        // Update current gameweek display
         if (mobileCurrentGameweekDisplay) {
             const displayText = gameweek === 'tiebreak' ? 'Tiebreak Round' : `Game Week ${gameweek}`;
             mobileCurrentGameweekDisplay.textContent = displayText;
@@ -320,15 +348,66 @@ class GameLogicManager {
             console.error('🔧 Mobile navigation: mobile-current-gameweek-display element not found');
         }
         
+        // Update mobile navigation buttons state
+        this.updateMobileNavigationButtons(gameweek, mobilePrevButton, mobileNextButton);
+        
+        // Setup event listeners for mobile prev/next buttons
         if (mobilePrevButton) {
-            mobilePrevButton.addEventListener('click', () => this.navigateGameweek(gameweek, -1, userData, userId));
+            // Remove existing event listeners by cloning the button
+            mobilePrevButton.replaceWith(mobilePrevButton.cloneNode(true));
+            const newMobilePrevButton = document.querySelector('#mobile-prev-gameweek');
+            newMobilePrevButton.addEventListener('click', () => {
+                console.log('🔧 Mobile navigation: Previous button clicked, navigating from', gameweek, 'to', gameweek - 1);
+                this.navigateGameweek(gameweek, -1, userData, userId);
+            });
         }
         
         if (mobileNextButton) {
-            mobileNextButton.addEventListener('click', () => this.navigateGameweek(gameweek, 1, userData, userId));
+            // Remove existing event listeners by cloning the button
+            mobileNextButton.replaceWith(mobileNextButton.cloneNode(true));
+            const newMobileNextButton = document.querySelector('#mobile-next-gameweek');
+            newMobileNextButton.addEventListener('click', () => {
+                console.log('🔧 Mobile navigation: Next button clicked, navigating from', gameweek, 'to', gameweek + 1);
+                this.navigateGameweek(gameweek, 1, userData, userId);
+            });
+        }
+    }
+
+    // Update mobile navigation buttons state
+    updateMobileNavigationButtons(gameweek, prevButton, nextButton) {
+        if (!prevButton || !nextButton) return;
+        
+        const currentNum = gameweek === 'tiebreak' ? 11 : parseInt(gameweek);
+        
+        console.log('🔧 updateMobileNavigationButtons:', { gameweek, currentNum });
+        
+        // Disable prev button if at first gameweek
+        prevButton.disabled = currentNum <= 1;
+        
+        // Disable next button if at last gameweek
+        nextButton.disabled = currentNum >= 11;
+        
+        console.log('🔧 Button states:', { 
+            prevDisabled: prevButton.disabled, 
+            nextDisabled: nextButton.disabled 
+        });
+        
+        // Update button styles based on disabled state
+        if (prevButton.disabled) {
+            prevButton.style.opacity = '0.5';
+            prevButton.style.cursor = 'not-allowed';
+        } else {
+            prevButton.style.opacity = '1';
+            prevButton.style.cursor = 'pointer';
         }
         
-        console.log('Mobile gameweek navigation initialized');
+        if (nextButton.disabled) {
+            nextButton.style.opacity = '0.5';
+            nextButton.style.cursor = 'not-allowed';
+        } else {
+            nextButton.style.opacity = '1';
+            nextButton.style.cursor = 'pointer';
+        }
     }
 
     // --- PICK OPERATIONS ---
