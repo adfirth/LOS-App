@@ -141,20 +141,22 @@ export class TeamOperations {
             
             console.log(`Current edition: ${currentEdition}, Current gameweek: ${currentGameweek}`);
             
-            // Get all active players
-            const playersSnapshot = await this.db.collection('users')
-                .where('status', '==', 'active')
-                .get();
+            // Get all non-archived players (including active, Active, and undefined status)
+            const playersSnapshot = await this.db.collection('users').get();
             
             const players = [];
             playersSnapshot.forEach(doc => {
-                players.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
+                const userData = doc.data();
+                // Only include non-archived users
+                if (userData.status !== 'archived') {
+                    players.push({
+                        id: doc.id,
+                        ...userData
+                    });
+                }
             });
             
-            console.log(`Found ${players.length} active players`);
+            console.log(`Found ${players.length} non-archived players`);
             
             // Get fixtures for current gameweek
             const gameweekKey = currentGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameweek}`;
@@ -177,6 +179,12 @@ export class TeamOperations {
             // Update displays
             this.updateStandingsSummary(standings);
             this.renderStandingsTable(standings);
+            
+            // Update the title
+            const titleElement = document.querySelector('#standings-title');
+            if (titleElement) {
+                titleElement.textContent = `Current Standings - Edition ${currentEdition}, Game Week ${currentGameweek}`;
+            }
             
             console.log('✅ Standings loaded successfully');
             
@@ -284,101 +292,75 @@ export class TeamOperations {
 
     // Update standings summary
     updateStandingsSummary(standings) {
-        const summaryContainer = document.querySelector('#standings-summary');
-        if (!summaryContainer) return;
-        
         const totalPlayers = standings.length;
         const activePlayers = standings.filter(p => !p.eliminated).length;
         const eliminatedPlayers = totalPlayers - activePlayers;
+        const averageLives = totalPlayers > 0 ? (standings.reduce((sum, p) => sum + (p.lives || 0), 0) / totalPlayers).toFixed(1) : '0.0';
         
-        summaryContainer.innerHTML = `
-            <div class="standings-summary">
-                <h3>Standings Summary</h3>
-                <div class="summary-stats">
-                    <div class="stat">
-                        <span class="stat-label">Total Players:</span>
-                        <span class="stat-value">${totalPlayers}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Active Players:</span>
-                        <span class="stat-value active">${activePlayers}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Eliminated:</span>
-                        <span class="stat-value eliminated">${eliminatedPlayers}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Update the existing elements
+        const totalPlayersElement = document.querySelector('#total-players-count');
+        const survivorsElement = document.querySelector('#survivors-count');
+        const eliminatedElement = document.querySelector('#eliminated-count');
+        const averageLivesElement = document.querySelector('#average-lives');
+        
+        if (totalPlayersElement) totalPlayersElement.textContent = totalPlayers;
+        if (survivorsElement) survivorsElement.textContent = activePlayers;
+        if (eliminatedElement) eliminatedElement.textContent = eliminatedPlayers;
+        if (averageLivesElement) averageLivesElement.textContent = averageLives;
+        
+        console.log(`✅ Updated standings summary: ${totalPlayers} total, ${activePlayers} survivors, ${eliminatedPlayers} eliminated, ${averageLives} avg lives`);
     }
 
     // Render standings table
     renderStandingsTable(standings) {
-        const tableContainer = document.querySelector('#standings-table-container');
-        if (!tableContainer) return;
+        const standingsBody = document.querySelector('#standings-body');
+        if (!standingsBody) return;
         
         if (!standings || standings.length === 0) {
-            tableContainer.innerHTML = '<p>No standings data available</p>';
+            standingsBody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-trophy" style="font-size: 2rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                        <p>No standings data available</p>
+                    </td>
+                </tr>
+            `;
             return;
         }
         
-        let tableHtml = `
-            <table class="standings-table">
-                <thead>
-                    <tr>
-                        <th>Position</th>
-                        <th>Player</th>
-                        <th>Picked Team</th>
-                        <th>Result</th>
-                        <th>Points</th>
-                        <th>Lives</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        let tableHtml = '';
         
         standings.forEach((player, index) => {
             const position = index + 1;
-            const positionClass = position <= 3 ? 'top-three' : '';
-            const statusClass = player.eliminated ? 'eliminated' : 'active';
-            
             const pickedTeam = player.picks.team || 'No pick';
             let result = 'Pending';
-            let resultClass = 'pending';
             
             if (player.totalPoints > 0) {
                 if (player.totalPoints === 3) {
                     result = 'Win';
-                    resultClass = 'win';
                 } else if (player.totalPoints === 1) {
                     result = 'Draw';
-                    resultClass = 'draw';
                 }
             } else if (player.picks.team) {
                 result = 'Loss';
-                resultClass = 'loss';
             }
             
             tableHtml += `
-                <tr class="${positionClass} ${statusClass}">
-                    <td class="position">${position}</td>
-                    <td class="player-name">${player.displayName}</td>
-                    <td class="picked-team">${pickedTeam}</td>
-                    <td class="result ${resultClass}">${result}</td>
-                    <td class="points">${player.totalPoints}</td>
-                    <td class="lives">${player.lives}</td>
-                    <td class="status ${statusClass}">${player.eliminated ? 'Eliminated' : 'Active'}</td>
+                <tr>
+                    <td>${position}</td>
+                    <td>${player.displayName}</td>
+                    <td>${player.email || 'No email'}</td>
+                    <td>${player.lives || 0}</td>
+                    <td>${pickedTeam}</td>
+                    <td>${result}</td>
+                    <td>${player.eliminated ? 'Eliminated' : 'Active'}</td>
+                    <td>-</td>
                 </tr>
             `;
         });
         
-        tableHtml += `
-                </tbody>
-            </table>
-        `;
-        
-        tableContainer.innerHTML = tableHtml;
+        standingsBody.innerHTML = tableHtml;
+        console.log(`✅ Rendered standings table with ${standings.length} players`);
     }
 
     // Export standings
