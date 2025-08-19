@@ -258,8 +258,11 @@ class UIManager {
                 if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
                 if (mobileWelcomeMessage) mobileWelcomeMessage.textContent = `Welcome, ${userData.displayName}!`;
                 
-                // Display card status based on lives remaining
-                this.updateLivesDisplay(userData, livesRemaining, mobileLivesRemaining, desktopLivesRemaining);
+                // Calculate current lives based on cumulative game results
+                const currentLives = await this.calculateCurrentLives(userData, user.uid);
+                
+                // Display card status based on calculated lives remaining
+                this.updateLivesDisplay({ ...userData, lives: currentLives }, livesRemaining, mobileLivesRemaining, desktopLivesRemaining);
 
                 // Render pick history for desktop, mobile, and legacy (only if containers exist)
                 if (window.app && window.app.gameLogicManager) {
@@ -421,6 +424,81 @@ class UIManager {
                 }
             }
         });
+    }
+
+    // Calculate current lives based on cumulative game results
+    async calculateCurrentLives(userData, userId) {
+        try {
+            // Start with initial lives
+            let currentLives = userData.lives || 2;
+            
+            // Get the current active edition (default to 'test' for now)
+            const currentEdition = 'test';
+            
+            // Calculate cumulative effect of all completed gameweeks
+            for (let gw = 1; gw <= 10; gw++) { // Check up to GW10
+                const currentGameweek = gw.toString();
+                
+                // Get fixtures for this gameweek
+                const gameweekKey = `gw${currentGameweek}`;
+                const editionKey = `edition${currentEdition}`;
+                const fixtureDocKey = `${editionKey}_${gameweekKey}`;
+                
+                const fixtureDoc = await firebase.firestore().collection('fixtures').doc(fixtureDocKey).get();
+                const currentFixtures = fixtureDoc.exists ? fixtureDoc.data().fixtures || [] : [];
+                
+                // Get player pick for this gameweek
+                try {
+                    const picksQuery = await firebase.firestore().collection('picks')
+                        .where('userId', '==', userId)
+                        .where('edition', '==', currentEdition)
+                        .where('gameweek', '==', currentGameweek)
+                        .get();
+                    
+                    if (!picksQuery.empty) {
+                        const pickDoc = picksQuery.docs[0];
+                        const pickData = pickDoc.data();
+                        const pickedTeam = pickData.teamPicked || pickData.team;
+                        
+                        // Find the fixture for this pick
+                        const fixture = currentFixtures.find(f => 
+                            f.homeTeam === pickedTeam || f.awayTeam === pickedTeam
+                        );
+                        
+                        if (fixture && (fixture.status === 'FT' || fixture.completed === true)) {
+                            // Match finished, calculate result
+                            const homeScore = parseInt(fixture.homeScore) || 0;
+                            const awayScore = parseInt(fixture.awayScore) || 0;
+                            
+                            if (pickedTeam === fixture.homeTeam) {
+                                if (homeScore <= awayScore) {
+                                    // Draw or loss - lose a life
+                                    currentLives = Math.max(0, currentLives - 1);
+                                }
+                            } else {
+                                if (awayScore <= homeScore) {
+                                    // Draw or loss - lose a life
+                                    currentLives = Math.max(0, currentLives - 1);
+                                }
+                            }
+                            
+                            if (currentLives === 0) {
+                                break; // Player is eliminated, no need to check further gameweeks
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log(`❌ Error processing gameweek ${currentGameweek} for lives calculation:`, error);
+                }
+            }
+            
+            console.log(`✅ Calculated current lives for ${userData.displayName}: ${currentLives}`);
+            return currentLives;
+            
+        } catch (error) {
+            console.error('❌ Error calculating current lives:', error);
+            return userData.lives || 2; // Fallback to original lives
+        }
     }
 
     // Update lives display
