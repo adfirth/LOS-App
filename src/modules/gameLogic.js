@@ -599,8 +599,8 @@ class GameLogicManager {
         }
     }
 
-    // Save temporary pick
-    saveTempPick(gameweek, userId) {
+        // Save temporary pick
+    async saveTempPick(gameweek, userId) {
         const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
         const tempPickKey = `tempPick_${userId}_${gameweek}`;
         const tempPick = sessionStorage.getItem(tempPickKey);
@@ -610,63 +610,87 @@ class GameLogicManager {
             return;
         }
         
-        // Check if deadline has passed
-        this.checkDeadlineForGameweek(gameweek).then(isDeadlinePassed => {
+        try {
+            // Check if deadline has passed
+            const isDeadlinePassed = await this.checkDeadlineForGameweek(gameweek);
             if (isDeadlinePassed) {
                 alert('Deadline has passed for this gameweek. Picks are locked.');
                 return;
             }
             
-            // Save the pick to database
-            this.db.collection('users').doc(userId).update({
+            // Save the pick to database (both collections for consistency)
+            const pickData = {
+                userId: userId,
+                teamPicked: tempPick,
+                isAutopick: false,
+                edition: this.currentActiveEdition || 'test', // Default fallback
+                gameweek: gameweek.toString(),
+                gameweekKey: gameweekKey,
+                savedAt: new Date(),
+                timestamp: new Date()
+            };
+            
+            // Get user details for the pick document
+            const userDoc = await this.db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                pickData.userFirstName = userData.firstName || userData.displayName?.split(' ')[0] || '';
+                pickData.userSurname = userData.surname || userData.displayName?.split(' ').slice(1).join(' ') || '';
+                pickData.userEmail = userData.email || '';
+            }
+            
+            // Save to picks collection first
+            await this.db.collection('picks').add(pickData);
+            
+            // Then save to users collection for backward compatibility
+            await this.db.collection('users').doc(userId).update({
                 [`picks.${gameweekKey}`]: tempPick
-            }).then(() => {
-                console.log(`Pick saved: ${tempPick} for Game Week ${gameweek}`);
-                
-                // Clear temporary pick from sessionStorage
-                sessionStorage.removeItem(tempPickKey);
-                
-                // Refresh both the pick history sidebar and the fixtures display
-                this.db.collection('users').doc(userId).get().then(userDoc => {
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        
-                        // Refresh the pick history sidebar (desktop)
-                        const picksHistoryContainer = document.querySelector('#picks-history');
-                        if (picksHistoryContainer) {
-                            this.renderPickHistory(userData.picks || {}, picksHistoryContainer, userId, userData);
-                        }
-                        
-                        // Refresh the mobile pick history
-                        const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
-                        if (mobilePicksHistoryContainer) {
-                            this.renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, userId, userData);
-                        }
-                        
-                        // Refresh the desktop pick history
-                        const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
-                        if (desktopPicksHistoryContainer) {
-                            this.renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, userId, userData);
-                        }
-                        
-                        // Refresh the fixtures display to update the save button
-                        if (window.loadFixturesForDeadline) {
-                            window.loadFixturesForDeadline(gameweek, userData, userId);
-                        }
-                        
-                        // Update the pick status header
-                        if (window.updatePickStatusHeader) {
-                            window.updatePickStatusHeader(gameweek, userData, userId).catch(error => {
-                                console.error('Error updating pick status header:', error);
-                            });
-                        }
-                    }
-                }).catch(console.error);
-            }).catch(error => {
-                console.error('Error saving pick:', error);
-                alert('Error saving pick. Please try again.');
             });
-        });
+            
+            console.log(`Pick saved: ${tempPick} for Game Week ${gameweek}`);
+            
+            // Clear temporary pick from sessionStorage
+            sessionStorage.removeItem(tempPickKey);
+            
+            // Refresh both the pick history sidebar and the fixtures display
+            const updatedUserDoc = await this.db.collection('users').doc(userId).get();
+            if (updatedUserDoc.exists) {
+                const userData = updatedUserDoc.data();
+                
+                // Refresh the pick history sidebar (desktop)
+                const picksHistoryContainer = document.querySelector('#picks-history');
+                if (picksHistoryContainer) {
+                    this.renderPickHistory(userData.picks || {}, picksHistoryContainer, userId, userData);
+                }
+                
+                // Refresh the mobile pick history
+                const mobilePicksHistoryContainer = document.querySelector('#mobile-picks-history');
+                if (mobilePicksHistoryContainer) {
+                    this.renderPickHistory(userData.picks || {}, mobilePicksHistoryContainer, userId, userData);
+                }
+                
+                // Refresh the desktop pick history
+                const desktopPicksHistoryContainer = document.querySelector('#desktop-picks-history');
+                if (desktopPicksHistoryContainer) {
+                    this.renderPickHistory(userData.picks || {}, desktopPicksHistoryContainer, userId, userData);
+                }
+                
+                // Refresh the fixtures display to update the save button
+                if (window.loadFixturesForDeadline) {
+                    window.loadFixturesForDeadline(gameweek, userData, userId);
+                }
+                
+                // Update the pick status header
+                if (window.updatePickStatusHeader) {
+                    window.updatePickStatusHeader(gameweek, userData, userId).catch(error => {
+                        console.error('Error updating pick status header:', error);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error saving pick:', error);
+            alert('Error saving pick. Please try again.');
+        }
     }
 
     // Release future pick

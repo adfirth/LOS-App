@@ -871,6 +871,14 @@ class EditionService {
         } else {
             console.log('🔧 EditionService: Scores manager not available for edition update');
         }
+        
+        // Also update the game logic manager's active edition
+        if (window.app && window.app.gameLogicManager) {
+            window.app.gameLogicManager.setActiveEdition(this.currentUserEdition);
+            console.log('🔧 EditionService: Updated game logic manager currentActiveEdition to:', this.currentUserEdition);
+        } else {
+            console.log('🔧 EditionService: Game logic manager not available for edition update');
+        }
     }
 
     /**
