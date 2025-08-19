@@ -1419,11 +1419,51 @@
             // Load standings if As It Stands tab was clicked
             if (tabName === 'as-it-stands') {
                 console.log('As It Stands tab clicked - loading standings...');
-                if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadStandings) {
-                    console.log('Calling loadStandings...');
-                    window.adminManagementManager.loadStandings();
-                } else {
-                    console.log('adminManagementManager.loadStandings not available yet');
+                
+                // Try multiple approaches to load standings
+                const tryLoadStandings = () => {
+                    // Method 1: Direct adminManagementManager
+                    if (typeof window.adminManagementManager !== 'undefined' && window.adminManagementManager.loadStandings) {
+                        console.log('Calling loadStandings via window.adminManagementManager...');
+                        window.adminManagementManager.loadStandings();
+                        return true;
+                    }
+                    
+                    // Method 2: Through window.app
+                    if (window.app && window.app.adminManagementManager && window.app.adminManagementManager.loadStandings) {
+                        console.log('Calling loadStandings via window.app.adminManagementManager...');
+                        window.app.adminManagementManager.loadStandings();
+                        return true;
+                    }
+                    
+                    // Method 3: Try to trigger refresh button
+                    const refreshStandingsBtn = document.querySelector('#refresh-standings-btn');
+                    if (refreshStandingsBtn) {
+                        console.log('Triggering refresh standings button click...');
+                        refreshStandingsBtn.click();
+                        return true;
+                    }
+                    
+                    return false;
+                };
+                
+                // Try immediately
+                if (!tryLoadStandings()) {
+                    console.log('Initial loadStandings attempt failed, retrying in 500ms...');
+                    
+                    // Retry after a short delay
+                    setTimeout(() => {
+                        if (!tryLoadStandings()) {
+                            console.log('Second loadStandings attempt failed, retrying in 1000ms...');
+                            
+                            // Final retry after longer delay
+                            setTimeout(() => {
+                                if (!tryLoadStandings()) {
+                                    console.log('All loadStandings attempts failed - standings may not load');
+                                }
+                            }, 1000);
+                        }
+                    }, 500);
                 }
             }
             
