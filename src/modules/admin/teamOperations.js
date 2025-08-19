@@ -135,9 +135,11 @@ export class TeamOperations {
         try {
             console.log('🔧 Loading standings...');
             
-            // Get current gameweek
-            const currentGameweek = this.currentActiveGameweek;
-            console.log(`Current gameweek: ${currentGameweek}`);
+            // Get current edition and gameweek from DOM selectors
+            const currentEdition = document.querySelector('#standings-edition-select')?.value || this.currentActiveEdition;
+            const currentGameweek = document.querySelector('#standings-gameweek-select')?.value || this.currentActiveGameweek;
+            
+            console.log(`Current edition: ${currentEdition}, Current gameweek: ${currentGameweek}`);
             
             // Get all active players
             const playersSnapshot = await this.db.collection('users')
@@ -156,7 +158,7 @@ export class TeamOperations {
             
             // Get fixtures for current gameweek
             const gameweekKey = currentGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameweek}`;
-            const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
+            const editionGameweekKey = `edition${currentEdition}_${gameweekKey}`;
             
             const fixturesDoc = await this.db.collection('fixtures').doc(editionGameweekKey).get();
             let fixtures = [];
@@ -204,7 +206,8 @@ export class TeamOperations {
             
             // Get player picks for this gameweek
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionGameweekKey = `edition${this.currentActiveEdition}_${gameweekKey}`;
+            const currentEdition = document.querySelector('#standings-edition-select')?.value || this.currentActiveEdition;
+            const editionGameweekKey = `edition${currentEdition}_${gameweekKey}`;
             
             try {
                 const picksDoc = await this.db.collection('picks').doc(player.id).get();
