@@ -157,11 +157,11 @@ class UIManager {
                         // Get current gameweek for display
                         const currentGameweek = window.app.currentActiveGameweek;
                         if (window.app && window.app.scoresManager) {
-                            // Use the new admin-specific rendering function to prevent duplication
-                            await window.app.scoresManager.statisticsEngine.renderAdminScores(fixtures, currentGameweek);
+                            // Use player scores rendering for player dashboard
+                            await window.app.scoresManager.renderPlayerScores(fixtures, currentGameweek);
                         }
                     }).catch(error => {
-                        console.error('Error loading admin scores:', error);
+                        console.error('Error loading player scores:', error);
                         if (window.app && window.app.scoresManager) {
                             window.app.scoresManager.showNoScoresMessage();
                         }

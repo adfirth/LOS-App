@@ -62,17 +62,27 @@ export class LiveScoring {
         const scoreGameweekSelect = document.querySelector('#score-gameweek-select');
         const container = document.querySelector('#scores-container');
         
+        // For player dashboard, use current active gameweek if no score selector found
+        let gameweek;
         if (!scoreGameweekSelect) {
-            console.log('Score gameweek select not found, skipping scores load');
-            return Promise.resolve([]);
+            // Check if we're in player dashboard (no admin panel)
+            const isPlayerDashboard = !document.querySelector('#admin-panel');
+            if (isPlayerDashboard) {
+                // Use current active gameweek from app settings
+                gameweek = window.app?.currentActiveGameweek || '1';
+                console.log('Player dashboard detected, using current active gameweek:', gameweek);
+            } else {
+                console.log('Score gameweek select not found, skipping scores load');
+                return Promise.resolve([]);
+            }
+        } else {
+            gameweek = scoreGameweekSelect.value;
         }
         
         if (!container) {
             console.log('Scores container not found, skipping scores load');
             return Promise.resolve([]);
         }
-        
-        const gameweek = scoreGameweekSelect.value;
         
         console.log(`loadScoresForGameweek called - gameweek: ${gameweek}, currentActiveEdition: ${this.currentActiveEdition}`);
         
