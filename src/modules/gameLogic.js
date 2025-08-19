@@ -55,11 +55,30 @@ class GameLogicManager {
         
         gameweeks.forEach(gw => {
             const pick = picks[gw.key];
-            const badge = pick ? this.getTeamBadge(pick) : null;
-            const badgeHtml = badge ? `<img src="${badge}" alt="${pick}" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;">` : '';
+            let teamName = 'No pick made';
+            let isAutopick = false;
+            
+            if (pick) {
+                // Handle new pick object format
+                if (typeof pick === 'string') {
+                    teamName = pick;
+                    isAutopick = false;
+                } else if (pick && typeof pick === 'object') {
+                    teamName = pick.team || 'Unknown team';
+                    isAutopick = pick.isAutopick || false;
+                } else {
+                    teamName = 'Unknown team';
+                    isAutopick = false;
+                }
+            }
+            
+            const badge = teamName !== 'No pick made' ? this.getTeamBadge(teamName) : null;
+            const badgeHtml = badge ? `<img src="${badge}" alt="${teamName}" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;">` : '';
+            const autopickIndicator = isAutopick ? ' (A)' : '';
+            
             html += `
                 <div class="pick-item">
-                    <strong>${gw.label}:</strong> ${pick ? badgeHtml + pick : 'No pick made'}
+                    <strong>${gw.label}:</strong> ${teamName !== 'No pick made' ? badgeHtml + teamName + autopickIndicator : teamName}
                 </div>
             `;
         });

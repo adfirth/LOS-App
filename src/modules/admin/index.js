@@ -189,37 +189,71 @@ export class AdminManager {
         console.log(`🔍 Getting picks for ${activePlayers.length} active players in edition ${edition}, gameweek ${gameweek}`);
         
         try {
-            // Get all picks for this edition and gameweek
-            const picksQuery = this.db.collection('picks')
-                .where('edition', '==', edition)
-                .where('gameweek', '==', gameweek);
+            // Instead of reading from picks collection, read from users collection to get current picks
+            const usersWithPicks = [];
             
-            const picksSnapshot = await picksQuery.get();
-            const allPicks = picksSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
-            // Debug: Log the structure of the first pick
-            if (allPicks.length > 0) {
-                console.log('🔍 Raw pick structure:', allPicks[0]);
-                console.log('🔍 Raw pick userId:', allPicks[0].userId);
+            for (const player of activePlayers) {
+                try {
+                    const userDoc = await this.db.collection('users').doc(player.id).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        const picks = userData.picks || {};
+                        
+                        // Create a pick object for the requested gameweek
+                        const gameweekKey = `gw${gameweek}`;
+                        const pick = picks[gameweekKey];
+                        
+                        if (pick) {
+                            // Handle new pick object format
+                            let teamPicked, isAutopick;
+                            if (typeof pick === 'string') {
+                                teamPicked = pick;
+                                isAutopick = false;
+                            } else if (pick && typeof pick === 'object') {
+                                teamPicked = pick.team || pick;
+                                isAutopick = pick.isAutopick || false;
+                            } else {
+                                teamPicked = 'Unknown team';
+                                isAutopick = false;
+                            }
+                            
+                            usersWithPicks.push({
+                                id: player.id,
+                                userId: player.id,
+                                userFirstName: userData.firstName || '',
+                                userSurname: userData.surname || '',
+                                teamPicked: teamPicked,
+                                isAutopick: isAutopick,
+                                gameweek: gameweek,
+                                gameweekKey: gameweekKey,
+                                edition: edition,
+                                isActive: true,
+                                timestamp: new Date()
+                            });
+                        } else {
+                            // No pick for this gameweek
+                            usersWithPicks.push({
+                                id: player.id,
+                                userId: player.id,
+                                userFirstName: userData.firstName || '',
+                                userSurname: userData.surname || '',
+                                teamPicked: null,
+                                isAutopick: false,
+                                gameweek: gameweek,
+                                gameweekKey: gameweekKey,
+                                edition: edition,
+                                isActive: true,
+                                timestamp: new Date()
+                            });
+                        }
+                    }
+                } catch (userError) {
+                    console.error(`❌ Error getting user data for ${player.id}:`, userError);
+                }
             }
             
-            // Filter picks to only include those from active players
-            const activePlayerIds = activePlayers.map(player => player.id);
-            console.log('🔍 Active player IDs:', activePlayerIds);
-            
-            const picksForActivePlayers = allPicks.filter(pick => {
-                const isFromActivePlayer = activePlayerIds.includes(pick.userId);
-                if (!isFromActivePlayer) {
-                    console.log(`⏭️ Skipping pick from inactive player: ${pick.userId}`);
-                }
-                return isFromActivePlayer;
-            });
-            
-            console.log(`✅ Filtered to ${picksForActivePlayers.length} picks from active players`);
-            return picksForActivePlayers;
+            console.log(`✅ Found ${usersWithPicks.length} players with picks for gameweek ${gameweek}`);
+            return usersWithPicks;
             
         } catch (error) {
             console.error('❌ Error getting picks for active players:', error);
