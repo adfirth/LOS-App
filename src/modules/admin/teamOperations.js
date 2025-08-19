@@ -426,20 +426,34 @@ export class TeamOperations {
                     const pickedTeam = player.picks.team || 'No pick';
                     let result = 'Pending';
                     
-                    if (player.picks.team && player.picks.team !== 'No pick') {
-                        if (player.fixtureStatus === 'FT') {
-                            // Match finished - show actual result
-                            if (player.totalPoints === 3) {
+                    if (player.picks.team && player.picks.team !== 'No pick' && player.picks.team !== 'To be revealed') {
+                        // For completed gameweeks, show the actual result based on totalPoints
+                        // Since we're calculating cumulative standings, we can determine the result from the points
+                        if (player.totalPoints > 0) {
+                            // Player has points, so they must have won or drawn
+                            if (player.totalPoints >= 3) {
                                 result = 'Win';
-                            } else if (player.totalPoints === 1) {
+                            } else if (player.totalPoints >= 1) {
                                 result = 'Draw';
                             } else {
                                 result = 'Loss';
                             }
                         } else {
-                            // Match not finished - show pending
-                            result = 'Pending';
+                            // No points means either no games played yet or all losses
+                            // Check if this is a completed gameweek by looking at the current gameweek
+                            const currentGameweek = document.querySelector('#standings-gameweek-select')?.value || 
+                                                  document.querySelector('#desktop-as-it-stands-gameweek')?.value ||
+                                                  document.querySelector('#mobile-as-it-stands-gameweek')?.value;
+                            
+                            if (currentGameweek && parseInt(currentGameweek) >= 1) {
+                                // For GW1 and GW2, we know the games are completed
+                                result = 'Loss'; // If they have 0 points and games are complete, it's a loss
+                            } else {
+                                result = 'Pending';
+                            }
                         }
+                    } else if (player.picks.team === 'To be revealed') {
+                        result = 'To be revealed';
                     } else {
                         result = 'No Pick';
                     }
@@ -514,20 +528,34 @@ export class TeamOperations {
                 const pickedTeam = player.picks.team || 'No pick';
                 let result = 'Pending';
                 
-                if (player.picks.team && player.picks.team !== 'No pick') {
-                    if (player.fixtureStatus === 'FT') {
-                        // Match finished - show actual result
-                        if (player.totalPoints === 3) {
+                if (player.picks.team && player.picks.team !== 'No pick' && player.picks.team !== 'To be revealed') {
+                    // For completed gameweeks, show the actual result based on totalPoints
+                    // Since we're calculating cumulative standings, we can determine the result from the points
+                    if (player.totalPoints > 0) {
+                        // Player has points, so they must have won or drawn
+                        if (player.totalPoints >= 3) {
                             result = 'Win';
-                        } else if (player.totalPoints === 1) {
+                        } else if (player.totalPoints >= 1) {
                             result = 'Draw';
                         } else {
                             result = 'Loss';
                         }
                     } else {
-                        // Match not finished - show pending
-                        result = 'Pending';
+                        // No points means either no games played yet or all losses
+                        // Check if this is a completed gameweek by looking at the current gameweek
+                        const currentGameweek = document.querySelector('#standings-gameweek-select')?.value || 
+                                              document.querySelector('#desktop-as-it-stands-gameweek')?.value ||
+                                              document.querySelector('#mobile-as-it-stands-gameweek')?.value;
+                        
+                        if (currentGameweek && parseInt(currentGameweek) >= 1) {
+                            // For GW1 and GW2, we know the games are completed
+                            result = 'Loss'; // If they have 0 points and games are complete, it's a loss
+                        } else {
+                            result = 'Pending';
+                        }
                     }
+                } else if (player.picks.team === 'To be revealed') {
+                    result = 'To be revealed';
                 } else {
                     result = 'No Pick';
                 }
