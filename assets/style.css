@@ -5,15 +5,22 @@
     --dark-text: #333;
     --success-green: #28a745;
     
+    /* New Teal Color Palette */
+    --teal-primary: rgb(94, 165, 152);
+    --teal-secondary: rgb(74, 138, 122);
+    --teal-light: rgba(94, 165, 152, 0.1);
+    --teal-medium: rgba(94, 165, 152, 0.2);
+    --teal-dark: rgba(74, 138, 122, 0.8);
+    
     /* Game Week Navigation Colors */
-    --nav-button-bg: #6c757d;
-    --nav-button-hover: #5a6268;
+    --nav-button-bg: var(--teal-primary);
+    --nav-button-hover: var(--teal-secondary);
     --nav-button-disabled: #dee2e6;
-    --nav-button-text: #6c757d;
+    --nav-button-text: white;
     --tab-border: #e9ecef;
-    --tab-hover-bg: #f8f9fa;
-    --tab-hover-border: #007bff;
-    --tab-hover-text: #007bff;
+    --tab-hover-bg: var(--teal-light);
+    --tab-hover-border: var(--teal-primary);
+    --tab-hover-text: var(--teal-secondary);
 }
 
 body {
@@ -1184,32 +1191,32 @@ a:hover {
 }
 
 .fixtures-section .deadline-section {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
     padding: 1.5rem;
-    border-bottom: 2px solid #2196f3;
+    border-bottom: 2px solid var(--teal-primary);
 }
 
 .fixtures-section .deadline-header h3 {
-    color: #1565c0;
+    color: var(--teal-secondary);
     margin: 0 0 0.5rem 0;
     font-size: 1.3rem;
     font-weight: 700;
 }
 
 .fixtures-section .deadline-status {
-    color: #1976d2;
+    color: var(--teal-primary);
     font-weight: 600;
     margin: 0;
 }
 
 .fixtures-section .pick-status-header {
-    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    background: linear-gradient(135deg, var(--teal-light), rgba(94, 165, 152, 0.15));
     padding: 1rem 1.5rem;
-    border-bottom: 2px solid #9c27b0;
+    border-bottom: 2px solid var(--teal-primary);
 }
 
 .fixtures-section .pick-status-text {
-    color: #7b1fa2;
+    color: var(--teal-secondary);
     font-weight: 600;
     margin: 0;
     font-size: 1.1rem;
@@ -1347,12 +1354,12 @@ a:hover {
 }
 
 .mobile-fixtures-section .mobile-deadline-section {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    border-bottom: 2px solid #2196f3;
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
+    border-bottom: 2px solid var(--teal-primary);
 }
 
 .mobile-fixtures-section .mobile-deadline-section h3 {
-    color: #1565c0;
+    color: var(--teal-secondary);
     margin: 0 0 0.5rem 0;
     font-size: 1.3rem;
     font-weight: 700;
@@ -5388,10 +5395,9 @@ a:hover {
 }
 
 .mobile-gameweek-tabs .gameweek-tab.locked {
-    background: #f8f9fa;
-    border-color: #ccc;
-    color: #999;
-    cursor: not-allowed;
+    background: #ffeb3b;
+    border-color: #ffc107;
+    color: #333;
 }
 
 /* Mobile Fixtures Section */
@@ -5575,9 +5581,6 @@ a:hover {
 }
 
 /* Force mobile layout for OnePlus and similar devices */
-body.force-mobile-layout {
-    /* Force mobile layout regardless of screen size */
-}
 
 body.force-mobile-layout .desktop-layout {
     display: none !important;
@@ -5937,7 +5940,7 @@ body.force-mobile-layout .desktop-edition-selector {
 .mobile-deadline-section .deadline-header h3 {
     margin: 0 0 10px 0;
     font-size: 1.2em;
-    color: #495057;
+    color: var(--teal-secondary);
 }
 
 .mobile-deadline-section .deadline-status {
@@ -5947,8 +5950,9 @@ body.force-mobile-layout .desktop-edition-selector {
     padding: 8px 15px;
     border-radius: 20px;
     display: inline-block;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background-color: var(--teal-light);
+    border: 1px solid var(--teal-primary);
+    color: var(--teal-secondary);
 }
 
 .mobile-deadline-section .deadline-status.active {
@@ -6164,15 +6168,15 @@ body.force-mobile-layout .desktop-edition-selector {
     gap: 8px;
     padding: 8px 12px;
     border-radius: 6px;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #ffffff, var(--teal-light));
+    border: 1px solid var(--teal-primary);
     transition: all 0.2s ease;
 }
 
 .team-display:hover {
-    background: linear-gradient(135deg, #e9ecef, #dee2e6);
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(94, 165, 152, 0.2);
 }
 
 .team-display.home-team {
@@ -7777,23 +7781,24 @@ body.force-mobile-layout .desktop-edition-selector {
     flex: 1;
     font-weight: 600;
     font-size: 1rem;
-    color: #212529;
+    color: var(--teal-secondary);
     text-align: center;
     padding: 8px;
     border-radius: 4px;
-    background-color: #f8f9fa;
+    background: linear-gradient(135deg, #ffffff, var(--teal-light));
+    border: 1px solid var(--teal-primary);
 }
 
 .mobile-team.home-team {
     text-align: left;
-    background-color: #e8f5e8;
-    border-left: 3px solid #28a745;
+    background: linear-gradient(135deg, #ffffff, rgba(40, 167, 69, 0.1));
+    border-left: 3px solid var(--success-green);
 }
 
 .mobile-team.away-team {
     text-align: right;
-    background-color: #fff3cd;
-    border-right: 3px solid #ffc107;
+    background: linear-gradient(135deg, #ffffff, rgba(253, 185, 19, 0.1));
+    border-right: 3px solid var(--alty-yellow);
 }
 
 .mobile-vs {
@@ -7930,17 +7935,17 @@ body.force-mobile-layout .desktop-edition-selector {
 
 /* Mobile Edition Selector Improvements */
 #mobile-edition-selector-container {
-    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-    border: 2px solid #28a745;
+    background: linear-gradient(135deg, var(--teal-light) 0%, var(--teal-medium) 100%);
+    border: 2px solid var(--teal-primary);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+    box-shadow: 0 2px 8px rgba(94, 165, 152, 0.2);
 }
 
 #mobile-edition-selector-container h4 {
     margin: 0 0 12px 0;
-    color: #155724;
+    color: var(--teal-secondary);
     font-size: 1.1rem;
     font-weight: 600;
 }
@@ -7959,7 +7964,7 @@ body.force-mobile-layout .desktop-edition-selector {
 #mobile-edition-selector-container button {
     width: 100%;
     padding: 10px 16px;
-    background: #007bff;
+    background: var(--teal-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -7970,7 +7975,7 @@ body.force-mobile-layout .desktop-edition-selector {
 }
 
 #mobile-edition-selector-container button:hover {
-    background: #0056b3;
+    background: var(--teal-secondary);
     transform: translateY(-1px);
 }
 
@@ -8747,5 +8752,230 @@ body.force-mobile-layout .desktop-edition-selector {
     
     .picks-table th:first-child {
         min-width: 120px;
+    }
+}
+
+/* Game Week Controls for Scores Tab */
+.gameweek-controls {
+    background: linear-gradient(135deg, var(--teal-light), var(--teal-medium));
+    border: 1px solid var(--teal-primary);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.gameweek-controls h4 {
+    color: var(--teal-secondary);
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.gameweek-controls .score-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.gameweek-controls .score-controls label {
+    font-weight: 600;
+    color: var(--dark-text);
+    min-width: 100px;
+}
+
+.gameweek-controls .score-controls select {
+    padding: 8px 12px;
+    border: 2px solid var(--teal-primary);
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
+    background: white;
+}
+
+.gameweek-controls .score-controls select:focus {
+    outline: none;
+    border-color: var(--teal-secondary);
+    box-shadow: 0 0 0 3px rgba(94, 165, 152, 0.1);
+}
+
+.gameweek-controls .score-controls button {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Game Week Fixtures Section */
+.gameweek-fixtures-section {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.gameweek-fixtures-section h4 {
+    color: var(--teal-secondary);
+    margin: 0 0 20px 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    border-bottom: 2px solid var(--teal-light);
+    padding-bottom: 10px;
+}
+
+/* Game Week Completion Controls */
+.gameweek-completion-controls {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.gameweek-completion-controls h5 {
+    color: #856404;
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.completion-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.completion-options button {
+    background: var(--alty-yellow);
+    color: var(--dark-text);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.completion-options button:hover {
+    background: #e6a800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(253, 185, 19, 0.3);
+}
+
+.complete-all-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    border: 1px solid #ffc107;
+}
+
+.complete-all-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #dc3545;
+    cursor: pointer;
+}
+
+.complete-all-checkbox input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.complete-all-checkbox label {
+    font-weight: 600;
+    color: #856404;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.complete-all-checkbox small {
+    color: #6c757d;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* VAR Review Status Styling */
+.var-review-status {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    text-align: center;
+}
+
+.var-review-status h6 {
+    color: #856404;
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.var-review-status p {
+    color: #856404;
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.var-review-status .var-indicator {
+    background: #ffc107;
+    color: #000;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    margin: 5px 0;
+}
+
+/* Responsive adjustments for new sections */
+@media (max-width: 768px) {
+    .gameweek-controls .score-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .gameweek-controls .score-controls label {
+        min-width: auto;
+        margin-bottom: 5px;
+    }
+    
+    .gameweek-controls .score-controls select {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .gameweek-controls .score-controls button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .completion-options {
+        gap: 12px;
+    }
+    
+    .complete-all-checkbox {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .complete-all-checkbox label {
+        font-size: 13px;
+    }
+    
+    .complete-all-checkbox small {
+        font-size: 11px;
     }
 }

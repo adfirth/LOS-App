@@ -737,93 +737,86 @@
                         <div class="admin-section">
                             <h3>Score Management</h3>
                             
-                            <!-- Enhanced Score Management -->
-                            <div class="score-entry">
-                                <h4>Score Management</h4>
-                                <div class="score-form">
-                                    <div class="score-controls">
-                                        <label for="score-gameweek-select">Game Week:</label>
-                                        <select id="score-gameweek-select">
-                                            <option value="1">Game Week 1</option>
-                                            <option value="2">Game Week 2</option>
-                                            <option value="3">Game Week 3</option>
-                                            <option value="4">Game Week 4</option>
-                                            <option value="5">Game Week 5</option>
-                                            <option value="6">Game Week 6</option>
-                                            <option value="7">Game Week 7</option>
-                                            <option value="8">Game Week 8</option>
-                                            <option value="9">Game Week 9</option>
-                                            <option value="10">Game Week 10</option>
-                                            <option value="tiebreak">Tiebreak Round</option>
-                                        </select>
-                                        
-                                                                            <button id="import-football-webpages-scores-btn" class="cta-button">Import from Football Web Pages</button>
-                                    <button id="refresh-scores-btn" class="cta-button">Refresh Display</button>
-                                        <input type="file" id="scores-file-input" accept=".json" style="display: none;">
-                                        <div id="import-status" class="status-message"></div>
-                                    </div>
+                            <!-- 1. Football Web Pages API Configuration (Moved to top) -->
+                            <div class="football-webpages-config">
+                                <h5>Football Web Pages API Settings</h5>
+                                <div class="api-config-controls">
+                                    <label for="football-webpages-league">League:</label>
+                                    <select id="football-webpages-league">
+                                        <option value="5">National League</option>
+                                        <option value="6">National League North</option>
+                                        <option value="7">National League South</option>
+                                    </select>
                                     
-                                    <!-- Football Web Pages API Configuration -->
-                                    <div class="football-webpages-config">
-                                        <h5>Football Web Pages API Settings</h5>
-                                        <div class="api-config-controls">
-                                            <label for="football-webpages-league">League:</label>
-                                            <select id="football-webpages-league">
-                                                <option value="5">National League</option>
-                                                <option value="6">National League North</option>
-                                                <option value="7">National League South</option>
-                                            </select>
-                                            
-                                            <label for="football-webpages-season">Season:</label>
-                                            <select id="football-webpages-season">
-                                                <option value="2025-26">2025/26</option>
-                                                <option value="2024-25">2024/25</option>
-                                                <option value="2023-24">2023/24</option>
-                                            </select>
-                                            
-                                            <button id="save-api-settings-btn" class="cta-button">Save API Settings</button>
-                                        </div>
-                                        <p id="api-settings-status" class="status-message"></p>
-                                    </div>
-
-                                    <!-- Test API Connection -->
-                                    <div class="test-api-section" id="test-api-section-debug" style="position: relative !important; z-index: 9999 !important; border-radius: 8px; background-color: #ff0000 !important; border: 5px solid #ff0000 !important; padding: 2rem !important; margin: 2rem 0 !important; color: white !important; font-weight: bold !important; display: block !important; visibility: visible !important; opacity: 1 !important;">
-                                        <h3>🧪 TEST API CONNECTION SECTION 🧪</h3>
-                                        <p><strong>This section should be highly visible with red background and white text!</strong></p>
-                                        <p>If you can see this, the Test API section is working!</p>
-                                        <p>Current time: <span id="test-api-time"></span></p>
-                                        <p>Section ID: test-api-section-debug</p>
-                                        <p>Position: Outside tab panes for maximum visibility</p>
-                                        <button onclick="testAPIConnection()" style="background: #00ff00; color: #000000; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Test API Connection</button>
-                                        <button onclick="alert('Test API section is working!')" style="background: #0000ff; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; margin-left: 0.5rem;">Test Alert</button>
-                                    </div>
+                                    <label for="football-webpages-season">Season:</label>
+                                    <select id="football-webpages-season">
+                                        <option value="2025-26">2025/26</option>
+                                        <option value="2024-25">2024/25</option>
+                                        <option value="2023-24">2023/24</option>
+                                    </select>
                                     
-                                    <!-- TEMPORARY TEST SECTION - SHOULD BE IMPOSSIBLE TO MISS -->
-                                    <div style="background-color: #00ff00 !important; border: 10px solid #000000 !important; padding: 3rem !important; margin: 3rem 0 !important; border-radius: 20px !important; color: black !important; font-weight: bold !important; font-size: 2rem !important; text-align: center !important; position: relative !important; z-index: 10000 !important;">
-                                        🚨🚨🚨 TEMPORARY TEST SECTION 🚨🚨🚨
-                                        <br><br>
-                                        IF YOU CAN SEE THIS, THE SETTINGS TAB IS WORKING
-                                        <br><br>
-                                        IF YOU CAN'T SEE THIS, THERE'S A SERIOUS ISSUE
-                                        <br><br>
-                                        <button onclick="alert('Test button works!')" style="background: #ff0000 !important; color: white !important; padding: 1rem 2rem !important; font-size: 1.5rem !important; border: none !important; border-radius: 10px !important; cursor: pointer !important;">TEST BUTTON</button>
-                                    </div>
-                                    
-                                    <!-- Auto Score Updates -->
-                                    <div class="auto-update-controls">
-                                        <h5>Auto Score Updates</h5>
-                                        <p>Automatically check for half-time scores (45+ min after kick-off) and full-time scores (105+ min after kick-off) every minute.</p>
-                                        <button id="start-auto-update-btn" class="cta-button">Start Auto Updates</button>
-                                        <button id="stop-auto-update-btn" class="cta-button">Stop Auto Updates</button>
-                                        <div id="auto-update-status" class="status-message"></div>
-                                    </div>
-                                    
-                                    <div id="scores-container">
-                                        <!-- Score entry rows will be populated here -->
-                                    </div>
-                                    
-                                    <button id="save-scores-btn" class="cta-button">Save Scores</button>
+                                    <button id="save-api-settings-btn" class="cta-button">Save API Settings</button>
                                 </div>
+                                <p id="api-settings-status" class="status-message"></p>
+                            </div>
+
+                            <!-- 2. Game Week Controls -->
+                            <div class="gameweek-controls">
+                                <h4>Game Week Management</h4>
+                                <div class="score-controls">
+                                    <label for="score-gameweek-select">Game Week:</label>
+                                    <select id="score-gameweek-select">
+                                        <option value="1">Game Week 1</option>
+                                        <option value="2">Game Week 2</option>
+                                        <option value="3">Game Week 3</option>
+                                        <option value="4">Game Week 4</option>
+                                        <option value="5">Game Week 5</option>
+                                        <option value="6">Game Week 6</option>
+                                        <option value="7">Game Week 7</option>
+                                        <option value="8">Game Week 8</option>
+                                        <option value="9">Game Week 9</option>
+                                        <option value="10">Game Week 10</option>
+                                        <option value="tiebreak">Tiebreak Round</option>
+                                    </select>
+                                    
+                                    <button id="import-football-webpages-scores-btn" class="cta-button">Import from Football Web Pages</button>
+                                    <button id="refresh-scores-btn" class="cta-button">Refresh Display</button>
+                                    <input type="file" id="scores-file-input" accept=".json" style="display: none;">
+                                    <div id="import-status" class="status-message"></div>
+                                </div>
+                                
+                                <!-- Auto Score Updates -->
+                                <div class="auto-update-controls">
+                                    <h5>Auto Score Updates</h5>
+                                    <p>Automatically check for half-time scores (45+ min after kick-off) and full-time scores (105+ min after kick-off) every minute.</p>
+                                    <button id="start-auto-update-btn" class="cta-button">Start Auto Updates</button>
+                                    <button id="stop-auto-update-btn" class="cta-button">Stop Auto Updates</button>
+                                    <div id="auto-update-status" class="status-message"></div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Game Week Fixtures & Scoring -->
+                            <div class="gameweek-fixtures-section">
+                                <h4>Game Week Fixtures & Scoring</h4>
+                                <div id="scores-container">
+                                    <!-- Score entry rows will be populated here -->
+                                </div>
+                                
+                                <!-- Game Week Completion Controls -->
+                                <div class="gameweek-completion-controls">
+                                    <h5>Game Week Completion</h5>
+                                    <div class="completion-options">
+                                        <button id="complete-all-remaining-btn" class="cta-button">Complete All Remaining Matches</button>
+                                        <div class="complete-all-checkbox">
+                                            <input type="checkbox" id="complete-all-gameweek" disabled>
+                                            <label for="complete-all-gameweek">Complete All - Final Lock-in (Lives & Eliminations)</label>
+                                            <small>Only available when all individual matches are complete</small>
+                                        </div>
+                                    </div>
+                                    <div id="completion-status" class="status-message"></div>
+                                </div>
+                                
+                                <button id="save-scores-btn" class="cta-button">Save Scores</button>
                             </div>
                         </div>
                     </div>

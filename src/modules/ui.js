@@ -429,7 +429,7 @@ class UIManager {
     updateLivesDisplay(userData, livesRemaining, mobileLivesRemaining, desktopLivesRemaining) {
         let cardDisplay = '';
         if (userData.lives === 2) {
-            cardDisplay = '<div class="lives-status lives-good"><i class="fas fa-check-circle"></i> All is well, you haven\'t got a card yet</div>';
+            cardDisplay = '<div class="lives-status lives-good"><i class="fas fa-check-circle"></i> All is well, you haven\'t got a card yet!</div>';
         } else if (userData.lives === 1) {
             cardDisplay = '<div class="lives-status lives-warning"><img src="images/Yellow Card.png" alt="Yellow Card" class="card-image"><span>Warning: You\'re on your last life!</span></div>';
         } else if (userData.lives === 0) {
