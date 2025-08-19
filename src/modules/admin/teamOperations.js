@@ -67,6 +67,9 @@ export class TeamOperations {
                 return;
             }
             
+            // Set up event listeners for existing selectors
+            this.setupExistingSelectors(deviceType);
+            
             // Create missing elements if they don't exist
             this.createAsItStandsElements(contentContainer, deviceType);
             
@@ -871,6 +874,39 @@ export class TeamOperations {
         // This method would return the team badge image URL
         // Implementation depends on your team badge system
         return null;
+    }
+
+    // Set up event listeners for existing selectors
+    setupExistingSelectors(deviceType) {
+        console.log(`🔧 Setting up existing selectors for ${deviceType}...`);
+        
+        // Set up gameweek selector
+        const gameweekSelectorId = deviceType === 'desktop' 
+            ? '#desktop-as-it-stands-gameweek' 
+            : '#mobile-as-it-stands-gameweek';
+        const gameweekSelect = document.querySelector(gameweekSelectorId);
+        
+        if (gameweekSelect) {
+            // Remove any existing listeners to prevent duplicates
+            gameweekSelect.removeEventListener('change', this.handleGameweekChange);
+            gameweekSelect.addEventListener('change', this.handleGameweekChange.bind(this));
+            console.log(`✅ Added event listener to ${deviceType} gameweek selector`);
+        } else {
+            console.warn(`❌ Gameweek selector not found: ${gameweekSelectorId}`);
+        }
+        
+        // Update Active Edition display
+        const activeEditionId = deviceType === 'desktop' 
+            ? '#desktop-active-edition' 
+            : '#mobile-active-edition';
+        const activeEditionSpan = document.querySelector(activeEditionId);
+        
+        if (activeEditionSpan) {
+            activeEditionSpan.textContent = 'Test Weeks';
+            console.log(`✅ Updated ${deviceType} active edition display`);
+        } else {
+            console.warn(`❌ Active edition span not found: ${activeEditionId}`);
+        }
     }
 
     // Handle gameweek change
