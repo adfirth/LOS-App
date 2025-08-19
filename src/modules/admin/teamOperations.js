@@ -278,10 +278,29 @@ export class TeamOperations {
                     const pickData = pickDoc.data();
                     console.log(`✅ Pick found for ${player.displayName}:`, pickData);
                     
-                    // Set the picks data in the expected format
-                    playerStanding.picks = {
-                        team: pickData.teamPicked || pickData.team || 'No pick'
-                    };
+                    // Check if this is player dashboard (not admin) and deadline hasn't passed
+                    const isPlayerDashboard = !document.querySelector('#admin-panel'); // Admin panel check
+                    
+                    if (isPlayerDashboard) {
+                        // For player dashboard, check deadline and show "To be revealed" if not passed
+                        const deadlinePassed = await this.checkDeadlineForGameweek(gameweek, currentEdition);
+                        console.log(`🔍 Deadline check for ${player.displayName} GW${gameweek}: ${deadlinePassed ? 'PASSED' : 'NOT PASSED'}`);
+                        
+                        if (deadlinePassed) {
+                            playerStanding.picks = {
+                                team: pickData.teamPicked || pickData.team || 'No pick'
+                            };
+                        } else {
+                            playerStanding.picks = {
+                                team: 'To be revealed'
+                            };
+                        }
+                    } else {
+                        // For admin panel, always show the actual pick
+                        playerStanding.picks = {
+                            team: pickData.teamPicked || pickData.team || 'No pick'
+                        };
+                    }
                 } else {
                     console.log(`❌ No pick found for player ${player.displayName} in edition ${currentEdition}, gameweek ${gameweek}`);
                     playerStanding.picks = { team: 'No pick' };
@@ -915,6 +934,62 @@ export class TeamOperations {
         console.log(`🔄 Gameweek changed to: ${newGameweek}`);
         this.currentActiveGameweek = newGameweek;
         this.loadStandings();
+    }
+
+    // Check if deadline has passed for a gameweek
+    async checkDeadlineForGameweek(gameweek, edition = null) {
+        try {
+            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
+            const editionKey = edition ? `edition${edition}` : 'editiontest';
+            const documentKey = `${editionKey}_${gameweekKey}`;
+            
+            console.log(`🔍 Checking deadline for: ${documentKey}`);
+            
+            const fixtureDoc = await this.db.collection('fixtures').doc(documentKey).get();
+            if (!fixtureDoc.exists) {
+                console.log(`❌ No fixtures document found for ${documentKey}`);
+                return false;
+            }
+            
+            const fixtureData = fixtureDoc.data();
+            if (!fixtureData || !fixtureData.fixtures || fixtureData.fixtures.length === 0) {
+                console.log(`❌ No fixtures data found for ${documentKey}`);
+                return false;
+            }
+            
+            // Find the earliest fixture (deadline)
+            const fixtures = fixtureData.fixtures;
+            let earliestFixture = null;
+            let earliestDate = null;
+            
+            for (const fixture of fixtures) {
+                if (fixture.date && fixture.kickOffTime) {
+                    const dateString = `${fixture.date}T${fixture.kickOffTime}`;
+                    const fixtureDate = new Date(dateString);
+                    
+                    if (!earliestDate || fixtureDate < earliestDate) {
+                        earliestDate = fixtureDate;
+                        earliestFixture = fixture;
+                    }
+                }
+            }
+            
+            if (!earliestFixture || !earliestDate) {
+                console.log(`❌ No valid fixture dates found for ${documentKey}`);
+                return false;
+            }
+            
+            const now = new Date();
+            const deadlinePassed = now >= earliestDate;
+            
+            console.log(`🔍 Deadline check: ${earliestDate.toLocaleString()} vs ${now.toLocaleString()} = ${deadlinePassed ? 'PASSED' : 'NOT PASSED'}`);
+            
+            return deadlinePassed;
+            
+        } catch (error) {
+            console.error(`❌ Error checking deadline for gameweek ${gameweek}:`, error);
+            return false;
+        }
     }
 
     // Cleanup method
