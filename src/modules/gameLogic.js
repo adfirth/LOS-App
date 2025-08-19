@@ -1287,6 +1287,20 @@ class GameLogicManager {
     setActiveEdition(edition) {
         this.currentActiveEdition = edition;
     }
+    
+    // Update pick status header
+    async updatePickStatusHeader(gameweek, userData, userId) {
+        try {
+            // Delegate to PickStatusService if available
+            if (window.app && window.app.pickStatusService) {
+                await window.app.pickStatusService.updatePickStatusHeader(gameweek, userData, userId, false);
+            } else {
+                console.warn('PickStatusService not available for desktop pick status header update');
+            }
+        } catch (error) {
+            console.error('Error updating desktop pick status header:', error);
+        }
+    }
 
     // --- CLEANUP ---
 
