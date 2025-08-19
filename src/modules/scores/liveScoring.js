@@ -140,9 +140,18 @@ export class LiveScoring {
                     });
                 }
                 
-                updatedFixtures.forEach((fixture, index) => {
-                    this.addScoreRow(fixture, index);
-                });
+                // Only add score rows if we're NOT in admin scores tab
+                // Admin scores tab is handled by renderAdminScores to prevent duplication
+                const isAdminScoresTab = document.querySelector('#scores-container') && 
+                                       document.querySelector('#scores-container').closest('.gameweek-fixtures-section');
+                
+                if (!isAdminScoresTab) {
+                    updatedFixtures.forEach((fixture, index) => {
+                        this.addScoreRow(fixture, index);
+                    });
+                } else {
+                    console.log('🔧 Admin scores tab detected - skipping addScoreRow to prevent duplication');
+                }
                 
                 console.log(`✅ Scores loaded successfully for ${updatedFixtures.length} fixtures`);
                 

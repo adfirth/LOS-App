@@ -511,36 +511,33 @@ export class StatisticsEngine {
                     </div>
                     
                     <div class="score-inputs">
-                        <div class="score-section">
-                            <label>Live Score:</label>
-                            <div class="score-input-group">
-                                <input type="number" class="home-score" data-fixture-id="${fixture.id}" data-team="home" min="0" value="${fixture.homeScore || ''}" placeholder="0">
-                                <span class="score-separator">-</span>
-                                <input type="number" class="away-score" data-fixture-id="${fixture.id}" data-team="away" min="0" value="${fixture.awayScore || ''}" placeholder="0">
-                            </div>
-                        </div>
-                        
-                        <div class="score-section">
-                            <label>Half Time:</label>
-                            <div class="score-input-group">
-                                <input type="number" class="home-score-ht" data-fixture-id="${fixture.id}" data-team="home" data-type="ht" min="0" value="${fixture.homeScoreHT || ''}" placeholder="0">
-                                <span class="score-separator">-</span>
-                                <input type="number" class="away-score-ht" data-fixture-id="${fixture.id}" data-team="away" data-type="ht" min="0" value="${fixture.awayScoreHT || ''}" placeholder="0">
-                            </div>
-                        </div>
+                                                 <div class="score-section">
+                             <label>Full Time Score:</label>
+                             <div class="score-input-group">
+                                 <input type="number" class="home-score" data-fixture-id="${fixture.id}" data-team="home" min="0" value="${fixture.homeScore || ''}" placeholder="0">
+                                 <span class="score-separator">-</span>
+                                 <input type="number" class="away-score" data-fixture-id="${fixture.id}" data-team="away" min="0" value="${fixture.awayScore || ''}" placeholder="0">
+                             </div>
+                         </div>
+                         
+                         <div class="score-section">
+                             <label>Half Time Score:</label>
+                             <div class="score-input-group">
+                                 <input type="number" class="home-score-ht" data-fixture-id="${fixture.id}" data-team="home" data-type="ht" min="0" value="${fixture.homeScoreHT || ''}" placeholder="0">
+                                 <span class="score-separator">-</span>
+                                 <input type="number" class="away-score-ht" data-fixture-id="${fixture.id}" data-team="away" data-type="ht" min="0" value="${fixture.awayScoreHT || ''}" placeholder="0">
+                             </div>
+                         </div>
                         
                         <div class="match-controls">
-                            <select class="match-status" data-fixture-id="${fixture.id}">
-                                <option value="NS" ${fixture.status === 'NS' ? 'selected' : ''}>Not Started</option>
-                                <option value="1H" ${fixture.status === '1H' ? 'selected' : ''}>First Half</option>
-                                <option value="HT" ${fixture.status === 'HT' ? 'selected' : ''}>Half Time</option>
-                                <option value="2H" ${fixture.status === '2H' ? 'selected' : ''}>Second Half</option>
-                                <option value="FT" ${fixture.status === 'FT' ? 'selected' : ''}>Full Time</option>
-                                <option value="AET" ${fixture.status === 'AET' ? 'selected' : ''}>Extra Time</option>
-                                <option value="PEN" ${fixture.status === 'PEN' ? 'selected' : ''}>Penalties</option>
-                                <option value="POSTP" ${fixture.status === 'POSTP' ? 'selected' : ''}>Postponed</option>
-                                <option value="CANC" ${fixture.status === 'CANC' ? 'selected' : ''}>Cancelled</option>
-                            </select>
+                                                         <select class="match-status" data-fixture-id="${fixture.id}">
+                                 <option value="NS" ${fixture.status === 'NS' ? 'selected' : ''}>Not Started</option>
+                                 <option value="POSTP" ${fixture.status === 'POSTP' ? 'selected' : ''}>Postponed</option>
+                                 <option value="1H" ${fixture.status === '1H' ? 'selected' : ''}>First Half</option>
+                                 <option value="HT" ${fixture.status === 'HT' ? 'selected' : ''}>Half Time</option>
+                                 <option value="2H" ${fixture.status === '2H' ? 'selected' : ''}>Second Half</option>
+                                 <option value="FT" ${fixture.status === 'FT' ? 'selected' : ''}>Full Time</option>
+                             </select>
                             
                             <div class="completion-controls">
                                 <input type="checkbox" class="match-complete" data-fixture-id="${fixture.id}" ${fixture.completed ? 'checked' : ''}>
