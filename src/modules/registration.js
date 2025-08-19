@@ -515,7 +515,7 @@ class RegistrationManager {
             whatsappConsent: formData.whatsappConsent,
             termsAccepted: formData.termsAccepted,
             status: 'active',
-            lives: 3, // Start with 3 lives
+            lives: 2, // Start with 2 lives
             preferredEdition: formData.edition,
             registrations: {
                 [editionKey]: {
@@ -559,7 +559,7 @@ class RegistrationManager {
             }
         };
 
-        await this.db.collection('users').doc(userId).set(updateData, { merge: true });
+        await this.db.collection('users').doc(userId).update(updateData);
         console.log('User re-registration data updated in Firestore');
     }
 
