@@ -1440,7 +1440,11 @@
                             standingsEditionSelect.value = 'test';
                         }
                         
-                        window.adminManagementManager.teamOperations.loadStandings();
+                        // Force a small delay to ensure the selector change takes effect
+                        setTimeout(() => {
+                            console.log('Calling loadStandings with edition:', document.querySelector('#standings-edition-select')?.value);
+                            window.adminManagementManager.teamOperations.loadStandings();
+                        }, 100);
                         return true;
                     }
                     
