@@ -255,18 +255,81 @@ export class TeamOperations {
                 eliminated: false
             };
             
-            // Get player picks for this gameweek
-            const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            let currentEdition = document.querySelector('#standings-edition-select')?.value;
-            if (!currentEdition) {
-                // For player dashboard, use the current active edition (test) which has the picks
-                currentEdition = 'test'; // Use test edition which has the actual picks
+            // Calculate cumulative effect of all gameweeks up to the current one
+            for (let gw = 1; gw <= parseInt(gameweek); gw++) {
+                const currentGameweek = gw.toString();
+                
+                // Get fixtures for this gameweek
+                const gameweekKey = currentGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameweek}`;
+                const editionKey = 'editiontest'; // We're working with test edition
+                const fixtureDocKey = `${editionKey}_${gameweekKey}`;
+                
+                const fixtureDoc = await this.db.collection('fixtures').doc(fixtureDocKey).get();
+                const currentFixtures = fixtureDoc.exists ? fixtureDoc.data().fixtures || [] : [];
+                
+                // Get player pick for this gameweek
+                try {
+                    const picksQuery = await this.db.collection('picks')
+                        .where('userId', '==', player.id)
+                        .where('edition', '==', 'test')
+                        .where('gameweek', '==', currentGameweek)
+                        .get();
+                    
+                    if (!picksQuery.empty) {
+                        const pickDoc = picksQuery.docs[0];
+                        const pickData = pickDoc.data();
+                        const pickedTeam = pickData.teamPicked || pickData.team;
+                        
+                        // Find the fixture for this pick
+                        const fixture = currentFixtures.find(f => 
+                            f.homeTeam === pickedTeam || f.awayTeam === pickedTeam
+                        );
+                        
+                        if (fixture && (fixture.status === 'FT' || fixture.completed === true)) {
+                            // Match finished, calculate result
+                            const homeScore = parseInt(fixture.homeScore) || 0;
+                            const awayScore = parseInt(fixture.awayScore) || 0;
+                            
+                            if (pickedTeam === fixture.homeTeam) {
+                                if (homeScore > awayScore) {
+                                    playerStanding.totalPoints += 3; // Win
+                                } else if (homeScore === awayScore) {
+                                    playerStanding.totalPoints += 1; // Draw
+                                    playerStanding.lives = Math.max(0, playerStanding.lives - 1);
+                                } else {
+                                    playerStanding.totalPoints += 0; // Loss
+                                    playerStanding.lives = Math.max(0, playerStanding.lives - 1);
+                                }
+                            } else {
+                                if (awayScore > homeScore) {
+                                    playerStanding.totalPoints += 3; // Win
+                                } else if (awayScore === homeScore) {
+                                    playerStanding.totalPoints += 1; // Draw
+                                    playerStanding.lives = Math.max(0, playerStanding.lives - 1);
+                                } else {
+                                    playerStanding.totalPoints += 0; // Loss
+                                    playerStanding.lives = Math.max(0, playerStanding.lives - 1);
+                                }
+                            }
+                            
+                            if (playerStanding.lives === 0) {
+                                playerStanding.eliminated = true;
+                                break; // Player is eliminated, no need to check further gameweeeks
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log(`❌ Error processing gameweek ${currentGameweek} for ${player.displayName}:`, error);
+                }
             }
             
-            console.log(`🔍 Looking for picks for player ${player.displayName} - Edition: ${currentEdition}, Gameweek: ${gameweek}`);
+            // Get the pick for the current gameweek (for display purposes)
+            let currentEdition = document.querySelector('#standings-edition-select')?.value;
+            if (!currentEdition) {
+                currentEdition = 'test';
+            }
             
             try {
-                // Query picks collection for this specific player, edition, and gameweek
                 const picksQuery = await this.db.collection('picks')
                     .where('userId', '==', player.id)
                     .where('edition', '==', currentEdition)
@@ -276,16 +339,12 @@ export class TeamOperations {
                 if (!picksQuery.empty) {
                     const pickDoc = picksQuery.docs[0];
                     const pickData = pickDoc.data();
-                    console.log(`✅ Pick found for ${player.displayName}:`, pickData);
                     
                     // Check if this is player dashboard (not admin) and deadline hasn't passed
-                    const isPlayerDashboard = !document.querySelector('#admin-panel'); // Admin panel check
+                    const isPlayerDashboard = !document.querySelector('#admin-panel');
                     
                     if (isPlayerDashboard) {
-                        // For player dashboard, check deadline and show "To be revealed" if not passed
                         const deadlinePassed = await this.checkDeadlineForGameweek(gameweek, currentEdition);
-                        console.log(`🔍 Deadline check for ${player.displayName} GW${gameweek}: ${deadlinePassed ? 'PASSED' : 'NOT PASSED'}`);
-                        
                         if (deadlinePassed) {
                             playerStanding.picks = {
                                 team: pickData.teamPicked || pickData.team || 'No pick'
@@ -296,66 +355,15 @@ export class TeamOperations {
                             };
                         }
                     } else {
-                        // For admin panel, always show the actual pick
                         playerStanding.picks = {
                             team: pickData.teamPicked || pickData.team || 'No pick'
                         };
                     }
                 } else {
-                    console.log(`❌ No pick found for player ${player.displayName} in edition ${currentEdition}, gameweek ${gameweek}`);
                     playerStanding.picks = { team: 'No pick' };
                 }
             } catch (error) {
-                console.log(`❌ Error fetching picks for player ${player.displayName}:`, error);
                 playerStanding.picks = { team: 'No pick' };
-            }
-            
-            // Calculate points based on picks and fixtures
-            if (fixtures.length > 0 && playerStanding.picks.team) {
-                const pickedTeam = playerStanding.picks.team;
-                const fixture = fixtures.find(f => 
-                    f.homeTeam === pickedTeam || f.awayTeam === pickedTeam
-                );
-                
-                if (fixture) {
-                    // Store fixture status for result determination
-                    playerStanding.fixtureStatus = fixture.status;
-                    
-                    if (fixture.status === 'FT') {
-                        // Match finished, calculate result
-                        const homeScore = parseInt(fixture.homeScore) || 0;
-                        const awayScore = parseInt(fixture.awayScore) || 0;
-                        
-                        if (pickedTeam === fixture.homeTeam) {
-                            if (homeScore > awayScore) {
-                                playerStanding.totalPoints = 3; // Win
-                            } else if (homeScore === awayScore) {
-                                playerStanding.totalPoints = 1; // Draw
-                                playerStanding.lives = Math.max(0, playerStanding.lives - 1);
-                            } else {
-                                playerStanding.totalPoints = 0; // Loss
-                                playerStanding.lives = Math.max(0, playerStanding.lives - 1);
-                            }
-                        } else {
-                            if (awayScore > homeScore) {
-                                playerStanding.totalPoints = 3; // Win
-                            } else if (awayScore === homeScore) {
-                                playerStanding.totalPoints = 1; // Draw
-                                playerStanding.lives = Math.max(0, playerStanding.lives - 1);
-                            } else {
-                                playerStanding.totalPoints = 0; // Loss
-                                playerStanding.lives = Math.max(0, playerStanding.lives - 1);
-                            }
-                        }
-                        
-                        if (playerStanding.lives === 0) {
-                            playerStanding.eliminated = true;
-                        }
-                    } else {
-                        // Match not finished - no points awarded yet
-                        playerStanding.totalPoints = 0;
-                    }
-                }
             }
             
             standings.push(playerStanding);
@@ -372,7 +380,7 @@ export class TeamOperations {
             return a.displayName.localeCompare(b.displayName);
         });
         
-        console.log(`✅ Calculated standings for ${standings.length} players`);
+        console.log(`✅ Calculated cumulative standings for ${standings.length} players up to gameweek ${gameweek}`);
         return standings;
     }
 
