@@ -156,14 +156,18 @@ export class TeamOperations {
             console.log('🔧 Loading standings...');
             
             // Get current edition and gameweek from DOM selectors
-            // For player dashboard, prioritize the current active edition (test) and gameweek
+            // For player dashboard, prioritize the current active edition from EditionService
             let currentEdition = document.querySelector('#standings-edition-select')?.value;
             let currentGameweek = document.querySelector('#standings-gameweek-select')?.value;
             
-            // If not found in admin panel, try dashboard selectors
+            // If not found in admin panel, try dashboard selectors or EditionService
             if (!currentEdition) {
-                // For player dashboard, use the current active edition (test) which has the picks
-                currentEdition = 'test'; // Use test edition which has the actual picks
+                // For player dashboard, use the current active edition from EditionService
+                if (window.editionService && window.editionService.getCurrentUserEdition) {
+                    currentEdition = window.editionService.getCurrentUserEdition();
+                } else {
+                    currentEdition = 'test'; // Fallback to test edition
+                }
             }
             if (!currentGameweek) {
                 currentGameweek = document.querySelector('#desktop-as-it-stands-gameweek')?.value || 
@@ -261,7 +265,14 @@ export class TeamOperations {
                 
                 // Get fixtures for this gameweek
                 const gameweekKey = currentGameweek === 'tiebreak' ? 'gwtiebreak' : `gw${currentGameweek}`;
-                const editionKey = 'editiontest'; // We're working with test edition
+                
+                // Get the current edition from EditionService instead of hardcoding
+                let currentEdition = 'test'; // Default fallback
+                if (window.editionService && window.editionService.getCurrentUserEdition) {
+                    currentEdition = window.editionService.getCurrentUserEdition();
+                }
+                
+                const editionKey = `edition${currentEdition}`;
                 const fixtureDocKey = `${editionKey}_${gameweekKey}`;
                 
                 const fixtureDoc = await this.db.collection('fixtures').doc(fixtureDocKey).get();
@@ -271,7 +282,7 @@ export class TeamOperations {
                 try {
                     const picksQuery = await this.db.collection('picks')
                         .where('userId', '==', player.id)
-                        .where('edition', '==', 'test')
+                        .where('edition', '==', currentEdition)
                         .where('gameweek', '==', currentGameweek)
                         .get();
                     
@@ -326,7 +337,12 @@ export class TeamOperations {
             // Get the pick for the current gameweek (for display purposes)
             let currentEdition = document.querySelector('#standings-edition-select')?.value;
             if (!currentEdition) {
-                currentEdition = 'test';
+                // Try to get from EditionService, fallback to test
+                if (window.editionService && window.editionService.getCurrentUserEdition) {
+                    currentEdition = window.editionService.getCurrentUserEdition();
+                } else {
+                    currentEdition = 'test';
+                }
             }
             
             try {
@@ -976,8 +992,14 @@ export class TeamOperations {
         const activeEditionSpan = document.querySelector(activeEditionId);
         
         if (activeEditionSpan) {
-            activeEditionSpan.textContent = 'Test Weeks';
-            console.log(`✅ Updated ${deviceType} active edition display`);
+            // Get the current edition display name from EditionService
+            let editionDisplayName = 'Test Weeks'; // Default fallback
+            if (window.editionService && window.editionService.getCurrentUserEdition) {
+                const currentEdition = window.editionService.getCurrentUserEdition();
+                editionDisplayName = window.editionService.getEditionDisplayName(currentEdition);
+            }
+            activeEditionSpan.textContent = editionDisplayName;
+            console.log(`✅ Updated ${deviceType} active edition display to: ${editionDisplayName}`);
         } else {
             console.warn(`❌ Active edition span not found: ${activeEditionId}`);
         }
@@ -1011,7 +1033,12 @@ export class TeamOperations {
     async checkDeadlineForGameweek(gameweek, edition = null) {
         try {
             const gameweekKey = gameweek === 'tiebreak' ? 'gwtiebreak' : `gw${gameweek}`;
-            const editionKey = edition ? `edition${edition}` : 'editiontest';
+            // Get the current edition from EditionService if not provided
+            let currentEdition = edition;
+            if (!currentEdition && window.editionService && window.editionService.getCurrentUserEdition) {
+                currentEdition = window.editionService.getCurrentUserEdition();
+            }
+            const editionKey = currentEdition ? `edition${currentEdition}` : 'editiontest';
             const documentKey = `${editionKey}_${gameweekKey}`;
             
             console.log(`🔍 Checking deadline for: ${documentKey}`);
