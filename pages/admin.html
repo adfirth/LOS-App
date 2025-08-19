@@ -1444,6 +1444,16 @@
                         console.log('Button text:', refreshStandingsBtn.textContent);
                         console.log('Button visible:', refreshStandingsBtn.offsetParent !== null);
                         console.log('Button event listeners:', refreshStandingsBtn.onclick);
+                        
+                        // Check if the button has an event listener, if not, set one up
+                        if (!refreshStandingsBtn.onclick && window.app && window.app.adminManagementManager) {
+                            console.log('Setting up event listener for refresh standings button...');
+                            refreshStandingsBtn.addEventListener('click', () => {
+                                console.log('Refresh standings button clicked - calling loadStandings...');
+                                window.app.adminManagementManager.loadStandings();
+                            });
+                        }
+                        
                         refreshStandingsBtn.click();
                         return true;
                     } else {
