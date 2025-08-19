@@ -60,7 +60,6 @@ export class LiveScoring {
         }
         
         const scoreGameweekSelect = document.querySelector('#score-gameweek-select');
-        const container = document.querySelector('#scores-container');
         
         // For player dashboard, use current active gameweek if no score selector found
         let gameweek;
@@ -77,6 +76,13 @@ export class LiveScoring {
             }
         } else {
             gameweek = scoreGameweekSelect.value;
+        }
+        
+        // Find the appropriate scores container
+        let container = document.querySelector('#scores-container'); // Admin panel
+        if (!container) {
+            // Try player dashboard containers
+            container = document.querySelector('#desktop-scores-display') || document.querySelector('#mobile-scores-display');
         }
         
         if (!container) {
@@ -195,7 +201,18 @@ export class LiveScoring {
 
     // Add a score row for a fixture
     addScoreRow(fixture, index) {
-        const container = document.querySelector('#scores-container');
+        // Find the appropriate scores container
+        let container = document.querySelector('#scores-container'); // Admin panel
+        if (!container) {
+            // Try player dashboard containers
+            container = document.querySelector('#desktop-scores-display') || document.querySelector('#mobile-scores-display');
+        }
+        
+        if (!container) {
+            console.log('No scores container found for addScoreRow');
+            return;
+        }
+        
         const scoreRow = document.createElement('div');
         scoreRow.className = 'score-row';
         
